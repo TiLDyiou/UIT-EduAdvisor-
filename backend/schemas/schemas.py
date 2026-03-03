@@ -56,7 +56,7 @@ class TranscriptUploadResponse(BaseModel):
     total_grades: int = 0
 
 
-# --- Internal DTOs (dùng trong services) ---
+#Internal DTOs (dùng trong services)
 
 
 class ParsedGrade(BaseModel):

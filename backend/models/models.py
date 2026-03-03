@@ -19,9 +19,9 @@ from sqlmodel import Field, Relationship, SQLModel, JSON, Column
 class GradeStatus(str, Enum):
     """Trạng thái môn học của sinh viên."""
 
-    DAT = "DAT"  # Đã đạt
-    ROT = "ROT"  # Rớt
-    DANG_HOC = "DANG_HOC"  # Đang học
+    DAT = "DAT"  
+    ROT = "ROT"  
+    DANG_HOC = "DANG_HOC" 
 
 
 # --- Models ---

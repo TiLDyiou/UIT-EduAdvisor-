@@ -4,9 +4,6 @@ services/parser.py — HTML transcript parser.
 Parse file điểm HTML được export từ hệ thống quản lý học vụ.
 Sử dụng BeautifulSoup4 để extract thông tin sinh viên và bảng điểm.
 
-LƯU Ý: Logic selector hiện tại dựa trên cấu trúc HTML mẫu.
-Khi có file thật, chỉ cần chỉnh sửa các hằng số SELECTOR và
-column indices bên dưới.
 """
 
 import logging
@@ -16,9 +13,8 @@ from schemas.schemas import ParsedGrade, ParsedTranscript
 
 logger = logging.getLogger(__name__)
 
-# =============================================================================
 # SELECTOR CONFIG — Chỉnh sửa khi có file HTML thật
-# =============================================================================
+
 
 # CSS selectors để tìm thông tin sinh viên
 # Giả định: thông tin nằm trong các thẻ có class/id cụ thể
@@ -41,11 +37,7 @@ GRADE_TABLE_COLUMNS = {
 # Số cột tối thiểu để xác định đây là dòng dữ liệu hợp lệ
 MIN_COLUMNS = 5
 
-
-# =============================================================================
 # PARSER FUNCTIONS
-# =============================================================================
-
 
 def _extract_student_info(soup: BeautifulSoup) -> dict[str, str]:
     """
@@ -199,9 +191,7 @@ def _safe_parse_int(value: str) -> int | None:
         return None
 
 
-# =============================================================================
 # PUBLIC API
-# =============================================================================
 
 
 def parse_transcript(html_content: str) -> ParsedTranscript:
