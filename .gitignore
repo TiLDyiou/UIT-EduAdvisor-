@@ -1,0 +1,48 @@
+.cursor/
+
+# === Secrets & env ===
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# === Python (apps/api) ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.venv/
+venv/
+env/
+*.egg
+
+# === Node / Next.js (apps/web) ===
+node_modules/
+.next/
+out/
+.turbo/
+.pnp.*
+.yarn/
+*.tsbuildinfo
+next-env.d.ts
+coverage/
+
+# === Editors / OS ===
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# === Docker / data volumes ===
+.docker-data/
+*.log
