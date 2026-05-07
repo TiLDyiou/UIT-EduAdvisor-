@@ -12,3 +12,5 @@ beautifulsoup4==4.12.3
 python-json-logger==3.2.1
 bcrypt==4.2.1
 pgvector==0.3.6
+openpyxl==3.1.5
+icalendar==6.1.0
