@@ -12,7 +12,8 @@ const serverEnv = z.object({
 });
 
 const clientEnv = z.object({
-  NEXT_PUBLIC_API_URL: z.string().url().default("http://localhost:8000"),
+  // Same origin as the web app so httpOnly session cookies work with /api/v1 rewrites.
+  NEXT_PUBLIC_API_URL: z.string().url().default("http://localhost:3000"),
 });
 
 export const env = {

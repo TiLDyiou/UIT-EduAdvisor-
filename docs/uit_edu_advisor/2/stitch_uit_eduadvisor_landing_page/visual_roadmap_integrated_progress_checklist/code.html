@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Visual Roadmap - UIT EduAdvisor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .course-glow-passed {
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+        }
+        .course-glow-current {
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+        }
+        .course-glow-failed {
+            box-shadow: 0 0 15px rgba(255, 77, 77, 0.4);
+        }
+        
+        /* Cyberpunk Grid Background */
+        .cyber-grid {
+            background-image: 
+                linear-gradient(to right, rgba(0, 242, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 242, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* SVG Line connectors */
+        .edge-line {
+            stroke: #39383e;
+            stroke-width: 2;
+            fill: none;
+        }
+        .edge-line-active {
+            stroke: #00f2ff;
+            stroke-width: 2;
+            fill: none;
+            opacity: 0.5;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#e0ffe5",
+                    "surface-container-lowest": "#0e0e13",
+                    "surface-container-high": "#2a292f",
+                    "on-surface-variant": "#b9cacb",
+                    "on-primary-container": "#006a71",
+                    "tertiary-fixed-dim": "#00e384",
+                    "tertiary-container": "#00fa92",
+                    "on-secondary-container": "#ddcdff",
+                    "on-primary-fixed": "#002022",
+                    "surface-container-highest": "#35343a",
+                    "primary-container": "#00f2ff",
+                    "on-surface": "#e4e1e9",
+                    "secondary-fixed-dim": "#d1bcff",
+                    "on-primary-fixed-variant": "#004f54",
+                    "surface-container": "#1f1f25",
+                    "on-tertiary-fixed": "#00210e",
+                    "surface-dim": "#131318",
+                    "surface-tint": "#00dbe7",
+                    "surface-container-low": "#1b1b20",
+                    "secondary": "#d1bcff",
+                    "tertiary-fixed": "#5affa2",
+                    "on-primary": "#00363a",
+                    "error-container": "#93000a",
+                    "on-error": "#690005",
+                    "error": "#ffb4ab",
+                    "secondary-fixed": "#e9ddff",
+                    "secondary-container": "#7000ff",
+                    "inverse-primary": "#00696f",
+                    "primary": "#e1fdff",
+                    "outline-variant": "#3a494b",
+                    "on-error-container": "#ffdad6",
+                    "primary-fixed-dim": "#00dbe7",
+                    "on-secondary-fixed": "#23005b",
+                    "surface-variant": "#35343a",
+                    "on-secondary": "#3c0090",
+                    "inverse-surface": "#e4e1e9",
+                    "primary-fixed": "#74f5ff",
+                    "on-tertiary-container": "#006e3d",
+                    "inverse-on-surface": "#303036",
+                    "on-secondary-fixed-variant": "#5700c9",
+                    "on-tertiary-fixed-variant": "#00522c",
+                    "on-background": "#e4e1e9",
+                    "surface": "#131318",
+                    "background": "#131318",
+                    "surface-bright": "#39383e",
+                    "outline": "#849495",
+                    "on-tertiary": "#00391d"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "xl": "40px",
+                    "xs": "4px",
+                    "margin": "32px",
+                    "md": "16px",
+                    "gutter": "20px",
+                    "lg": "24px",
+                    "sm": "8px",
+                    "base": "4px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Space Grotesk"],
+                    "body-lg": ["Space Grotesk"],
+                    "title-lg": ["Space Grotesk"],
+                    "headline-lg": ["Space Grotesk"],
+                    "label-lg": ["Space Grotesk"],
+                    "headline-md": ["Space Grotesk"],
+                    "label-sm": ["Space Grotesk"],
+                    "body-md": ["Space Grotesk"]
+            },
+            "fontSize": {
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.08em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-sm": ["10px", {"lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased overflow-hidden h-screen w-screen flex">
+<!-- SideNavBar (from JSON) -->
+<nav class="hidden md:flex flex-col justify-between py-6 h-screen w-64 border-r border-slate-800 bg-slate-950 dark:bg-black shadow-[4px_0_15px_rgba(0,242,255,0.05)] z-50 shrink-0">
+<div>
+<!-- Header/Brand -->
+<div class="px-lg mb-margin">
+<div class="flex items-center gap-sm mb-xs">
+<span class="material-symbols-outlined text-cyan-400 fill-icon text-[32px]" data-icon="school">school</span>
+<h1 class="text-xl font-bold text-cyan-400 tracking-widest uppercase font-['Space_Grotesk']">UIT EduAdvisor</h1>
+</div>
+<p class="font-label-sm text-label-sm text-slate-500 uppercase tracking-widest">Academic Portal</p>
+</div>
+<!-- Navigation Links -->
+<ul class="flex flex-col gap-xs px-sm">
+<li>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-slate-400 hover:text-cyan-200 hover:bg-slate-900/50 hover:shadow-[0_0_10px_rgba(0,242,255,0.2)] transition-all scale-98 active:scale-95 duration-150 font-label-lg text-label-lg uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-md py-sm rounded-lg bg-slate-900 text-cyan-400 border-l-2 border-cyan-400 hover:bg-slate-900/50 hover:shadow-[0_0_10px_rgba(0,242,255,0.2)] transition-all scale-98 active:scale-95 duration-150 font-label-lg text-label-lg uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined fill-icon" data-icon="account_tree">account_tree</span>
+<span>Roadmap</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-slate-400 hover:text-cyan-200 hover:bg-slate-900/50 hover:shadow-[0_0_10px_rgba(0,242,255,0.2)] transition-all scale-98 active:scale-95 duration-150 font-label-lg text-label-lg uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+<span>Scheduler</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-slate-400 hover:text-cyan-200 hover:bg-slate-900/50 hover:shadow-[0_0_10px_rgba(0,242,255,0.2)] transition-all scale-98 active:scale-95 duration-150 font-label-lg text-label-lg uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined" data-icon="calculate">calculate</span>
+<span>GPA Calculator</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-slate-400 hover:text-cyan-200 hover:bg-slate-900/50 hover:shadow-[0_0_10px_rgba(0,242,255,0.2)] transition-all scale-98 active:scale-95 duration-150 font-label-lg text-label-lg uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span>Library</span>
+</a>
+</li>
+</ul>
+</div>
+<!-- Footer Links -->
+<div class="px-sm">
+<ul class="flex flex-col gap-xs">
+<li>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-slate-400 hover:text-cyan-200 hover:bg-slate-900/50 hover:shadow-[0_0_10px_rgba(0,242,255,0.2)] transition-all scale-98 active:scale-95 duration-150 font-label-lg text-label-lg uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span>Documentation</span>
+</a>
+</li>
+</ul>
+<!-- User Profile Area -->
+<div class="mt-lg pt-md border-t border-slate-800 px-md flex items-center gap-md">
+<div class="w-8 h-8 rounded-full bg-surface-bright flex items-center justify-center overflow-hidden border border-outline-variant">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A futuristic, high-contrast cyberpunk avatar portrait of a student. They are bathed in neon blue and deep violet light. The style is sharp, sleek, and digital-first, fitting seamlessly into a high-end neural interface terminal." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBU8EU-8oDqrPfjCVCyNpn4qOw0Ut047T8Zz0oenVHTXpScGpOZJQPg2OPkpJcYtostzhtcmYbfkt9tTtor_1uSOnqukEd_agdBQeenYFG7sSpVtFECPuT1y6LKz4gM2zE5OBosrqkuwXi3MbKqo8hqWILJBh1JZv9pWu2ksGDi5NQGjLxIFNVDBfgmUJ441To8i0NVYIxfd6ZaMWpuitGG73v7kPQjxGdG3WLxT0eRt-TobYRng9M2sj6Q5wOhJp5qKM8XY6NtwxnY"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-label-lg text-label-lg text-on-surface truncate">Student_1048</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant truncate">CS Major</p>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<div class="flex-1 flex flex-col min-w-0 h-screen relative bg-surface-container-lowest cyber-grid">
+<!-- TopAppBar (from JSON) -->
+<header class="fixed top-0 right-0 left-0 md:left-64 z-40 flex items-center justify-between px-8 w-full md:w-[calc(100%-16rem)] h-16 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md flat no-shadows font-['Space_Grotesk'] font-medium text-cyan-400">
+<div class="flex items-center gap-sm">
+<!-- Mobile Menu Button -->
+<button class="md:hidden p-xs rounded hover:bg-surface-bright transition-colors text-on-surface">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h2 class="font-headline-md text-headline-md font-bold text-on-surface">Visual Roadmap</h2>
+</div>
+<div class="flex items-center gap-lg">
+<!-- Search on Right -->
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]" data-icon="search">search</span>
+<input class="bg-surface-container border-b border-surface-bright focus:border-cyan-400 text-on-surface pl-xl pr-sm py-sm text-sm outline-none w-64 transition-colors font-body-md text-body-md rounded-t-DEFAULT placeholder:text-on-surface-variant/50 focus:text-primary" placeholder="Search courses..." type="text"/>
+</div>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-xs">
+<button class="p-sm rounded-full text-slate-500 hover:text-cyan-300 transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-sm rounded-full text-slate-500 hover:text-cyan-300 transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Interactive Canvas & Sidebar Wrapper -->
+<main class="flex-1 flex pt-16 overflow-hidden w-full relative z-10">
+<!-- Roadmap Graph Area (Pan/Zoom canvas concept) -->
+<div class="flex-1 relative overflow-auto p-xl scrollbar-hide">
+<!-- SVG Layer for Connecting Lines -->
+<svg class="absolute top-0 left-0 w-full h-[1500px] pointer-events-none z-0" style="min-width: 1200px;">
+<!-- Level 1 to Level 2 -->
+<path class="edge-line-active" d="M 200,100 C 350,100 350,150 500,150"></path>
+<path class="edge-line-active" d="M 200,200 C 350,200 350,150 500,150"></path>
+<path class="edge-line" d="M 200,300 C 350,300 350,250 500,250"></path>
+<!-- Level 2 to Level 3 -->
+<path class="edge-line" d="M 750,150 C 900,150 900,100 1050,100"></path>
+<path class="edge-line" d="M 750,150 C 900,150 900,200 1050,200"></path>
+<path class="edge-line" d="M 750,250 C 900,250 900,300 1050,300"></path>
+</svg>
+<div class="relative z-10 min-w-[1200px] min-h-[800px]">
+<!-- Column 1: Year 1 / Foundation -->
+<div class="absolute left-[50px] top-[50px] w-[250px] space-y-lg">
+<div class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest mb-md ml-sm">Semester 1</div>
+<!-- Course Node: Passed -->
+<div class="bg-surface-container-low border-l-2 border-primary-container p-md rounded-DEFAULT course-glow-passed cursor-pointer hover:bg-surface-container transition-colors relative group">
+<div class="flex justify-between items-start mb-xs">
+<span class="font-label-lg text-label-lg text-primary-container uppercase">IT001</span>
+<span class="bg-primary-container/20 text-primary-container border border-primary-container rounded-sm px-1 py-0.5 font-label-sm text-[8px] uppercase tracking-wider">4 Cr</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface leading-tight mb-sm">Nhập môn lập trình</h3>
+<div class="flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Completed - A</span>
+</div>
+</div>
+<!-- Course Node: Passed -->
+<div class="bg-surface-container-low border-l-2 border-primary-container p-md rounded-DEFAULT course-glow-passed cursor-pointer hover:bg-surface-container transition-colors relative group">
+<div class="flex justify-between items-start mb-xs">
+<span class="font-label-lg text-label-lg text-primary-container uppercase">IT002</span>
+<span class="bg-primary-container/20 text-primary-container border border-primary-container rounded-sm px-1 py-0.5 font-label-sm text-[8px] uppercase tracking-wider">4 Cr</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface leading-tight mb-sm">Cấu trúc dữ liệu và giải thuật</h3>
+<div class="flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Completed - B+</span>
+</div>
+</div>
+<!-- Course Node: Failed -->
+<div class="bg-surface-container-low border-l-2 border-[#FF4D4D] p-md rounded-DEFAULT course-glow-failed cursor-pointer hover:bg-surface-container transition-colors relative group mt-xl">
+<div class="flex justify-between items-start mb-xs">
+<span class="font-label-lg text-label-lg text-[#FF4D4D] uppercase">MA003</span>
+<span class="bg-[#FF4D4D]/20 text-[#FF4D4D] border border-[#FF4D4D] rounded-sm px-1 py-0.5 font-label-sm text-[8px] uppercase tracking-wider">3 Cr</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface leading-tight mb-sm">Toán rời rạc</h3>
+<div class="flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-[#FF4D4D]"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Retake Required</span>
+</div>
+</div>
+</div>
+<!-- Column 2: Year 2 / Core -->
+<div class="absolute left-[500px] top-[100px] w-[250px] space-y-lg">
+<div class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest mb-md ml-sm">Semester 3</div>
+<!-- Course Node: Current -->
+<div class="bg-surface-container-high border-l-2 border-[#FFD700] p-md rounded-DEFAULT course-glow-current cursor-pointer hover:bg-surface-container-highest transition-colors relative group">
+<div class="absolute -top-2 -right-2 bg-surface text-[#FFD700] rounded-full p-1 border border-[#FFD700] z-20 shadow-[0_0_10px_rgba(255,215,0,0.5)]">
+<span class="material-symbols-outlined text-[14px]" data-icon="star">star</span>
+</div>
+<div class="flex justify-between items-start mb-xs">
+<span class="font-label-lg text-label-lg text-[#FFD700] uppercase">IT003</span>
+<span class="bg-[#FFD700]/20 text-[#FFD700] border border-[#FFD700] rounded-sm px-1 py-0.5 font-label-sm text-[8px] uppercase tracking-wider">4 Cr</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface leading-tight mb-sm">Kỹ thuật lập trình</h3>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[#FFD700] text-[14px]" data-icon="sync">sync</span>
+<span class="font-label-sm text-label-sm text-[#FFD700]">In Progress - Midterm: 8.5</span>
+</div>
+<!-- Progress Bar for Current Course -->
+<div class="w-full bg-surface-bright h-1 mt-sm rounded-full overflow-hidden">
+<div class="bg-[#FFD700] h-full" style="width: 60%;"></div>
+</div>
+</div>
+<!-- Course Node: Future/Locked -->
+<div class="bg-surface-container-lowest border-l-2 border-outline-variant p-md rounded-DEFAULT opacity-80 hover:opacity-100 cursor-not-allowed relative group mt-xl">
+<div class="absolute inset-0 bg-surface-container-lowest/50 backdrop-blur-[2px] z-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-DEFAULT">
+<span class="material-symbols-outlined text-outline text-[32px]" data-icon="lock">lock</span>
+</div>
+<div class="flex justify-between items-start mb-xs">
+<span class="font-label-lg text-label-lg text-outline-variant uppercase">IT004</span>
+<span class="bg-outline-variant/20 text-outline border border-outline-variant rounded-sm px-1 py-0.5 font-label-sm text-[8px] uppercase tracking-wider">4 Cr</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface-variant leading-tight mb-sm">Hệ điều hành</h3>
+<div class="flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+<span class="font-label-sm text-label-sm text-outline">Prereq: IT002 Required</span>
+</div>
+</div>
+</div>
+<!-- Column 3: Year 3 / Specialization & Electives -->
+<div class="absolute left-[1050px] top-[50px] w-[300px]">
+<div class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest mb-md ml-sm">Semester 5 &amp; Beyond</div>
+<!-- Elective Group Container -->
+<div class="border-2 border-dashed border-outline-variant rounded-lg p-md relative bg-surface-container-lowest/30 backdrop-blur-sm">
+<div class="absolute -top-3 left-4 bg-background px-2 font-label-lg text-label-lg text-primary-fixed uppercase tracking-widest">
+                                Nhóm tự chọn 1 (Select 2)
+                            </div>
+<div class="space-y-md mt-sm">
+<!-- Future Course -->
+<div class="bg-surface-container-low border border-outline-variant p-sm rounded-DEFAULT opacity-70 cursor-pointer hover:opacity-100 hover:border-primary-fixed-dim transition-all">
+<div class="flex justify-between items-start">
+<span class="font-label-lg text-label-lg text-on-surface-variant uppercase">SE104</span>
+<span class="text-outline font-label-sm text-[8px] uppercase">3 Cr</span>
+</div>
+<h3 class="font-body-md text-body-md text-on-surface mt-xs">Phát triển phần mềm an toàn</h3>
+</div>
+<!-- Future Course -->
+<div class="bg-surface-container-low border border-outline-variant p-sm rounded-DEFAULT opacity-70 cursor-pointer hover:opacity-100 hover:border-primary-fixed-dim transition-all">
+<div class="flex justify-between items-start">
+<span class="font-label-lg text-label-lg text-on-surface-variant uppercase">SE112</span>
+<span class="text-outline font-label-sm text-[8px] uppercase">3 Cr</span>
+</div>
+<h3 class="font-body-md text-body-md text-on-surface mt-xs">Quản lý dự án phần mềm</h3>
+</div>
+<!-- Add Course Slot -->
+<button class="w-full border border-dashed border-outline-variant rounded-DEFAULT py-sm flex items-center justify-center text-outline hover:text-primary-fixed hover:border-primary-fixed transition-colors bg-transparent">
+<span class="material-symbols-outlined mr-xs text-[18px]" data-icon="add">add</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Browse Electives</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Sidebar: Academic Progress & Legend -->
+<aside class="w-80 bg-surface-container-low border-l border-surface-bright flex flex-col shrink-0 z-20 h-full shadow-[-4px_0_20px_rgba(0,0,0,0.5)]">
+<!-- Progress Header & Checklist Combined -->
+<div class="p-lg border-b border-surface-bright flex-1 overflow-y-auto">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-xs">Academic Progress</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Bachelor of Computer Science</p>
+<!-- Overall Progress Ring/Bar -->
+<div class="bg-surface-container rounded-lg p-md border border-outline-variant/30 relative overflow-hidden mb-xl">
+<!-- Decorative glow -->
+<div class="absolute -right-4 -bottom-4 w-24 h-24 bg-primary-container/10 rounded-full blur-xl"></div>
+<div class="flex justify-between items-end mb-sm relative z-10">
+<div>
+<div class="text-display-lg font-display-lg text-primary-container leading-none">45<span class="text-title-lg">%</span></div>
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mt-1">Completed</div>
+</div>
+<div class="text-right">
+<div class="font-title-lg text-title-lg text-on-surface">64 / 142</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Credits</div>
+</div>
+</div>
+<div class="w-full bg-surface-bright h-2 rounded-full overflow-hidden relative z-10">
+<div class="bg-primary-container h-full shadow-[0_0_10px_#00F2FF]" style="width: 45%;"></div>
+</div>
+</div>
+<!-- Graduation Checklist -->
+<h4 class="font-label-lg text-label-lg text-on-surface uppercase tracking-widest mb-md">Graduation Checklist</h4>
+<ul class="space-y-md mb-xl">
+<li class="flex items-center justify-between">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary-container text-[20px]" data-icon="check_circle">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface">English Proficiency</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary-container border border-primary-container/30 bg-primary-container/10 px-2 py-1 rounded uppercase">Met</span>
+</li>
+<li class="flex items-center justify-between">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary-container text-[20px]" data-icon="check_circle">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface">National Defense</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary-container border border-primary-container/30 bg-primary-container/10 px-2 py-1 rounded uppercase">Met</span>
+</li>
+<li class="flex items-center justify-between">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-[#FFD700] text-[20px]" data-icon="pending">pending</span>
+<span class="font-body-md text-body-md text-on-surface">Physical Education</span>
+</div>
+<span class="font-label-sm text-label-sm text-[#FFD700] border border-[#FFD700]/30 bg-[#FFD700]/10 px-2 py-1 rounded uppercase">In Progress</span>
+</li>
+<li class="flex items-center justify-between">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-outline-variant text-[20px]" data-icon="radio_button_unchecked">radio_button_unchecked</span>
+<span class="font-body-md text-body-md text-on-surface-variant">Social Work Days</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline border border-outline-variant/30 bg-surface-container-lowest px-2 py-1 rounded uppercase">0/15 Days</span>
+</li>
+</ul>
+<!-- Legend -->
+<h4 class="font-label-lg text-label-lg text-on-surface uppercase tracking-widest mb-md">Node Legend</h4>
+<ul class="space-y-sm">
+<li class="flex items-center gap-md">
+<div class="w-4 h-4 rounded-xs border border-primary-container bg-primary-container/20 course-glow-passed"></div>
+<span class="font-body-md text-body-md text-on-surface">Passed / Completed</span>
+</li>
+<li class="flex items-center gap-md">
+<div class="w-4 h-4 rounded-xs border border-[#FFD700] bg-[#FFD700]/20 course-glow-current relative">
+<span class="absolute -top-1 -right-1 w-2 h-2 bg-[#FFD700] rounded-full animate-pulse"></span>
+</div>
+<span class="font-body-md text-body-md text-on-surface">Current Semester</span>
+</li>
+<li class="flex items-center gap-md">
+<div class="w-4 h-4 rounded-xs border border-[#FF4D4D] bg-[#FF4D4D]/20 course-glow-failed"></div>
+<span class="font-body-md text-body-md text-on-surface">Failed / Retake Required</span>
+</li>
+<li class="flex items-center gap-md">
+<div class="w-4 h-4 rounded-xs border border-outline-variant bg-surface-container-lowest"></div>
+<span class="font-body-md text-body-md text-on-surface-variant">Future / Locked</span>
+</li>
+</ul>
+<!-- Quick Stats -->
+<h4 class="font-label-lg text-label-lg text-on-surface uppercase tracking-widest mt-xl mb-md">Quick Stats</h4>
+<div class="grid grid-cols-2 gap-sm">
+<div class="bg-surface-container rounded-DEFAULT p-sm border border-outline-variant/30 text-center">
+<div class="text-title-lg text-title-lg text-on-surface">3.45</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase mt-1">GPA</div>
+</div>
+<div class="bg-surface-container rounded-DEFAULT p-sm border border-outline-variant/30 text-center">
+<div class="text-title-lg text-title-lg text-[#FF4D4D]">1</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase mt-1">Retakes</div>
+</div>
+</div>
+</div>
+<!-- Filters / Actions -->
+<div class="p-lg">
+<button class="w-full bg-transparent border border-primary-container text-primary-container font-label-lg text-label-lg uppercase tracking-widest py-sm rounded-DEFAULT hover:bg-primary-container/10 hover:shadow-[0_0_15px_rgba(0,242,255,0.3)] transition-all flex justify-center items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]" data-icon="filter_list">filter_list</span>
+                        Filter Tree View
+                    </button>
+<button class="w-full bg-primary-container text-surface-container-lowest font-label-lg text-label-lg uppercase tracking-widest py-sm rounded-DEFAULT hover:shadow-[0_0_15px_#00F2FF] transition-all mt-sm flex justify-center items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]" data-icon="download">download</span>
+                        Export PDF
+                    </button>
+</div>
+</aside>
+<!-- UIT Mate FAB -->
+<button class="absolute bottom-lg right-[340px] z-50 w-14 h-14 bg-surface-container rounded-full border border-primary-container shadow-[0_0_20px_rgba(0,242,255,0.3)] flex items-center justify-center group hover:scale-105 transition-transform overflow-hidden">
+<!-- Inner glow effect -->
+<div class="absolute inset-0 bg-primary-container/10 group-hover:bg-primary-container/20 transition-colors"></div>
+<span class="material-symbols-outlined text-primary-container text-[28px] relative z-10 fill-icon" data-icon="smart_toy">smart_toy</span>
+</button>
+</main>
+</div>
+</body></html>

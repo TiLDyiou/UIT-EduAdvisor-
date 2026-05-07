@@ -40,6 +40,32 @@ class Settings(BaseSettings):
     vault_addr: str = "http://vault:8200"
     vault_dev_root_token_id: str = Field(default="", repr=False)
 
+    # --- M2: DAA / Moodle (real integration; URLs must be reachable from the API container) ---
+    daa_base_url: str = "https://daa.uit.edu.vn"
+    daa_login_path: str = "/user"
+    daa_profile_path: str = "/user"
+    daa_grades_path: str = "/sinhvien/tracuu/kqht"
+    daa_schedule_path: str = "/sinhvien/tkb"
+    daa_exams_path: str = "/sinhvien/tracuu/lichthi"
+
+    moodle_base_url: str = "https://courses.uit.edu.vn"
+    moodle_login_path: str = "/login/index.php"
+    moodle_calendar_path: str = "/calendar/view.php?view=upcoming"
+
+    http_user_agent: str = "UIT-EduAdvisor/0.1 (+https://github.com/)"
+    http_timeout_seconds: float = 45.0
+
+    captcha_state_ttl_seconds: int = 300
+    captcha_cooldown_seconds: int = 60
+    captcha_fail_threshold: int = 3
+
+    student_session_ttl_seconds: int = 7 * 24 * 60 * 60
+    session_cookie_name: str = "uea_session"
+    session_cookie_secure: bool = False
+
+    daa_captcha_rate_limit_per_hour: int = 30
+    daa_login_rate_limit_per_hour: int = 10
+
     @property
     def database_url(self) -> str:
         return (

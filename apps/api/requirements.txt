@@ -8,4 +8,7 @@ alembic==1.14.0
 redis==5.2.1
 hvac==2.3.0
 httpx==0.28.1
+beautifulsoup4==4.12.3
 python-json-logger==3.2.1
+bcrypt==4.2.1
+pgvector==0.3.6

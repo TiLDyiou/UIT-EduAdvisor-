@@ -9,6 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.health import router as health_router
+from app.api.v1.router import router as v1_router
 from app.core.config import get_settings
 from app.core.lifecycle import lifespan
 from app.core.logging import configure_logging, new_request_id, set_request_id
@@ -61,6 +62,7 @@ def create_app() -> FastAPI:
         return response
 
     app.include_router(health_router)
+    app.include_router(v1_router, prefix="/api/v1")
     return app
 
 

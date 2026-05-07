@@ -15,6 +15,7 @@ import hvac
 import redis.asyncio as redis_async
 
 from app.core.config import get_settings
+from app.core.security.vault_transit import VaultTransit
 from app.db.session import close_engine, init_engine
 
 if TYPE_CHECKING:
@@ -32,8 +33,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     redis_client = redis_async.from_url(settings.redis_url, decode_responses=True)
     vault_client = hvac.Client(url=settings.vault_addr, token=settings.vault_dev_root_token_id)
 
+    vault_transit = VaultTransit(vault_client)
+    await vault_transit.bootstrap()
+
     app.state.redis = redis_client
     app.state.vault = vault_client
+    app.state.vault_transit = vault_transit
 
     try:
         yield

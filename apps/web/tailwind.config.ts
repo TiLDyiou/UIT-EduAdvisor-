@@ -8,7 +8,11 @@ const config: Config = {
   ],
   darkMode: "class",
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ["var(--font-space-grotesk)", "system-ui", "sans-serif"],
+      },
+    },
   },
   plugins: [],
 };

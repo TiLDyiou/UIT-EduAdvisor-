@@ -61,14 +61,26 @@ bấm. Moodle sync hoàn toàn tự động theo lịch.
 **Bước 0 - Consent Flow (BẮT BUỘC trước First-time Setup):**
 
 Trước khi nhập credential, SV phải đọc và tick đồng ý Privacy Policy +
-Terms of Service. Nội dung phải ghi rõ tối thiểu:
+Terms of Service. Nội dung:
+"Chào bạn, để bạn yên tâm sử dụng ứng dụng, chúng tôi cam kết bảo vệ dữ liệu cá nhân của bạn với các nguyên tắc kỹ thuật nghiêm ngặt sau đây:
 
-- "App sẽ lưu MSSV + MK của bạn dưới dạng đã mã hóa để phục vụ tự động
-  đồng bộ Moodle."
-- "Bạn có thể xóa MK và toàn bộ dữ liệu bất cứ lúc nào tại Settings."
-- Link đến trang Privacy Policy đầy đủ.
+1. Quản lý Tài khoản và Định danh
+Mã hóa dữ liệu: Mã số sinh viên (MSSV) và Mật khẩu của bạn được lưu trữ trên hệ thống dưới dạng đã mã hóa (encrypted). Việc lưu trữ này chỉ nhằm mục đích duy nhất là phục vụ tính năng tự động đồng bộ hóa dữ liệu từ Moodle, giúp trải nghiệm của bạn liền mạch hơn.
 
-Không tick -> không cho phép submit form đăng ký.
+Cơ chế lưu trữ tạm thời: Các thông tin định danh phiên làm việc (Cookie session) từ cổng DAA hoặc Moodle chỉ tồn tại tạm thời trong bộ nhớ đệm (RAM) để xử lý yêu cầu (request). Chúng tôi không lưu trữ các cookie này vào cơ sở dữ liệu (Database) dưới bất kỳ hình thức nào.
+
+2. Quyền kiểm soát dữ liệu cá nhân
+Quyền xóa bỏ: Bạn có toàn quyền chủ động với dữ liệu của mình. Tại mục Settings (Cài đặt), bạn có thể thực hiện xóa Mật khẩu và toàn bộ dữ liệu cá nhân liên quan bất cứ lúc nào. Sau khi xác nhận xóa, các thông tin này sẽ được gỡ bỏ hoàn toàn khỏi hệ thống của chúng tôi.
+
+3. Chia sẻ dữ liệu với bên thứ ba
+Nguyên tắc không chia sẻ: Chúng tôi cam kết không bán, cho thuê hoặc chia sẻ dữ liệu cá nhân của bạn cho bất kỳ bên thứ ba nào vì mục đích thương mại.
+
+Ngoại lệ kỹ thuật: Để vận hành tính năng AI Mate, dữ liệu liên quan sẽ được gửi tới Gemini API (thuộc Google). Việc gửi dữ liệu này đã được ghi chú rõ ràng tại giao diện tính năng và tuân thủ các tiêu chuẩn bảo mật của đối tác cung cấp API.
+
+4. Bảo mật nội dung hội thoại (Chat)
+Nội dung thô: Các đoạn hội thoại chi tiết (nội dung chat thô) giữa bạn và AI không được lưu trữ trên máy chủ của chúng tôi.
+
+Bản tóm tắt (Summary): Hệ thống chỉ lưu trữ bản tóm tắt nội dung do AI tạo ra để hỗ trợ ngữ cảnh cho các lần trò chuyện sau. Điều này giúp bảo vệ nội dung chi tiết của bạn trong khi vẫn đảm bảo AI hiểu được tiến trình hỗ trợ."
 
 **Luồng xác thực lần đầu (First-time Setup):**
 

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Account Settings - ADVISOR_OS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#006e3d",
+                        "secondary": "#d1bcff",
+                        "on-primary-container": "#006a71",
+                        "inverse-primary": "#00696f",
+                        "surface": "#131318",
+                        "on-primary": "#00363a",
+                        "on-secondary-fixed-variant": "#5700c9",
+                        "outline-variant": "#3a494b",
+                        "primary": "#e1fdff",
+                        "surface-tint": "#00dbe7",
+                        "outline": "#849495",
+                        "on-tertiary": "#00391d",
+                        "on-error-container": "#ffdad6",
+                        "on-background": "#e4e1e9",
+                        "on-secondary-fixed": "#23005b",
+                        "on-error": "#690005",
+                        "on-secondary": "#3c0090",
+                        "surface-container": "#1f1f25",
+                        "surface-container-highest": "#35343a",
+                        "tertiary-fixed": "#5affa2",
+                        "surface-container-high": "#2a292f",
+                        "primary-fixed": "#74f5ff",
+                        "on-tertiary-fixed-variant": "#00522c",
+                        "on-primary-fixed-variant": "#004f54",
+                        "on-secondary-container": "#ddcdff",
+                        "secondary-fixed-dim": "#d1bcff",
+                        "inverse-on-surface": "#303036",
+                        "secondary-container": "#7000ff",
+                        "primary-container": "#00f2ff",
+                        "inverse-surface": "#e4e1e9",
+                        "surface-bright": "#39383e",
+                        "on-surface-variant": "#b9cacb",
+                        "surface-container-low": "#1b1b20",
+                        "surface-variant": "#35343a",
+                        "tertiary-fixed-dim": "#00e384",
+                        "surface-dim": "#131318",
+                        "on-primary-fixed": "#002022",
+                        "background": "#131318",
+                        "surface-container-lowest": "#0e0e13",
+                        "tertiary": "#e0ffe5",
+                        "primary-fixed-dim": "#00dbe7",
+                        "on-surface": "#e4e1e9",
+                        "on-tertiary-fixed": "#00210e",
+                        "error": "#ffb4ab",
+                        "secondary-fixed": "#e9ddff",
+                        "tertiary-container": "#00fa92",
+                        "error-container": "#93000a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "xl": "40px",
+                        "base": "4px",
+                        "margin": "32px",
+                        "gutter": "20px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Space Grotesk"],
+                        "headline-md": ["Space Grotesk"],
+                        "headline-lg": ["Space Grotesk"],
+                        "display-lg": ["Space Grotesk"],
+                        "body-md": ["Space Grotesk"],
+                        "title-lg": ["Space Grotesk"],
+                        "label-sm": ["Space Grotesk"],
+                        "label-lg": ["Space Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "label-sm": ["10px", { "lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "label-lg": ["12px", { "lineHeight": "16px", "letterSpacing": "0.08em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-grid-pattern {
+            background-image: linear-gradient(to right, rgba(0,242,255,0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(0,242,255,0.03) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md bg-grid-pattern min-h-screen relative overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="bg-zinc-950/80 backdrop-blur-xl fixed top-0 w-full z-50 border-b border-cyan-900/20 font-space-grotesk tracking-tight flex justify-between items-center px-6 h-16 w-full">
+<div class="flex items-center gap-4">
+<span class="text-xl font-bold uppercase tracking-widest text-cyan-400 drop-shadow-[0_0_8px_rgba(0,242,255,0.3)]">ADVISOR_OS</span>
+</div>
+<div class="flex items-center gap-lg">
+<div class="relative hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">search</span>
+<input class="bg-surface-container-low border-b border-surface-bright focus:border-cyan-400 text-on-surface font-body-md pl-10 pr-4 py-2 w-64 rounded-t focus:outline-none focus:ring-0 transition-colors" placeholder="Search parameters..." type="text"/>
+</div>
+<div class="flex gap-4 border-l border-cyan-500/10 pl-4">
+<button class="text-zinc-500 hover:text-cyan-300 hover:bg-cyan-500/10 transition-all active:scale-95 duration-150 p-2 rounded-DEFAULT">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 transition-all active:scale-95 duration-150 p-2 rounded-DEFAULT">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<button class="text-zinc-500 hover:text-cyan-300 hover:bg-cyan-500/10 transition-all active:scale-95 duration-150 p-2 rounded-DEFAULT">
+<span class="material-symbols-outlined" data-icon="power_settings_new">power_settings_new</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant overflow-hidden ml-2">
+<img alt="Advisor Profile" class="w-full h-full object-cover" data-alt="A close-up portrait of a professional advisor in a high-tech cyberpunk environment. The subject is dimly lit with harsh neon blue rim lighting against a pitch-black background, emphasizing a technical and authoritative persona. They wear a sleek, dark collar that hints at futuristic academic attire." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRLTizvDqVp-b2_htoAxwI8Vjmad5Tg4g3HacAs8MntuplPehHh5hTC3XQTM6aYWmiUOqKqupn7IzrGttrpNS8XS66qD9GXQHhE_ntbK6QjChmjarYViBd00BPn3uKXl06LbfPkfPLE3vkpW0ioDXe4ecXXNumm0szpaxtMCyVzLIGAq83h8T0dltiz4YLG-k2UF4b9303oNGRnSVhUaoYeJijcy5r29QiDLNPxfjGsfBwR_2TPFpW8LRAkf23ROvdje7v9ZzMnmy2"/>
+</div>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<nav class="hidden md:flex bg-zinc-950 font-space-grotesk text-sm uppercase font-medium fixed left-0 top-16 h-[calc(100vh-64px)] w-64 border-r border-cyan-900/20 flex-col py-8 px-4 gap-2">
+<div class="mb-8 px-4">
+<div class="text-on-surface font-headline-md text-cyan-400 tracking-wider">NODE_01</div>
+<div class="text-zinc-500 font-label-sm mt-1">Senior Advisor</div>
+</div>
+<div class="flex-1 flex flex-col gap-2">
+<a class="text-cyan-400 bg-cyan-500/5 border-r-2 border-cyan-400 flex items-center gap-3 px-4 py-3 rounded-l-DEFAULT transition-colors active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined text-cyan-400" data-icon="account_circle">account_circle</span>
+<span>Profile</span>
+</a>
+<a class="text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200 transition-colors flex items-center gap-3 px-4 py-3 rounded-l-DEFAULT transition-colors active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="lock">lock</span>
+<span>Security</span>
+</a>
+<a class="text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200 transition-colors flex items-center gap-3 px-4 py-3 rounded-l-DEFAULT transition-colors active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="hub">hub</span>
+<span>Integrations</span>
+</a>
+<a class="text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200 transition-colors flex items-center gap-3 px-4 py-3 rounded-l-DEFAULT transition-colors active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings_input_component">settings_input_component</span>
+<span>Preferences</span>
+</a>
+</div>
+<button class="mt-8 mb-4 w-full bg-transparent border border-cyan-400 text-cyan-400 font-label-lg py-2 rounded-DEFAULT hover:bg-cyan-400/5 transition-all">UPGRADE_PERMISSIONS</button>
+<div class="border-t border-cyan-500/10 pt-4 flex flex-col gap-2">
+<a class="text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200 transition-colors flex items-center gap-3 px-4 py-2 rounded-l-DEFAULT transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="help_outline">help_outline</span>
+<span class="font-label-sm">Support</span>
+</a>
+<a class="text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200 transition-colors flex items-center gap-3 px-4 py-2 rounded-l-DEFAULT transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="terminal">terminal</span>
+<span class="font-label-sm">Terminal</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="pt-16 md:pl-64 min-h-screen p-6 md:p-8">
+<div class="max-w-4xl mx-auto space-y-12">
+<header class="border-b border-surface-bright pb-4">
+<h1 class="font-headline-lg text-on-surface">System Configuration</h1>
+<p class="font-body-md text-on-surface-variant mt-1">Manage node identity, access protocols, and external interfaces.</p>
+</header>
+<div class="space-y-8">
+<!-- Identity Node (Profile) -->
+<!-- Access Protocols (Security) -->
+<section class="bg-surface-container-low rounded-xl p-6 md:p-8 border border-white/5">
+<h2 class="font-title-lg text-cyan-400 mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">enhanced_encryption</span> Security &amp; Access
+                    </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+<div>
+<label class="font-label-sm text-on-surface-variant block mb-1 uppercase tracking-widest">Current Key</label>
+<input class="w-full bg-surface-container border-b border-surface-bright focus:border-cyan-400 text-on-surface font-body-md py-2 px-3 rounded focus:outline-none focus:ring-0 transition-colors" placeholder="••••••••" type="password"/>
+</div>
+<div>
+<label class="font-label-sm text-on-surface-variant block mb-1 uppercase tracking-widest">New Key</label>
+<input class="w-full bg-surface-container border-b border-surface-bright focus:border-cyan-400 text-on-surface font-body-md py-2 px-3 rounded focus:outline-none focus:ring-0 transition-colors" placeholder="Enter new key" type="password"/>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container rounded border border-white/5 mb-6">
+<div>
+<div class="font-label-lg text-on-surface">Biometric 2FA</div>
+<div class="font-label-sm text-on-surface-variant mt-1">Require secondary verification for terminal access</div>
+</div>
+<button class="w-10 h-6 bg-cyan-400 rounded-full relative transition-colors focus:outline-none">
+<span class="absolute right-1 top-1 w-4 h-4 bg-zinc-900 rounded-full transition-transform"></span>
+</button>
+</div>
+<div class="flex justify-end">
+<button class="bg-surface-container-high border border-cyan-400/50 text-cyan-400 font-label-lg px-6 py-2.5 rounded hover:bg-cyan-400/10 transition-colors">UPDATE_KEY</button>
+</div>
+</section>
+<!-- External Interfaces (Integrations) -->
+<!-- Core Purge (Data Management) -->
+<section class="bg-surface-container-low rounded-xl p-6 md:p-8 border border-error/20">
+<h2 class="font-title-lg text-error mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">delete_forever</span> Data Management
+                    </h2>
+<p class="font-body-md text-on-surface-variant mb-6">Irreversible deletion of encrypted credentials and telemetry data.</p>
+<div class="bg-surface-container p-4 rounded-lg border border-error/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+<div>
+<h3 class="font-label-lg text-on-surface mb-1">Eradicate Local Node Data</h3>
+<p class="font-label-sm text-outline">Removes MK credentials and all stored local session data.</p>
+</div>
+<button class="bg-transparent border border-error/50 text-error font-label-lg px-6 py-2.5 rounded hover:bg-error/10 transition-colors whitespace-nowrap">EXECUTE_PURGE</button>
+</div>
+</section>
+</div>
+</div>
+</main>
+</body></html>

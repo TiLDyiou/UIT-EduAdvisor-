@@ -1,8 +1,10 @@
 # UIT EduAdvisor
 
-Cố vấn học vụ All-in-one cho sinh viên UIT. Skeleton M0 - nền móng kỹ thuật cho 6 phân hệ trong [docs/UIT_EduAdvisor_PRD_v3.md](docs/UIT_EduAdvisor_PRD_v3.md).
+Cố vấn học vụ All-in-one cho sinh viên UIT. Nền móng + bảo mật + onboarding thật cho 6 phân hệ trong [docs/UIT_EduAdvisor_PRD_v3.md](docs/UIT_EduAdvisor_PRD_v3.md).
 
-> Trạng thái: **M0 Skeleton**. Chỉ có health check + DB extension. Không có business logic. Xem [.cursor/plans/](.cursor/plans/) cho roadmap.
+> Trạng thái: **M2 Onboarding (đang triển khai)**. API `/api/v1` gồm captcha + đăng nhập DAA thật, session sinh viên (cookie httpOnly + Redis), đồng bộ DAA/Moodle nền, SSE tiến trình, xóa credential/dữ liệu. Cần `make migrate` để áp Alembic `0006`. Frontend: `/onboarding`, `/settings` (Next.js rewrite `/api/v1` về FastAPI để cookie cùng origin). Xem [.cursor/plans/](.cursor/plans/) cho roadmap.
+
+Legal text (consent versions): [docs/legal/privacy_v1.md](docs/legal/privacy_v1.md), [docs/legal/tos_v1.md](docs/legal/tos_v1.md). Constants trong API: `app.core.legal.POLICY_VERSION` / `TOS_VERSION`.
 
 ## Kiến trúc
 
@@ -93,15 +95,17 @@ Single source of truth: file `.env` ở root, được load bởi cả `docker c
 
 Các giá trị `*_HOST` (ví dụ `POSTGRES_HOST=postgres`) là **service name** trong Docker network. Khi chạy code trên host (ví dụ `make test-api` trực tiếp), cần override sang `localhost`.
 
-## Cảnh báo bảo mật M0
+## Cảnh báo bảo mật M1
 
-- **Vault chạy dev-mode**: tự unseal, lưu in-memory, mất data khi restart. **Tuyệt đối không dùng cho production thật**. Sẽ chuyển sang production mode (file backend + unseal key + audit log) ở Milestone 1 trước khi encrypt credential sinh viên đầu tiên.
+- **Vault vẫn dev-mode** trong compose hiện tại: tự unseal, in-memory, restart là mất Transit keys (trừ khi dev root token + workflow bootstrap lại). **Trước khi M2 cho onboarding production**, phải chuyển Vault sang production mode (file/raft backend + unseal có quy trình, runbook M8). Wrapper Transit trong code chỉ đảm bảo encrypt/decrypt đúng khi Vault đang chạy; không đảm bảo persistence qua restart trong dev-mode.
 - **`.env` chứa secret thật khi deploy**: không commit. Đã có trong `.gitignore`. Trên VPS cần `chmod 600`.
 - **Không có HTTPS / reverse proxy ở M0**: ports expose trực tiếp localhost. Sẽ thêm Caddy ở M8.
 
 ## Test & lint cục bộ
 
 Test/lint chạy trên host (không qua container) để nhanh hơn và parity với IDE.
+
+**API pytest (M1+)**: một phần test dùng [testcontainers](https://testcontainers.com/) (Postgres pgvector, Vault dev, Redis). Máy dev và CI cần **Docker** đang chạy (`docker ps` ok).
 
 ```bash
 make install        # tạo venv (api) + node_modules (web). Lần đầu mất vài phút.
@@ -121,4 +125,4 @@ CI chưa push image lên registry. Sẽ thêm khi có domain + VPS production (M
 
 ## Roadmap
 
-Xem [.cursor/plans/production_roadmap_80636c8e.plan.md](.cursor/plans/production_roadmap_80636c8e.plan.md) cho 9 milestone đầy đủ. Sau M0 skeleton này, M1 sẽ bắt đầu schema + Vault Transit + consent flow.
+Xem [.cursor/plans/production_roadmap_80636c8e.plan.md](.cursor/plans/production_roadmap_80636c8e.plan.md) cho 9 milestone đầy đủ. Sau M1 (schema + Transit + consent/audit/rate-limit nền), M2 là authentication và onboarding sinh viên.
