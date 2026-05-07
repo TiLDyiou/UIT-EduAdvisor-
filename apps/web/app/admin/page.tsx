@@ -1,0 +1,93 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+
+import { fetchAdminMe, type AdminMe } from "@/lib/admin";
+import { apiFetch } from "@/lib/api";
+
+export default function AdminHomePage() {
+  const router = useRouter();
+  const [me, setMe] = useState<AdminMe | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const r = await fetchAdminMe();
+      if (cancelled) return;
+      if (r.unauthorized) {
+        router.replace("/admin/login");
+        return;
+      }
+      if (r.ok && r.me) {
+        setMe(r.me);
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  const onLogout = useCallback(async () => {
+    if (!me) return;
+    setLogoutError(null);
+    const r = await apiFetch("/api/v1/admin/auth/logout", {
+      method: "POST",
+      headers: { "X-CSRF-Token": me.csrf_token },
+    });
+    if (r.status === 204) {
+      router.replace("/admin/login");
+      return;
+    }
+    setLogoutError("Đăng xuất thất bại.");
+  }, [me, router]);
+
+  if (loading) {
+    return (
+      <main className="mx-auto max-w-3xl px-6 py-12">
+        <p className="text-sm text-neutral-400">Đang tải…</p>
+      </main>
+    );
+  }
+  if (!me) return null;
+
+  return (
+    <main className="mx-auto max-w-3xl px-6 py-12">
+      <header className="mb-8 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-cyan-400">UIT EduAdvisor</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Admin Dashboard</h1>
+          <p className="text-sm text-neutral-400">Đăng nhập với {me.email}</p>
+        </div>
+        <button
+          onClick={onLogout}
+          className="rounded-md border border-neutral-700 px-3 py-1.5 text-sm hover:border-red-500 hover:text-red-400"
+        >
+          Đăng xuất
+        </button>
+      </header>
+      {logoutError ? <p className="mb-4 text-sm text-red-400">{logoutError}</p> : null}
+      <section className="rounded-xl border border-neutral-800 bg-neutral-950/60 p-6 text-sm text-neutral-300">
+        <p className="mb-4">Đăng nhập thành công. Chọn module để vận hành:</p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Link className="rounded border border-neutral-700 px-3 py-2 hover:border-cyan-500" href="/admin/policies">
+            Policy ingest jobs
+          </Link>
+          <Link className="rounded border border-neutral-700 px-3 py-2 hover:border-cyan-500" href="/admin/imports">
+            Excel imports
+          </Link>
+          <Link className="rounded border border-neutral-700 px-3 py-2 hover:border-cyan-500" href="/admin/jobs">
+            Job monitor
+          </Link>
+          <Link className="rounded border border-neutral-700 px-3 py-2 hover:border-cyan-500" href="/admin/audit">
+            Audit logs
+          </Link>
+        </div>
+      </section>
+    </main>
+  );
+}

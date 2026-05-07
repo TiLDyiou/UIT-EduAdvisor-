@@ -10,8 +10,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
-from app.core.sessions import StudentSession, get_student_session
-from app.db.models.core_security import Student
+from app.core.sessions import (
+    AdminSession,
+    StudentSession,
+    get_admin_session,
+    get_student_session,
+)
+from app.db.models.core_security import AdminUser, Student
 from app.db.session import get_sessionmaker
 
 
@@ -59,6 +64,38 @@ async def get_current_student(
 def require_csrf(
     request: Request,
     sess: Annotated[StudentSession, Depends(get_current_student_session)],
+) -> None:
+    token = request.headers.get("x-csrf-token")
+    if not token or token != sess.csrf_token:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="csrf_failed")
+
+
+async def get_current_admin_session(
+    request: Request,
+    redis: Annotated[Redis, Depends(get_redis)],
+) -> AdminSession:
+    settings = get_settings()
+    token = request.cookies.get(settings.admin_session_cookie_name)
+    sess = await get_admin_session(redis, token)
+    if sess is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="admin_session_required")
+    return sess
+
+
+async def get_current_admin(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    sess: Annotated[AdminSession, Depends(get_current_admin_session)],
+) -> AdminUser:
+    res = await db.execute(select(AdminUser).where(AdminUser.id == sess.admin_id).limit(1))
+    row = res.scalar_one_or_none()
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="admin_not_found")
+    return row
+
+
+def require_admin_csrf(
+    request: Request,
+    sess: Annotated[AdminSession, Depends(get_current_admin_session)],
 ) -> None:
     token = request.headers.get("x-csrf-token")
     if not token or token != sess.csrf_token:

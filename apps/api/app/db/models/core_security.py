@@ -92,6 +92,27 @@ class AdminUser(UUIDPkMixin, TimestampMixin, Base):
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
+class AdminJob(UUIDPkMixin, TimestampMixin, Base):
+    __tablename__ = "admin_jobs"
+
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    created_by: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("admin_users.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    current_stage: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    progress_percent: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    result_summary: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    input_file_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    created_by_admin: Mapped[AdminUser] = relationship()
+
+
 class AuditLog(UUIDPkMixin, Base):
     __tablename__ = "audit_logs"
     __table_args__ = (Index("ix_audit_logs_actor_created", "actor_id", "created_at"),)

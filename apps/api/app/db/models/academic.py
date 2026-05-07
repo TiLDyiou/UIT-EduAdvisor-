@@ -35,6 +35,59 @@ class Course(BigIntPkMixin, TimestampUpdateMixin, Base):
     credits: Mapped[int] = mapped_column(Integer, nullable=False)
     kind: Mapped[str] = mapped_column(String(32), nullable=False)
     difficulty: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    admin_locked: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    admin_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class CourseResource(BigIntPkMixin, TimestampUpdateMixin, Base):
+    __tablename__ = "course_resources"
+
+    course_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False
+    )
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    url: Mapped[str] = mapped_column(Text, nullable=False)
+    resource_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    term_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_visible: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("admin_users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("admin_users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    course: Mapped[Course] = relationship()
+
+
+class TooltipTerm(BigIntPkMixin, TimestampUpdateMixin, Base):
+    __tablename__ = "tooltip_terms"
+
+    keyword: Mapped[str] = mapped_column(Text, nullable=False)
+    normalized_keyword: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
+    short_explanation: Mapped[str] = mapped_column(Text, nullable=False)
+    policy_document_id: Mapped[int | None] = mapped_column(
+        BigInteger,
+        ForeignKey("policy_documents.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    policy_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("admin_users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("admin_users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
 
 
 class CoursePrerequisite(Base):
@@ -248,4 +301,80 @@ class ElectiveGroupCourse(Base):
     )
 
     elective_group: Mapped[ElectiveGroup] = relationship(back_populates="elective_group_courses")
+    course: Mapped[Course] = relationship()
+
+
+class TermCourseOffering(BigIntPkMixin, TimestampUpdateMixin, Base):
+    __tablename__ = "term_course_offerings"
+    __table_args__ = (
+        UniqueConstraint("term_code", "course_id", name="uq_term_course_offering"),
+    )
+
+    term_code: Mapped[str] = mapped_column(String(32), nullable=False)
+    course_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False
+    )
+    source_job_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("admin_jobs.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    source_file_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    course: Mapped[Course] = relationship()
+    sections: Mapped[list[TermCourseSection]] = relationship(back_populates="offering")
+
+
+class TermCourseSection(BigIntPkMixin, TimestampUpdateMixin, Base):
+    __tablename__ = "term_course_sections"
+
+    offering_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("term_course_offerings.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    section_code: Mapped[str] = mapped_column(String(32), nullable=False)
+    day_of_week: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    start_period: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    end_period: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    room: Mapped[str | None] = mapped_column(Text, nullable=True)
+    week_pattern: Mapped[str | None] = mapped_column(Text, nullable=True)
+    instructor_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_job_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("admin_jobs.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    offering: Mapped[TermCourseOffering] = relationship(back_populates="sections")
+
+
+class TermExamSchedule(BigIntPkMixin, TimestampUpdateMixin, Base):
+    __tablename__ = "term_exam_schedules"
+    __table_args__ = (
+        UniqueConstraint(
+            "term_code",
+            "course_id",
+            "exam_date",
+            "start_time",
+            name="uq_term_exam_schedule_slot",
+        ),
+    )
+
+    term_code: Mapped[str] = mapped_column(String(32), nullable=False)
+    course_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False
+    )
+    exam_date: Mapped[date] = mapped_column(Date, nullable=False)
+    start_time: Mapped[time] = mapped_column(Time, nullable=False)
+    end_time: Mapped[time] = mapped_column(Time, nullable=False)
+    room: Mapped[str | None] = mapped_column(Text, nullable=True)
+    kind: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    source_job_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("admin_jobs.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    source_file_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     course: Mapped[Course] = relationship()

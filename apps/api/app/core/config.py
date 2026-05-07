@@ -66,6 +66,14 @@ class Settings(BaseSettings):
     daa_captcha_rate_limit_per_hour: int = 30
     daa_login_rate_limit_per_hour: int = 10
 
+    # --- M4: admin auth ---
+    admin_session_ttl_seconds: int = 8 * 60 * 60
+    admin_session_cookie_name: str = "uea_admin_session"
+    admin_session_cookie_secure: bool = False
+    admin_login_rate_limit_per_hour: int = 60
+    admin_private_storage_dir: str = "/tmp/uit_eduadvisor_admin_private"
+    admin_upload_max_file_size_bytes: int = 10 * 1024 * 1024
+
     @property
     def database_url(self) -> str:
         return (

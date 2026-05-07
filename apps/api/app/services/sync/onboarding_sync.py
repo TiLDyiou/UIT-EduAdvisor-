@@ -74,6 +74,8 @@ async def _ensure_course(
     res = await session.execute(select(Course).where(Course.code == normalized_code).limit(1))
     row = res.scalar_one_or_none()
     if row:
+        if row.admin_locked:
+            return row
         if name and name != row.name:
             row.name = name[:2000]
         if credits is not None:
