@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { apiFetch } from "@/lib/api";
 
@@ -14,6 +15,7 @@ type CaptchaPayload = {
 type StartPayload = { job_id: string; student_id: string };
 
 export default function OnboardingPage() {
+  const router = useRouter();
   const [captcha, setCaptcha] = useState<CaptchaPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -50,12 +52,26 @@ export default function OnboardingPage() {
     const es = new EventSource(`/api/v1/sync-jobs/${jobId}/events`);
     es.onmessage = (ev) => {
       setEvents((prev) => [...prev, ev.data]);
+      let payload: { stage?: string; message?: string } | null = null;
+      try {
+        payload = JSON.parse(ev.data) as { stage?: string; message?: string };
+      } catch {
+        return;
+      }
+      if (payload.stage === "failed") {
+        setError(payload.message || "Đồng bộ thất bại");
+        return;
+      }
+      if (payload.stage === "completed") {
+        es.close();
+        router.push("/tracker");
+      }
     };
     es.onerror = () => {
       es.close();
     };
     return () => es.close();
-  }, [jobId]);
+  }, [jobId, router]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();

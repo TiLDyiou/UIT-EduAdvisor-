@@ -45,6 +45,29 @@ interface EnrollmentOption {
   grade_10: number | null;
 }
 
+function asNumber(value: unknown, fallback = 0): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function asNullableNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function normalizeGpaOverview(raw: unknown): GpaOverview {
+  const value = (raw ?? {}) as Partial<GpaOverview>;
+  return {
+    gpa_10: asNumber(value.gpa_10),
+    gpa_4: asNumber(value.gpa_4),
+    total_credits: asNumber(value.total_credits),
+    earned_credits: asNumber(value.earned_credits),
+  };
+}
+
 /* ------------------------------------------------------------------ */
 /* Section Components                                                 */
 /* ------------------------------------------------------------------ */
@@ -108,7 +131,14 @@ function SimulatorSection({ currentGpa }: { currentGpa: GpaOverview }) {
         }),
       });
       if (res.ok) {
-        setResult(await res.json());
+        const raw = (await res.json()) as {
+          current: unknown;
+          simulated: unknown;
+        };
+        setResult({
+          current: normalizeGpaOverview(raw.current),
+          simulated: normalizeGpaOverview(raw.simulated),
+        });
       }
     } finally {
       setLoading(false);
@@ -216,7 +246,12 @@ function ReverseCalculatorSection() {
         }),
       });
       if (res.ok) {
-        setResult(await res.json());
+        const raw = (await res.json()) as Partial<ReverseResult>;
+        setResult({
+          required_avg_10: asNumber(raw.required_avg_10),
+          required_avg_4: asNumber(raw.required_avg_4),
+          achievable: Boolean(raw.achievable),
+        });
       }
     } finally {
       setLoading(false);
@@ -304,7 +339,15 @@ function RetakeEstimatorSection({ enrollments }: { enrollments: EnrollmentOption
         }),
       });
       if (res.ok) {
-        setResult(await res.json());
+        const raw = (await res.json()) as Partial<RetakeResult>;
+        setResult({
+          old_gpa_10: asNumber(raw.old_gpa_10),
+          new_gpa_10: asNumber(raw.new_gpa_10),
+          delta_gpa_10: asNumber(raw.delta_gpa_10),
+          old_gpa_4: asNumber(raw.old_gpa_4),
+          new_gpa_4: asNumber(raw.new_gpa_4),
+          delta_gpa_4: asNumber(raw.delta_gpa_4),
+        });
       }
     } finally {
       setLoading(false);
@@ -414,14 +457,32 @@ export default function GpaToolsPage() {
           setError("Phiên đăng nhập hết hạn.");
           return;
         }
-        if (gpaRes.ok) setGpa(await gpaRes.json());
+        if (gpaRes.ok) {
+          const raw = (await gpaRes.json()) as GpaOverview;
+          setGpa(normalizeGpaOverview(raw));
+        }
         if (roadmapRes.ok) {
-          const data = await roadmapRes.json();
+          const data = (await roadmapRes.json()) as {
+            nodes: Array<{
+              course_id: number | string;
+              course_code: string;
+              course_name: string;
+              credits: number | string;
+              grade_10: number | string | null;
+            }>;
+          };
           // Build enrollment options from roadmap nodes that have grades
           const opts: EnrollmentOption[] = data.nodes
-            .filter((n: { grade_10: number | null }) => n.grade_10 !== null)
-            .map((n: { course_id: number; course_code: string; course_name: string; credits: number; grade_10: number | null }) => ({
-              id: n.course_id,
+            .map((n) => ({
+              id: asNumber(n.course_id),
+              course_code: n.course_code,
+              course_name: n.course_name,
+              credits: asNumber(n.credits),
+              grade_10: asNullableNumber(n.grade_10),
+            }))
+            .filter((n) => n.id > 0 && n.grade_10 !== null)
+            .map((n) => ({
+              id: n.id,
               course_code: n.course_code,
               course_name: n.course_name,
               credits: n.credits,

@@ -88,6 +88,19 @@ function statusCfg(status: string) {
   return STATUS_CONFIG[status] ?? STATUS_CONFIG.not_started;
 }
 
+function asNumber(value: unknown, fallback = 0): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function asNullableNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
 /* ------------------------------------------------------------------ */
 /* Components                                                         */
 /* ------------------------------------------------------------------ */
@@ -302,9 +315,35 @@ export default function TrackerPage() {
         setError("Không thể tải dữ liệu. Vui lòng thử lại.");
         return;
       }
+      const roadmapRaw = (await roadmapRes.json()) as RoadmapData;
+      const gpaRaw = (await gpaRes.json()) as GpaOverview;
+      const normalizedRoadmap: RoadmapData = {
+        ...roadmapRaw,
+        nodes: (roadmapRaw.nodes ?? []).map((n) => ({
+          ...n,
+          course_id: asNumber(n.course_id),
+          credits: asNumber(n.credits),
+          term_number: asNumber(n.term_number),
+          grade_10: asNullableNumber(n.grade_10),
+          grade_4: asNullableNumber(n.grade_4),
+        })),
+        elective_groups: (roadmapRaw.elective_groups ?? []).map((g) => ({
+          ...g,
+          group_id: asNumber(g.group_id),
+          required_value: asNumber(g.required_value),
+          current_value: asNumber(g.current_value),
+        })),
+        is_preview: Boolean(roadmapRaw.is_preview),
+      };
+      const normalizedGpa: GpaOverview = {
+        gpa_10: asNumber(gpaRaw.gpa_10),
+        gpa_4: asNumber(gpaRaw.gpa_4),
+        total_credits: asNumber(gpaRaw.total_credits),
+        earned_credits: asNumber(gpaRaw.earned_credits),
+      };
 
-      setRoadmap(await roadmapRes.json());
-      setGpa(await gpaRes.json());
+      setRoadmap(normalizedRoadmap);
+      setGpa(normalizedGpa);
     } catch {
       setError("Lỗi kết nối. Kiểm tra kết nối mạng và thử lại.");
     } finally {

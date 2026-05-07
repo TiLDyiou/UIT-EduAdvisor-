@@ -68,7 +68,10 @@ async def _update_job(
 async def _ensure_course(
     session: AsyncSession, code: str, name: str | None, credits: Any
 ) -> Course:
-    res = await session.execute(select(Course).where(Course.code == code).limit(1))
+    normalized_code = _normalize_course_code(code)
+    if not normalized_code:
+        raise ValueError("invalid_course_code")
+    res = await session.execute(select(Course).where(Course.code == normalized_code).limit(1))
     row = res.scalar_one_or_none()
     if row:
         if name and name != row.name:
@@ -83,7 +86,12 @@ async def _ensure_course(
             creds = int(credits)
         except Exception:
             creds = 0
-    c = Course(code=code, name=(name or code)[:2000], credits=creds, kind="daa")
+    c = Course(
+        code=normalized_code,
+        name=(name or normalized_code)[:2000],
+        credits=creds,
+        kind="daa",
+    )
     session.add(c)
     await session.flush()
     return c
@@ -125,10 +133,20 @@ async def _persist_grades(session: AsyncSession, student_id, rows: list[dict[str
 async def _persist_schedule(session: AsyncSession, student_id, rows: list[dict[str, Any]]) -> None:
     term = "CURRENT"
     for r in rows:
-        code = r.get("course_code")
+        raw_code = str(r.get("course_code") or "").strip()
+        code = _normalize_course_code(raw_code)
         if not code:
             continue
-        c = await _ensure_course(session, str(code).strip(), str(code).strip(), None)
+        course_name = str(r.get("course_name") or "").strip() or code
+        c = await _ensure_course(session, code, course_name, None)
+        await _upsert_enrollment(
+            session,
+            student_id=student_id,
+            course_id=c.id,
+            term_code=term,
+            status="in_progress",
+            final_grade_10=None,
+        )
         dow = int(r.get("day_of_week") or 1)
         sp = int(r.get("start_period") or 1)
         ep = int(r.get("end_period") or sp)
@@ -174,11 +192,22 @@ async def _persist_exams(session: AsyncSession, student_id, rows: list[dict[str,
         code = str(r.get("course_code") or "").strip()
         if not code:
             continue
+        code = _normalize_course_code(code) or code[:32]
+        if not code:
+            continue
         parsed = _parse_exam_dt(str(r.get("exam_datetime") or ""))
         if not parsed:
             continue
         exam_date, start_t, end_t = parsed
         c = await _ensure_course(session, code, code, None)
+        await _upsert_enrollment(
+            session,
+            student_id=student_id,
+            course_id=c.id,
+            term_code=term,
+            status="in_progress",
+            final_grade_10=None,
+        )
         room = r.get("room")
         session.add(
             Exam(
@@ -192,6 +221,63 @@ async def _persist_exams(session: AsyncSession, student_id, rows: list[dict[str,
                 kind="daa",
             )
         )
+
+
+async def _upsert_enrollment(
+    session: AsyncSession,
+    *,
+    student_id,
+    course_id: int,
+    term_code: str,
+    status: str,
+    final_grade_10: Any | None,
+) -> None:
+    normalized_term = term_code[:32]
+    res = await session.execute(
+        select(Enrollment)
+        .where(
+            Enrollment.student_id == student_id,
+            Enrollment.course_id == course_id,
+            Enrollment.term_code == normalized_term,
+        )
+        .limit(1)
+    )
+    en = res.scalar_one_or_none()
+    if en is None:
+        en = Enrollment(
+            student_id=student_id,
+            course_id=course_id,
+            term_code=normalized_term,
+            status=status,
+            final_grade_10=final_grade_10,
+        )
+        session.add(en)
+        return
+    if en.final_grade_10 is None and final_grade_10 is not None:
+        en.final_grade_10 = final_grade_10
+    if en.status != "recorded":
+        en.status = status
+
+
+def _normalize_course_code(raw: str | None) -> str | None:
+    if not raw:
+        return None
+    text = re.sub(r"\s+", " ", raw).strip()
+    if not text:
+        return None
+    first_token = text.split(" ", 1)[0].strip(".,;:-")
+    if _looks_like_course_code(first_token):
+        return first_token[:32]
+    m = re.search(r"\b([A-Z]{2,}\d{2,4}(?:\.[A-Z0-9]+)*)\b", text.upper())
+    if not m:
+        return text[:32]
+    return m.group(1)[:32]
+
+
+def _looks_like_course_code(s: str) -> bool:
+    return bool(re.fullmatch(r"[A-Z0-9]+(?:\.[A-Z0-9]+)*", s)) and any(
+        ch.isdigit() for ch in s
+    )
 
 
 async def _persist_moodle_deadlines(session: AsyncSession, student_id, html: str) -> None:

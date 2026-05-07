@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass
 from decimal import Decimal
 from urllib.parse import urljoin, urlparse
@@ -107,14 +108,20 @@ def parse_grades_tables(html: str) -> list[dict[str, str | Decimal | int | None]
     soup = BeautifulSoup(html, "html.parser")
     rows_out: list[dict[str, str | Decimal | int | None]] = []
     for table in soup.select("table"):
-        headers = [th.get_text(" ", strip=True).lower() for th in table.find_all("th")]
+        headers = [_norm_header(th.get_text(" ", strip=True)) for th in table.find_all("th")]
         if not headers:
             first_row = table.find("tr")
             if not first_row:
                 continue
-            headers = [td.get_text(" ", strip=True).lower() for td in first_row.find_all("td")]
+            headers = [_norm_header(td.get_text(" ", strip=True)) for td in first_row.find_all("td")]
         col_idx = {h: i for i, h in enumerate(headers) if h}
-        if not any(k in col_idx for k in ("mã môn", "ma mon", "mã hp", "course")):
+        code_headers = {"ma mon", "ma mon hoc", "ma hp", "ma hoc phan", "course", "course code"}
+        name_headers = {"ten mon", "ten mon hoc", "ten hp", "ten hoc phan", "course name"}
+        credit_headers = {"so tin chi", "tin chi", "tc", "credits"}
+        term_headers = {"hoc ky", "ky", "term"}
+        grade_headers = {"diem", "diem tk", "diem tong ket", "tong ket", "grade", "final grade"}
+
+        if not any(k in col_idx for k in code_headers):
             continue
         body_rows = table.find_all("tr")[1:] if headers else table.find_all("tr")
         for tr in body_rows:
@@ -130,22 +137,19 @@ def parse_grades_tables(html: str) -> list[dict[str, str | Decimal | int | None]
                 if i >= len(cells):
                     continue
                 val = cells[i]
-                if h in ("mã môn", "ma mon", "mã hp", "mã học phần"):
+                if h in code_headers:
                     code = val or code
-                if h in ("tên môn", "ten mon", "tên học phần"):
+                if h in name_headers:
                     name = val or name
-                if h in ("số tín chỉ", "tin chi", "tc"):
+                if h in credit_headers:
                     try:
                         credits = int(float(val.replace(",", ".")))
                     except Exception:
                         credits = None
-                if h in ("học kỳ", "hoc ky", "kỳ", "ky"):
+                if h in term_headers:
                     term = val or term
-                if h in ("điểm", "diem", "điểm tk", "điểm tổng kết"):
-                    try:
-                        grade = Decimal(val.replace(",", "."))
-                    except Exception:
-                        grade = None
+                if h in grade_headers:
+                    grade = _parse_decimal_maybe(val)
             if code:
                 rows_out.append(
                     {
@@ -173,12 +177,14 @@ def parse_schedule_rows(html: str) -> list[dict[str, str | int | None]]:
             cells = [td.get_text(" ", strip=True) for td in tr.find_all("td")]
             if len(cells) < 3:
                 continue
+            course_cell = cells[3] if len(cells) > 3 else None
             out.append(
                 {
                     "day_of_week": _parse_int_maybe(cells[0]),
                     "start_period": _parse_int_maybe(cells[1]),
                     "end_period": _parse_int_maybe(cells[2]),
-                    "course_code": cells[3] if len(cells) > 3 else None,
+                    "course_code": _extract_course_code(course_cell),
+                    "course_name": course_cell,
                     "room": cells[-1] if len(cells) > 4 else None,
                 }
             )
@@ -188,6 +194,49 @@ def parse_schedule_rows(html: str) -> list[dict[str, str | int | None]]:
 def _parse_int_maybe(s: str) -> int | None:
     m = re.search(r"\d+", s)
     return int(m.group(0)) if m else None
+
+
+def _parse_decimal_maybe(s: str) -> Decimal | None:
+    m = re.search(r"\d+(?:[.,]\d+)?", s)
+    if not m:
+        return None
+    with_value = m.group(0).replace(",", ".")
+    try:
+        return Decimal(with_value)
+    except Exception:
+        return None
+
+
+def _norm_header(s: str) -> str:
+    lowered = s.strip().lower()
+    normalized = unicodedata.normalize("NFD", lowered)
+    no_marks = "".join(ch for ch in normalized if unicodedata.category(ch) != "Mn")
+    compact = re.sub(r"[^a-z0-9]+", " ", no_marks)
+    return re.sub(r"\s+", " ", compact).strip()
+
+
+def _extract_course_code(s: str | None) -> str | None:
+    if not s:
+        return None
+    text = re.sub(r"\s+", " ", s).strip()
+    if not text:
+        return None
+
+    first_token = text.split(" ", 1)[0].strip(".,;:-")
+    if _looks_like_course_code(first_token):
+        return first_token
+
+    m = re.search(r"\b([A-Z]{2,}\d{2,4}(?:\.[A-Z0-9]+)*)\b", text.upper())
+    if not m:
+        return None
+    code = m.group(1)
+    return code if _looks_like_course_code(code) else None
+
+
+def _looks_like_course_code(s: str) -> bool:
+    return bool(re.fullmatch(r"[A-Z0-9]+(?:\.[A-Z0-9]+)*", s)) and any(
+        ch.isdigit() for ch in s
+    )
 
 
 def parse_exam_rows(html: str) -> list[dict[str, str | None]]:
