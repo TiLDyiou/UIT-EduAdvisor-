@@ -65,7 +65,7 @@ async def _admin_login_and_csrf(client: httpx.AsyncClient, admin_user: AdminUser
 async def test_policy_upload_creates_job_and_document(client, admin_user, db_session) -> None:
     csrf = await _admin_login_and_csrf(client, admin_user)
     files = {"file": ("policy-v1.pdf", b"%PDF-1.4 test file", "application/pdf")}
-    data = {"title": "QD", "version": "v1", "effective_year": "2026", "tag": "general"}
+    data = {"title": "QD", "tag": "other"}
     r = await client.post(
         "/api/v1/admin/policies/upload",
         data=data,
@@ -77,8 +77,42 @@ async def test_policy_upload_creates_job_and_document(client, admin_user, db_ses
 
     job_q = await db_session.execute(select(AdminJob).where(AdminJob.id == job_id))
     assert job_q.scalar_one_or_none() is not None
-    doc_q = await db_session.execute(select(PolicyDocument).where(PolicyDocument.version == "v1"))
+    doc_q = await db_session.execute(select(PolicyDocument).where(PolicyDocument.title == "QD"))
     assert doc_q.scalar_one_or_none() is not None
+
+
+async def test_policy_upload_accepts_octet_stream_when_extension_ok(client, admin_user, db_session) -> None:
+    csrf = await _admin_login_and_csrf(client, admin_user)
+    files = {"file": ("policy-v1.pdf", b"%PDF-1.4 test file", "application/octet-stream")}
+    r = await client.post(
+        "/api/v1/admin/policies/upload",
+        data={"title": "Octet PDF", "tag": "other"},
+        files=files,
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert r.status_code == 202
+
+
+async def test_policy_delete_removes_document(client, admin_user, db_session) -> None:
+    csrf = await _admin_login_and_csrf(client, admin_user)
+    up = await client.post(
+        "/api/v1/admin/policies/upload",
+        data={"title": "To delete", "tag": "other"},
+        files={"file": ("x.pdf", b"%PDF-1.4 x", "application/pdf")},
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert up.status_code == 202
+    doc_q = await db_session.execute(select(PolicyDocument).where(PolicyDocument.title == "To delete"))
+    doc = doc_q.scalar_one()
+
+    r = await client.delete(
+        f"/api/v1/admin/policies/{doc.id}",
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert r.status_code == 204
+
+    gone = await db_session.execute(select(PolicyDocument).where(PolicyDocument.id == doc.id))
+    assert gone.scalar_one_or_none() is None
 
 
 async def test_import_upload_enqueues_job(client, admin_user, db_session) -> None:

@@ -24,7 +24,7 @@ async def retrieve_policy_chunks(
                 PolicyDocument.tag.ilike(token),
             ),
         )
-        .order_by(PolicyDocument.effective_year.desc(), PolicyDocument.id.desc(), PolicyChunk.chunk_index.asc())
+        .order_by(PolicyDocument.id.desc(), PolicyChunk.chunk_index.asc())
         .limit(limit)
     )
     rows = await db.execute(stmt)

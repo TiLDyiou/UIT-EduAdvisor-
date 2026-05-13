@@ -8,14 +8,14 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, Response, UploadFile, status
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.core.security.audit import record_audit
 from app.db.models.core_security import AdminUser
-from app.db.models.rag_chat import PolicyChunk, PolicyDocument
+from app.db.models.rag_chat import PolicyDocument
 from app.deps import get_current_admin, get_db, get_settings_dep, require_admin_csrf
 from app.schemas.admin.jobs import AdminJobResponse
 from app.schemas.admin.policies import AdminPolicyListResponse, AdminPolicyResponse, AdminPolicyUploadForm
@@ -39,8 +39,6 @@ def _to_policy_response(row: PolicyDocument) -> AdminPolicyResponse:
     return AdminPolicyResponse(
         id=row.id,
         title=row.title,
-        version=row.version,
-        effective_year=row.effective_year,
         tag=row.tag,
         source_filename=row.source_filename,
         mime_type=row.mime_type,
@@ -72,15 +70,11 @@ async def upload_policy(
     admin: Annotated[AdminUser, Depends(get_current_admin)],
     settings: Annotated[Settings, Depends(get_settings_dep)],
     title: str = Form(...),
-    version: str = Form(...),
-    effective_year: int = Form(...),
     tag: str = Form(...),
     file: UploadFile = File(...),
 ) -> AdminJobResponse:
     body = AdminPolicyUploadForm(
         title=title,
-        version=version,
-        effective_year=effective_year,
         tag=tag,
     )
     filename = file.filename or ""
@@ -88,8 +82,12 @@ async def upload_policy(
     if ext not in ALLOWED_POLICY_EXT:
         raise HTTPException(status_code=422, detail={"error": "unsupported_extension"})
 
-    content_type = file.content_type or ""
-    if content_type and content_type not in ALLOWED_POLICY_MIME:
+    # Browsers often send application/octet-stream for local file picks; allow when ext is valid.
+    content_type = (file.content_type or "").split(";")[0].strip()
+    allowed_mime = set(ALLOWED_POLICY_MIME)
+    if ext in ALLOWED_POLICY_EXT:
+        allowed_mime.add("application/octet-stream")
+    if content_type and content_type not in allowed_mime:
         raise HTTPException(status_code=422, detail={"error": "unsupported_mime_type"})
 
     content = await file.read()
@@ -111,8 +109,6 @@ async def upload_policy(
         input_file_path=str(full_path),
         result_summary={
             "title": body.title,
-            "version": body.version,
-            "effective_year": body.effective_year,
             "tag": body.tag,
             "filename": filename,
             "content_hash": content_hash,
@@ -120,8 +116,6 @@ async def upload_policy(
     )
     row = PolicyDocument(
         title=body.title,
-        version=body.version,
-        effective_year=body.effective_year,
         tag=body.tag,
         file_path=str(full_path),
         source_filename=filename or None,
@@ -154,7 +148,7 @@ async def upload_policy(
         action="admin.policy.uploaded",
         target_type="policy_document",
         target_id=str(row.id),
-        payload={"job_id": str(job.id), "tag": row.tag, "version": row.version},
+        payload={"job_id": str(job.id), "tag": row.tag},
         ip_address=_client_ip(request),
     )
     await db.commit()
@@ -166,7 +160,6 @@ async def list_policies(
     db: Annotated[AsyncSession, Depends(get_db)],
     _: Annotated[AdminUser, Depends(get_current_admin)],
     tag: str | None = Query(default=None, max_length=32),
-    effective_year: int | None = Query(default=None, ge=2000, le=2100),
     deprecated: bool | None = Query(default=None),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -174,13 +167,11 @@ async def list_policies(
     query = select(PolicyDocument)
     if tag:
         query = query.where(PolicyDocument.tag == tag.strip().lower())
-    if effective_year is not None:
-        query = query.where(PolicyDocument.effective_year == effective_year)
     if deprecated is not None:
         query = query.where(PolicyDocument.is_deprecated == deprecated)
     total = await db.scalar(select(func.count()).select_from(query.subquery()))
     rows = await db.execute(
-        query.order_by(PolicyDocument.effective_year.desc(), PolicyDocument.id.desc())
+        query.order_by(PolicyDocument.id.desc())
         .limit(limit)
         .offset(offset)
     )
@@ -227,7 +218,7 @@ async def deprecate_policy(
             action="admin.policy.deprecated",
             target_type="policy_document",
             target_id=str(policy_id),
-            payload={"tag": row.tag, "version": row.version},
+            payload={"tag": row.tag},
             ip_address=_client_ip(request),
         )
         await db.commit()
@@ -272,8 +263,51 @@ async def restore_policy(
         action="admin.policy.restored",
         target_type="policy_document",
         target_id=str(policy_id),
-        payload={"tag": row.tag, "version": row.version},
+        payload={"tag": row.tag},
         ip_address=_client_ip(request),
     )
     await db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.delete(
+    "/{policy_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    dependencies=[Depends(require_admin_csrf)],
+)
+async def delete_policy(
+    policy_id: int,
+    request: Request,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    admin: Annotated[AdminUser, Depends(get_current_admin)],
+) -> Response:
+    res = await db.execute(select(PolicyDocument).where(PolicyDocument.id == policy_id).limit(1))
+    row = res.scalar_one_or_none()
+    if row is None:
+        raise HTTPException(status_code=404, detail="policy_not_found")
+
+    # Core DELETE only: bulk chunk DELETE + ORM delete(instance) can desync session state and break flush.
+    file_path = row.file_path
+    audit_payload = {"tag": row.tag, "title": row.title}
+    await db.execute(delete(PolicyDocument).where(PolicyDocument.id == policy_id))
+
+    await record_audit(
+        db,
+        actor_type="admin",
+        actor_id=admin.id,
+        action="admin.policy.deleted",
+        target_type="policy_document",
+        target_id=str(policy_id),
+        payload=audit_payload,
+        ip_address=_client_ip(request),
+    )
+    await db.commit()
+
+    if file_path:
+        try:
+            os.remove(file_path)
+        except OSError:
+            pass
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)

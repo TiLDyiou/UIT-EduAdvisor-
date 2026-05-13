@@ -7,7 +7,6 @@ class PolicyRetrieveItem(BaseModel):
     document_id: int
     document_title: str
     tag: str
-    effective_year: int
     chunk_index: int
     content: str
 

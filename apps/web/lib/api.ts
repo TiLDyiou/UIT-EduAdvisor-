@@ -68,6 +68,13 @@ export function parseApiError(body: unknown): string {
   if (body && typeof body === "object") {
     const detail = (body as { detail?: unknown }).detail;
     if (typeof detail === "string") return detail;
+    if (Array.isArray(detail) && detail.length > 0) {
+      const first = detail[0];
+      if (first && typeof first === "object") {
+        const msg = (first as { msg?: unknown }).msg;
+        if (typeof msg === "string") return msg;
+      }
+    }
     if (detail && typeof detail === "object") {
       const error = (detail as { error?: unknown }).error;
       if (typeof error === "string") return error;

@@ -1,4 +1,5 @@
 .cursor/
+.agent/
 
 # === Secrets & env ===
 .env

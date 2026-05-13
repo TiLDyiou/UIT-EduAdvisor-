@@ -28,12 +28,10 @@ from app.db.models.mixins import BigIntPkMixin, UUIDPkMixin
 class PolicyDocument(BigIntPkMixin, Base):
     __tablename__ = "policy_documents"
     __table_args__ = (
-        UniqueConstraint("tag", "version", "effective_year", name="uq_policy_tag_version_year"),
+        UniqueConstraint("tag", "title", name="uq_policy_tag_title"),
     )
 
     title: Mapped[str] = mapped_column(Text, nullable=False)
-    version: Mapped[str] = mapped_column(Text, nullable=False)
-    effective_year: Mapped[int] = mapped_column(Integer, nullable=False)
     tag: Mapped[str] = mapped_column(String(32), nullable=False)
     file_path: Mapped[str] = mapped_column(Text, nullable=False)
     source_filename: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -72,19 +72,27 @@ export default function AdminHomePage() {
       </header>
       {logoutError ? <p className="mb-4 text-sm text-red-400">{logoutError}</p> : null}
       <section className="rounded-xl border border-neutral-800 bg-neutral-950/60 p-6 text-sm text-neutral-300">
-        <p className="mb-4">Đăng nhập thành công. Chọn module để vận hành:</p>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Link className="rounded border border-neutral-700 px-3 py-2 hover:border-cyan-500" href="/admin/policies">
-            Policy ingest jobs
+        <p className="mb-6 text-base">Đăng nhập thành công. Chọn phân hệ quản lý để thao tác:</p>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Link className="flex flex-col gap-2 rounded border border-neutral-700 p-4 hover:border-cyan-500" href="/admin/curricula">
+            <span className="font-medium text-cyan-400">Chương trình đào tạo</span>
+            <span className="text-xs text-neutral-400">Quản lý các khung chương trình đào tạo theo từng chuyên ngành và năm học. Cung cấp dữ liệu gốc để tư vấn môn học cho sinh viên.</span>
           </Link>
-          <Link className="rounded border border-neutral-700 px-3 py-2 hover:border-cyan-500" href="/admin/imports">
-            Excel imports
+          <Link className="flex flex-col gap-2 rounded border border-neutral-700 p-4 hover:border-cyan-500" href="/admin/policies">
+            <span className="font-medium text-cyan-400">Quy chế & Chính sách</span>
+            <span className="text-xs text-neutral-400">Tải lên (Upload) file tài liệu quy chế (PDF, Docx) để AI phân tích (Ingest) và học kiến thức, dùng để trả lời tự động các câu hỏi của sinh viên.</span>
           </Link>
-          <Link className="rounded border border-neutral-700 px-3 py-2 hover:border-cyan-500" href="/admin/jobs">
-            Job monitor
+          <Link className="flex flex-col gap-2 rounded border border-neutral-700 p-4 hover:border-cyan-500" href="/admin/imports">
+            <span className="font-medium text-cyan-400">Nhập dữ liệu Excel</span>
+            <span className="text-xs text-neutral-400">Tải lên các file Excel như Lịch thi, Danh sách mở lớp. Hệ thống sẽ kiểm tra trước (Preview) và cho phép bạn áp dụng (Apply) vào CSDL.</span>
           </Link>
-          <Link className="rounded border border-neutral-700 px-3 py-2 hover:border-cyan-500" href="/admin/audit">
-            Audit logs
+          <Link className="flex flex-col gap-2 rounded border border-neutral-700 p-4 hover:border-cyan-500" href="/admin/jobs">
+            <span className="font-medium text-cyan-400">Tiến trình nền (Jobs)</span>
+            <span className="text-xs text-neutral-400">Kiểm tra trạng thái (Đang xử lý, Lỗi, Thành công) của các tác vụ mất nhiều thời gian như đồng bộ dữ liệu, phân tích AI.</span>
+          </Link>
+          <Link className="flex flex-col gap-2 rounded border border-neutral-700 p-4 hover:border-cyan-500" href="/admin/audit">
+            <span className="font-medium text-cyan-400">Nhật ký (Audit logs)</span>
+            <span className="text-xs text-neutral-400">Xem lại lịch sử thay đổi trên hệ thống: ai đã thực hiện thao tác gì, vào lúc nào, tác động đến dữ liệu nào.</span>
           </Link>
         </div>
       </section>

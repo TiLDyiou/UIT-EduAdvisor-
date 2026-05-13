@@ -25,7 +25,6 @@ async def retrieve_policies(
                 document_id=doc.id,
                 document_title=doc.title,
                 tag=doc.tag,
-                effective_year=doc.effective_year,
                 chunk_index=chunk.chunk_index,
                 content=chunk.content,
             )
