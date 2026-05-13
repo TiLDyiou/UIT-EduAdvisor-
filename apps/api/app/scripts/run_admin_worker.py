@@ -21,6 +21,7 @@ from app.services.admin_jobs import (
     JOB_STATUS_SUCCEEDED,
     claim_next_job,
 )
+from app.services.ai_mate.gemini import batch_embed_texts
 from app.services.excel_import import preview_course_offerings_file, preview_exam_schedule_xlsx
 from app.services.policy_ingest import chunk_text, extract_policy_text
 
@@ -46,16 +47,21 @@ async def _handle_policy_ingest(db, job) -> None:
     if not chunks:
         raise ValueError("no_policy_chunks")
 
+    job.current_stage = "embedding_chunks"
+    job.progress_percent = 55
+    settings = get_settings()
+    vectors = await batch_embed_texts(settings, chunks)
+
     job.current_stage = "saving_chunks"
     job.progress_percent = 70
     await db.execute(delete(PolicyChunk).where(PolicyChunk.document_id == doc.id))
-    for idx, chunk in enumerate(chunks):
+    for idx, (chunk, emb) in enumerate(zip(chunks, vectors, strict=True)):
         db.add(
             PolicyChunk(
                 document_id=doc.id,
                 chunk_index=idx,
                 content=chunk,
-                embedding=None,
+                embedding=emb,
             )
         )
 

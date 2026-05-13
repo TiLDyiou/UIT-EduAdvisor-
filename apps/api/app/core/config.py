@@ -74,6 +74,16 @@ class Settings(BaseSettings):
     admin_private_storage_dir: str = "/tmp/uit_eduadvisor_admin_private"
     admin_upload_max_file_size_bytes: int = 10 * 1024 * 1024
 
+    # --- M6: AI Mate (Gemini + RAG; secrets must not appear in repr) ---
+    ai_gemini_api_key: str = Field(default="", repr=False)
+    ai_gemini_model: str = "gemini-2.0-flash"
+    ai_embedding_model: str = "text-embedding-004"
+    ai_chat_rate_limit_per_hour: int = 30
+    ai_chat_timeout_seconds: float = 60.0
+    ai_stream_first_byte_seconds: float = 3.0
+    ai_summary_retention_days: int = 90
+    ai_public_policy_retrieve_per_hour: int = 120
+
     @property
     def database_url(self) -> str:
         return (

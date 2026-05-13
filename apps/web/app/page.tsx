@@ -7,9 +7,15 @@ export default function HomePage() {
         <p className="text-xs uppercase tracking-[0.2em] text-cyan-400">UIT EduAdvisor</p>
         <h1 className="text-4xl font-semibold tracking-tight">Cố vấn học vụ</h1>
         <p className="text-sm text-neutral-400">
-          Milestone 3: Academic Tracker, Roadmap Tree và bộ công cụ GPA Suite.
+          Milestone 3: Academic Tracker; Milestone 6: AI Mate (chat, RAG quy chế, bộ nhớ cục bộ).
         </p>
         <div className="flex flex-wrap justify-center gap-4 text-sm">
+          <Link
+            href="/ai-mate"
+            className="rounded-md bg-emerald-700 px-4 py-2 font-medium text-white hover:bg-emerald-600"
+          >
+            AI Mate
+          </Link>
           <Link
             href="/tracker"
             className="rounded-md bg-gradient-to-r from-cyan-600 to-violet-600 px-4 py-2 font-medium text-white shadow hover:from-cyan-500 hover:to-violet-500 transition-all"
