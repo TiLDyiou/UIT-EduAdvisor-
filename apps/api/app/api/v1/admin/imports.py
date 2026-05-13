@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import os
 import secrets
 import uuid
+from contextlib import suppress
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
@@ -67,33 +69,40 @@ async def _enqueue_import_job(
     payload = await file.read()
     ext = _validate_import_file(file, len(payload), settings)
     path = await _store_uploaded_file(settings, ext, payload)
+    committed = False
     try:
-        validate_xlsx_readable(path)
-    except Exception as exc:
-        raise HTTPException(status_code=422, detail={"error": "invalid_xlsx_file"}) from exc
-    job = await create_admin_job(
-        db,
-        kind=kind,
-        created_by=admin.id,
-        input_file_path=path,
-        result_summary={
-            "filename": file.filename,
-            "preview": {"valid_rows": 0, "invalid_rows": 0, "errors": ["pending_worker_preview"]},
-        },
-    )
-    await record_audit(
-        db,
-        actor_type="admin",
-        actor_id=admin.id,
-        action="admin.import.uploaded",
-        target_type="admin_job",
-        target_id=str(job.id),
-        payload={"kind": kind, "filename": file.filename},
-        ip_address=_client_ip(request),
-    )
-    await db.commit()
-    job_dict = to_job_response_dict(job)
-    return AdminImportUploadResponse(job_id=job_dict["id"], kind=job_dict["kind"], status=job_dict["status"])
+        try:
+            validate_xlsx_readable(path)
+        except Exception as exc:
+            raise HTTPException(status_code=422, detail={"error": "invalid_xlsx_file"}) from exc
+        job = await create_admin_job(
+            db,
+            kind=kind,
+            created_by=admin.id,
+            input_file_path=path,
+            result_summary={
+                "filename": file.filename,
+                "preview": {"valid_rows": 0, "invalid_rows": 0, "errors": ["pending_worker_preview"]},
+            },
+        )
+        await record_audit(
+            db,
+            actor_type="admin",
+            actor_id=admin.id,
+            action="admin.import.uploaded",
+            target_type="admin_job",
+            target_id=str(job.id),
+            payload={"kind": kind, "filename": file.filename},
+            ip_address=_client_ip(request),
+        )
+        await db.commit()
+        committed = True
+        job_dict = to_job_response_dict(job)
+        return AdminImportUploadResponse(job_id=job_dict["id"], kind=job_dict["kind"], status=job_dict["status"])
+    finally:
+        if not committed:
+            with suppress(OSError):
+                os.remove(path)
 
 
 @router.post(

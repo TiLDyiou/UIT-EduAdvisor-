@@ -3,11 +3,23 @@ from __future__ import annotations
 import hashlib
 import os
 import secrets
+from contextlib import suppress
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, Response, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
 from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,7 +30,11 @@ from app.db.models.core_security import AdminUser
 from app.db.models.rag_chat import PolicyDocument
 from app.deps import get_current_admin, get_db, get_settings_dep, require_admin_csrf
 from app.schemas.admin.jobs import AdminJobResponse
-from app.schemas.admin.policies import AdminPolicyListResponse, AdminPolicyResponse, AdminPolicyUploadForm
+from app.schemas.admin.policies import (
+    AdminPolicyListResponse,
+    AdminPolicyResponse,
+    AdminPolicyUploadForm,
+)
 from app.services.admin_jobs import create_admin_job, to_job_response_dict
 
 router = APIRouter(prefix="/admin/policies", tags=["admin-policies"])
@@ -101,58 +117,61 @@ async def upload_policy(
     full_path = root / safe_name
     full_path.write_bytes(content)
 
-    content_hash = hashlib.sha256(content).hexdigest()
-    job = await create_admin_job(
-        db,
-        kind=POLICY_JOB_KIND,
-        created_by=admin.id,
-        input_file_path=str(full_path),
-        result_summary={
-            "title": body.title,
-            "tag": body.tag,
-            "filename": filename,
-            "content_hash": content_hash,
-        },
-    )
-    row = PolicyDocument(
-        title=body.title,
-        tag=body.tag,
-        file_path=str(full_path),
-        source_filename=filename or None,
-        mime_type=content_type or None,
-        file_size_bytes=len(content),
-        content_hash=content_hash,
-        chunk_count=0,
-        ingest_job_id=job.id,
-        uploaded_by=admin.id,
-        uploaded_at=datetime.now(UTC),
-        is_deprecated=False,
-    )
-    db.add(row)
+    committed = False
     try:
-        await db.flush()
-    except IntegrityError as exc:
+        content_hash = hashlib.sha256(content).hexdigest()
+        job = await create_admin_job(
+            db,
+            kind=POLICY_JOB_KIND,
+            created_by=admin.id,
+            input_file_path=str(full_path),
+            result_summary={
+                "title": body.title,
+                "tag": body.tag,
+                "filename": filename,
+                "content_hash": content_hash,
+            },
+        )
+        row = PolicyDocument(
+            title=body.title,
+            tag=body.tag,
+            file_path=str(full_path),
+            source_filename=filename or None,
+            mime_type=content_type or None,
+            file_size_bytes=len(content),
+            content_hash=content_hash,
+            chunk_count=0,
+            ingest_job_id=job.id,
+            uploaded_by=admin.id,
+            uploaded_at=datetime.now(UTC),
+            is_deprecated=False,
+        )
+        db.add(row)
         try:
-            os.remove(full_path)
-        except OSError:
-            pass
-        raise HTTPException(
-            status_code=409,
-            detail={"error": "policy_version_conflict"},
-        ) from exc
+            await db.flush()
+        except IntegrityError as exc:
+            raise HTTPException(
+                status_code=409,
+                detail={"error": "policy_version_conflict"},
+            ) from exc
 
-    await record_audit(
-        db,
-        actor_type="admin",
-        actor_id=admin.id,
-        action="admin.policy.uploaded",
-        target_type="policy_document",
-        target_id=str(row.id),
-        payload={"job_id": str(job.id), "tag": row.tag},
-        ip_address=_client_ip(request),
-    )
-    await db.commit()
-    return AdminJobResponse.model_validate(to_job_response_dict(job))
+        await record_audit(
+            db,
+            actor_type="admin",
+            actor_id=admin.id,
+            action="admin.policy.uploaded",
+            target_type="policy_document",
+            target_id=str(row.id),
+            payload={"job_id": str(job.id), "tag": row.tag},
+            ip_address=_client_ip(request),
+        )
+        await db.commit()
+        committed = True
+        return AdminJobResponse.model_validate(to_job_response_dict(job))
+    finally:
+        if not committed:
+            with suppress(OSError):
+                os.remove(full_path)
 
 
 @router.get("", response_model=AdminPolicyListResponse)
@@ -305,9 +324,7 @@ async def delete_policy(
     await db.commit()
 
     if file_path:
-        try:
+        with suppress(OSError):
             os.remove(file_path)
-        except OSError:
-            pass
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
