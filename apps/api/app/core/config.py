@@ -84,6 +84,21 @@ class Settings(BaseSettings):
     ai_summary_retention_days: int = 90
     ai_public_policy_retrieve_per_hour: int = 120
 
+    # --- M7: Remote Bot (tokens are secrets; set repr=False) ---
+    telegram_bot_token: str = Field(default="", repr=False)
+    telegram_bot_username: str = ""
+    telegram_webhook_secret: str = Field(default="", repr=False)
+    discord_bot_token: str = Field(default="", repr=False)
+    messenger_page_access_token: str = Field(default="", repr=False)
+    messenger_verify_token: str = Field(default="", repr=False)
+    messenger_app_secret: str = Field(default="", repr=False)
+    messenger_page_name: str = ""
+    bot_command_rate_limit_per_hour: int = 10
+    bot_link_token_ttl_seconds: int = 600
+    reminder_check_interval_seconds: int = 300
+    reminder_exam_hours_before: int = 36
+    reminder_deadline_hours_before: int = 18
+
     @property
     def database_url(self) -> str:
         return (

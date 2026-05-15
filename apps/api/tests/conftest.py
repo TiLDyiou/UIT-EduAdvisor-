@@ -197,3 +197,62 @@ async def redis_async_client(redis_container):
     client = redis_async.from_url(url, decode_responses=True)
     yield client
     await client.aclose()
+
+
+# ---------------------------------------------------------------------------
+# Convenience aliases and factory fixtures for bot tests
+# ---------------------------------------------------------------------------
+
+
+@pytest_asyncio.fixture
+async def db(db_session):
+    """Alias so tests can write `db` instead of `db_session`."""
+    return db_session
+
+
+@pytest_asyncio.fixture
+async def redis(redis_async_client):
+    """Alias so tests can write `redis` instead of `redis_async_client`."""
+    await redis_async_client.flushdb()
+    return redis_async_client
+
+
+@pytest.fixture
+def create_student(db_session):
+    """Factory fixture: insert a minimal Student row."""
+    import uuid as _uuid
+
+    from app.db.models.core_security import Student
+
+    async def _create(student_id: _uuid.UUID | None = None):
+        sid = student_id or _uuid.uuid4()
+        # Major id=1 is the UNKNOWN major seeded in db_session
+        res = await db_session.execute(text("SELECT id FROM majors LIMIT 1"))
+        major_id = res.scalar_one()
+        s = Student(
+            id=sid,
+            student_code_ciphertext=f"enc_{sid.hex[:8]}",
+            full_name_ciphertext=f"enc_name_{sid.hex[:8]}",
+            major_id=major_id,
+            enrollment_year=2024,
+        )
+        db_session.add(s)
+        await db_session.flush()
+        return s
+
+    return _create
+
+
+@pytest.fixture
+def create_course(db_session):
+    """Factory fixture: insert a minimal Course row."""
+    from app.db.models.academic import Course
+
+    async def _create(code: str, name: str, credits: int = 3):
+        c = Course(code=code, name=name, credits=credits, kind="required")
+        db_session.add(c)
+        await db_session.flush()
+        return c
+
+    return _create
+

@@ -119,6 +119,58 @@ services:
       vault:
         condition: service_healthy
 
+  # --- M7: Bot services ---
+
+  reminder-worker:
+    build:
+      context: ../apps/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: ["python", "-m", "app.scripts.run_reminder_worker"]
+    environment:
+      APP_ENV: ${APP_ENV}
+      APP_LOG_LEVEL: ${APP_LOG_LEVEL}
+      TZ: ${TZ}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-}
+      MESSENGER_PAGE_ACCESS_TOKEN: ${MESSENGER_PAGE_ACCESS_TOKEN:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  discord-bot:
+    build:
+      context: ../apps/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: ["python", "-m", "app.scripts.run_discord_bot"]
+    environment:
+      APP_ENV: ${APP_ENV}
+      APP_LOG_LEVEL: ${APP_LOG_LEVEL}
+      TZ: ${TZ}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   web:
     build:
       context: ../apps/web
@@ -137,3 +189,4 @@ volumes:
   postgres-data:
   redis-data:
   admin-uploads:
+
