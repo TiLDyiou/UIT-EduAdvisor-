@@ -54,11 +54,11 @@ up: env ## Start the full stack (build images if needed)
 
 .PHONY: down
 down: ## Stop the stack (keep volumes)
-	$(COMPOSE) down
+	$(COMPOSE) down --remove-orphans
 
 .PHONY: down-volumes
 down-volumes: ## Stop the stack AND wipe volumes (destructive)
-	$(COMPOSE) down -v
+	$(COMPOSE) down -v --remove-orphans
 
 .PHONY: logs
 logs: ## Tail logs from all services
