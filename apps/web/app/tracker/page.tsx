@@ -45,6 +45,11 @@ interface GpaOverview {
   gpa_4: number;
   total_credits: number;
   earned_credits: number;
+  daa_dtbc_10?: number | null;
+  daa_dtbc_4?: number | null;
+  daa_dtbctl_10?: number | null;
+  daa_dtbctl_4?: number | null;
+  daa_earned_credits?: number | null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -105,27 +110,118 @@ function asNullableNumber(value: unknown): number | null {
 /* Components                                                         */
 /* ------------------------------------------------------------------ */
 
+function GpaCardWithTooltip({
+  title,
+  value10,
+  value4,
+  theme,
+  tooltipText,
+}: {
+  title: string;
+  value10: number | null | undefined;
+  value4: number | null | undefined;
+  theme: "cyan" | "violet" | "emerald" | "amber";
+  tooltipText: string;
+}) {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const themeClasses = {
+    cyan: "border-cyan-800/40 bg-gradient-to-br from-cyan-950/60 to-neutral-900/80 text-cyan-400",
+    violet: "border-violet-800/40 bg-gradient-to-br from-violet-950/60 to-neutral-900/80 text-violet-400",
+    emerald: "border-emerald-800/40 bg-gradient-to-br from-emerald-950/60 to-neutral-900/80 text-emerald-400",
+    amber: "border-amber-800/40 bg-gradient-to-br from-amber-950/60 to-neutral-900/80 text-amber-400",
+  };
+
+  const hasValue = value10 !== null && value10 !== undefined && value10 > 0;
+
+  return (
+    <div
+      className={`relative flex-1 min-w-[200px] rounded-xl border p-4 backdrop-blur transition-all duration-300 hover:scale-[1.03] hover:shadow-lg cursor-help ${themeClasses[theme]}`}
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
+      <div className="flex items-center justify-between">
+        <p className="text-xs uppercase tracking-wider font-semibold">{title}</p>
+        <span className="text-xs opacity-60">ⓘ</span>
+      </div>
+      <div className="mt-2 flex items-baseline gap-2">
+        <p className="text-3xl font-bold tracking-tight text-white">
+          {hasValue ? value10!.toFixed(2) : "N/A"}
+        </p>
+        {hasValue && value4 !== null && value4 !== undefined && value4 > 0 && (
+          <p className="text-sm font-medium text-neutral-400">
+            (Hệ 4: {value4!.toFixed(2)})
+          </p>
+        )}
+      </div>
+
+      {showTooltip && (
+        <div className="absolute bottom-full left-1/2 z-50 mb-3 w-64 -translate-x-1/2 rounded-lg border border-neutral-700 bg-neutral-950 p-3 text-xs text-neutral-200 shadow-2xl backdrop-blur">
+          <div className="relative">
+            <p className="leading-relaxed whitespace-normal break-words">{tooltipText}</p>
+            <div className="absolute -bottom-4 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-b border-r border-neutral-700 bg-neutral-950" />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function GpaBadge({ gpa }: { gpa: GpaOverview }) {
   return (
-    <div className="flex flex-wrap gap-4">
-      <div className="flex-1 min-w-[140px] rounded-xl border border-cyan-800/40 bg-gradient-to-br from-cyan-950/60 to-neutral-900/80 p-4 backdrop-blur">
-        <p className="text-xs uppercase tracking-wider text-cyan-400">GPA Thang 10</p>
-        <p className="mt-1 text-3xl font-bold tracking-tight text-white">
-          {gpa.gpa_10.toFixed(2)}
-        </p>
+    <div className="space-y-6">
+      {/* Self-calculated academic values */}
+      <div>
+        <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest mb-3">Tự động tính (Học kỳ hiện tại)</p>
+        <div className="flex flex-wrap gap-4">
+          <div className="flex-1 min-w-[140px] rounded-xl border border-cyan-800/40 bg-gradient-to-br from-cyan-950/60 to-neutral-900/80 p-4 backdrop-blur">
+            <p className="text-xs uppercase tracking-wider text-cyan-400">GPA Thang 10 (Ước tính)</p>
+            <p className="mt-1 text-3xl font-bold tracking-tight text-white">
+              {gpa.gpa_10.toFixed(2)}
+            </p>
+          </div>
+          <div className="flex-1 min-w-[140px] rounded-xl border border-violet-800/40 bg-gradient-to-br from-violet-950/60 to-neutral-900/80 p-4 backdrop-blur">
+            <p className="text-xs uppercase tracking-wider text-violet-400">GPA Thang 4 (Ước tính)</p>
+            <p className="mt-1 text-3xl font-bold tracking-tight text-white">
+              {gpa.gpa_4.toFixed(2)}
+            </p>
+          </div>
+          <div className="flex-1 min-w-[140px] rounded-xl border border-neutral-700/40 bg-neutral-900/60 p-4 backdrop-blur">
+            <p className="text-xs uppercase tracking-wider text-neutral-400">Tín chỉ tích lũy</p>
+            <p className="mt-1 text-3xl font-bold tracking-tight text-white">
+              {gpa.earned_credits}
+              <span className="text-base text-neutral-500">/{gpa.total_credits}</span>
+            </p>
+          </div>
+        </div>
       </div>
-      <div className="flex-1 min-w-[140px] rounded-xl border border-violet-800/40 bg-gradient-to-br from-violet-950/60 to-neutral-900/80 p-4 backdrop-blur">
-        <p className="text-xs uppercase tracking-wider text-violet-400">GPA Thang 4</p>
-        <p className="mt-1 text-3xl font-bold tracking-tight text-white">
-          {gpa.gpa_4.toFixed(2)}
-        </p>
-      </div>
-      <div className="flex-1 min-w-[140px] rounded-xl border border-neutral-700/40 bg-neutral-900/60 p-4 backdrop-blur">
-        <p className="text-xs uppercase tracking-wider text-neutral-400">Tín chỉ tích lũy</p>
-        <p className="mt-1 text-3xl font-bold tracking-tight text-white">
-          {gpa.earned_credits}
-          <span className="text-base text-neutral-500">/{gpa.total_credits}</span>
-        </p>
+
+      {/* Official values from school (DAA) */}
+      <div>
+        <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest mb-3">Thông tin chính thức từ trường (DAA)</p>
+        <div className="flex flex-wrap gap-4">
+          <GpaCardWithTooltip
+            title="ĐTBC (DAA)"
+            value10={gpa.daa_dtbc_10}
+            value4={gpa.daa_dtbc_4}
+            theme="emerald"
+            tooltipText="Điểm trung bình chung (ĐTBC): Tính điểm tất cả các môn đã học (kể cả rớt), dùng để xét số tín chỉ được đăng ký, học vượt, chuyển ngành hoặc xét điều kiện làm khóa luận tốt nghiệp."
+          />
+          <GpaCardWithTooltip
+            title="ĐTBCTL (DAA)"
+            value10={gpa.daa_dtbctl_10}
+            value4={gpa.daa_dtbctl_4}
+            theme="amber"
+            tooltipText="Điểm trung bình chung tích lũy (ĐTBCTL): Chỉ tính điểm các môn đã tích lũy (từ 5,0 trở lên), dùng để phân loại kết quả và xếp hạng tốt nghiệp."
+          />
+          {gpa.daa_earned_credits != null && gpa.daa_earned_credits > 0 && (
+            <div className="flex-1 min-w-[140px] rounded-xl border border-neutral-700/40 bg-neutral-900/60 p-4 backdrop-blur">
+              <p className="text-xs uppercase tracking-wider text-neutral-400">TC tích lũy (DAA)</p>
+              <p className="mt-1 text-3xl font-bold tracking-tight text-white">
+                {gpa.daa_earned_credits}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -340,6 +436,11 @@ export default function TrackerPage() {
         gpa_4: asNumber(gpaRaw.gpa_4),
         total_credits: asNumber(gpaRaw.total_credits),
         earned_credits: asNumber(gpaRaw.earned_credits),
+        daa_dtbc_10: asNullableNumber(gpaRaw.daa_dtbc_10),
+        daa_dtbc_4: asNullableNumber(gpaRaw.daa_dtbc_4),
+        daa_dtbctl_10: asNullableNumber(gpaRaw.daa_dtbctl_10),
+        daa_dtbctl_4: asNullableNumber(gpaRaw.daa_dtbctl_4),
+        daa_earned_credits: asNullableNumber(gpaRaw.daa_earned_credits),
       };
 
       setRoadmap(normalizedRoadmap);

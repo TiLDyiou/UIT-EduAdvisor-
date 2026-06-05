@@ -104,7 +104,7 @@ async def list_courses(
     search: str | None = Query(default=None, max_length=128),
     kind: str | None = Query(default=None, max_length=32),
     difficulty: str | None = Query(default=None, max_length=16),
-    limit: int = Query(default=20, ge=1, le=100),
+    limit: int = Query(default=20, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
 ) -> AdminCourseListResponse:
     base_query = _course_query(search, kind, difficulty)
@@ -204,6 +204,7 @@ async def update_course(
         "credits": row.credits,
         "kind": row.kind,
         "difficulty": row.difficulty,
+        "is_active": row.is_active,
     }
     for key, value in changes.items():
         setattr(row, key, value)
@@ -233,6 +234,7 @@ async def update_course(
                 "credits": row.credits,
                 "kind": row.kind,
                 "difficulty": row.difficulty,
+                "is_active": row.is_active,
             },
         },
         ip_address=_client_ip(request),

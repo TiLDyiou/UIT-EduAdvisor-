@@ -117,8 +117,6 @@ async def test_admin_tooltip_crud_and_public_endpoint(client, admin_user, db_ses
     csrf = await _admin_login_and_csrf(client, admin_user)
     policy = PolicyDocument(
         title="QD 1",
-        version="v1",
-        effective_year=2026,
         tag="general",
         file_path="/private/policy-v1.pdf",
         source_filename="policy-v1.pdf",
@@ -157,6 +155,7 @@ async def test_admin_tooltip_crud_and_public_endpoint(client, admin_user, db_ses
         headers={"X-CSRF-Token": csrf},
     )
     assert dup.status_code == 409
+    await db_session.rollback()
     rows = await db_session.execute(select(TooltipTerm).where(TooltipTerm.id == tooltip_id))
     assert rows.scalar_one().is_active is True
 

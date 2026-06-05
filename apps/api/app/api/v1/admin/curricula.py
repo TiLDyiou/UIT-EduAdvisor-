@@ -27,6 +27,8 @@ from app.schemas.admin.curricula import (
     AdminCurriculumTermResponse,
     AdminCurriculumUpdateRequest,
     AdminElectiveGroupResponse,
+    AdminMajorListItem,
+    AdminMajorListResponse,
 )
 
 router = APIRouter(prefix="/admin/curricula", tags=["admin-curricula"])
@@ -88,6 +90,7 @@ async def _load_curriculum_detail(db: AsyncSession, curriculum: Curriculum) -> A
         name=curriculum.name,
         effective_year=curriculum.effective_year,
         total_credits=curriculum.total_credits,
+        is_active=curriculum.is_active,
         terms=[
             AdminCurriculumTermResponse(
                 id=t.id,
@@ -124,7 +127,7 @@ async def list_curricula(
     _: Annotated[AdminUser, Depends(get_current_admin)],
     major_id: int | None = Query(default=None, gt=0),
     effective_year: int | None = Query(default=None, ge=2000, le=2100),
-    limit: int = Query(default=20, ge=1, le=100),
+    limit: int = Query(default=20, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
 ) -> AdminCurriculumListResponse:
     base_query = _curriculum_query(major_id, effective_year)
@@ -142,10 +145,26 @@ async def list_curricula(
             name=row.name,
             effective_year=row.effective_year,
             total_credits=row.total_credits,
+            is_active=row.is_active,
         )
         for row in rows.scalars().all()
     ]
     return AdminCurriculumListResponse(items=items, total=total or 0, limit=limit, offset=offset)
+
+
+@router.get("/majors", response_model=AdminMajorListResponse)
+async def list_majors(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[AdminUser, Depends(get_current_admin)],
+) -> AdminMajorListResponse:
+    res = await db.execute(select(Major).order_by(Major.name.asc()))
+    rows = res.scalars().all()
+    items = [
+        AdminMajorListItem(id=row.id, code=row.code, name=row.name)
+        for row in rows
+    ]
+    return AdminMajorListResponse(items=items)
+
 
 
 @router.post(
@@ -160,12 +179,22 @@ async def create_curriculum(
     db: Annotated[AsyncSession, Depends(get_db)],
     admin: Annotated[AdminUser, Depends(get_current_admin)],
 ) -> AdminCurriculumDetailResponse:
-    major_exists = await db.scalar(select(func.count()).select_from(Major).where(Major.id == body.major_id))
-    if not major_exists:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="major_not_found")
+    # Resolve major: by ID or find-or-create by code
+    if body.major_id is not None:
+        res = await db.execute(select(Major).where(Major.id == body.major_id).limit(1))
+        major = res.scalar_one_or_none()
+        if major is None:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="major_not_found")
+    else:
+        res = await db.execute(select(Major).where(Major.code == body.major_code).limit(1))
+        major = res.scalar_one_or_none()
+        if major is None:
+            major = Major(code=body.major_code, name=body.major_name)
+            db.add(major)
+            await db.flush()
 
     row = Curriculum(
-        major_id=body.major_id,
+        major_id=major.id,
         name=body.name,
         effective_year=body.effective_year,
         total_credits=body.total_credits,
@@ -215,6 +244,7 @@ async def update_curriculum(
             "name": row.name,
             "effective_year": row.effective_year,
             "total_credits": row.total_credits,
+            "is_active": row.is_active,
         }
         for key, value in changes.items():
             setattr(row, key, value)
@@ -231,6 +261,7 @@ async def update_curriculum(
                     "name": row.name,
                     "effective_year": row.effective_year,
                     "total_credits": row.total_credits,
+                    "is_active": row.is_active,
                 },
             },
             ip_address=_client_ip(request),

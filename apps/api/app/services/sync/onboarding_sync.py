@@ -25,6 +25,7 @@ from app.services.daa.parser import (
     parse_grades_tables,
     parse_profile_name,
     parse_schedule_rows,
+    parse_grades_summary,
 )
 from app.services.moodle.client import moodle_get_text, moodle_login
 from app.services.moodle.parser import parse_due_datetime, parse_upcoming_deadlines
@@ -340,6 +341,21 @@ async def run_onboarding_sync(
         async with maker() as session:
             await _persist_grades(session, student_id, grade_rows)
             await session.commit()
+
+        # Crawl and parse GPA summary from /sinhvien/kqhoctap
+        try:
+            summary_html = await daa_get_text(daa_client, settings.daa_grades_summary_path)
+            summary_data = parse_grades_summary(summary_html)
+            summary.update({
+                "daa_dtbc_10": summary_data.get("dtbc_10"),
+                "daa_dtbc_4": summary_data.get("dtbc_4"),
+                "daa_dtbctl_10": summary_data.get("dtbctl_10"),
+                "daa_dtbctl_4": summary_data.get("dtbctl_4"),
+                "daa_earned_credits": summary_data.get("earned_credits"),
+            })
+        except Exception as exc:
+            logger.warning("Failed to parse grades summary from DAA: %s", exc)
+
 
         await _emit(redis, job_id, "daa_schedule", 50, "Đang đồng bộ thời khóa biểu")
         sched_html = await daa_get_text(daa_client, settings.daa_schedule_path)

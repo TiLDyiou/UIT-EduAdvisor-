@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     daa_login_path: str = "/user"
     daa_profile_path: str = "/user"
     daa_grades_path: str = "/sinhvien/tracuu/kqht"
+    daa_grades_summary_path: str = "/sinhvien/kqhoctap"
     daa_schedule_path: str = "/sinhvien/tkb"
     daa_exams_path: str = "/sinhvien/tracuu/lichthi"
 

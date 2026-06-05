@@ -1,15 +1,27 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, field_validator
+from typing import Self
+
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 ALLOWED_ELECTIVE_RULE_TYPES = {"min_credits", "min_courses"}
 
 
 class AdminCurriculumCreateRequest(BaseModel):
-    major_id: int = Field(gt=0)
+    major_id: int | None = Field(default=None, gt=0)
+    major_code: str | None = Field(default=None, min_length=1, max_length=32)
+    major_name: str | None = Field(default=None, min_length=1, max_length=512)
     name: str = Field(min_length=1, max_length=512)
     effective_year: int = Field(ge=2000, le=2100)
     total_credits: int = Field(gt=0, le=300)
+
+    @model_validator(mode="after")
+    def _require_major_ref(self) -> Self:
+        if self.major_id is None and not self.major_code:
+            raise ValueError("Cần truyền major_id hoặc major_code + major_name")
+        if self.major_id is None and self.major_code and not self.major_name:
+            raise ValueError("major_name bắt buộc khi dùng major_code")
+        return self
 
     @field_validator("name")
     @classmethod
@@ -24,6 +36,7 @@ class AdminCurriculumUpdateRequest(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=512)
     effective_year: int | None = Field(default=None, ge=2000, le=2100)
     total_credits: int | None = Field(default=None, gt=0, le=300)
+    is_active: bool | None = None
 
     @field_validator("name")
     @classmethod
@@ -81,6 +94,7 @@ class AdminCurriculumListItem(BaseModel):
     name: str
     effective_year: int
     total_credits: int
+    is_active: bool
 
 
 class AdminCurriculumListResponse(BaseModel):
@@ -115,5 +129,17 @@ class AdminCurriculumDetailResponse(BaseModel):
     name: str
     effective_year: int
     total_credits: int
+    is_active: bool
     terms: list[AdminCurriculumTermResponse]
     elective_groups: list[AdminElectiveGroupResponse]
+
+
+class AdminMajorListItem(BaseModel):
+    id: int
+    code: str
+    name: str
+
+
+class AdminMajorListResponse(BaseModel):
+    items: list[AdminMajorListItem]
+

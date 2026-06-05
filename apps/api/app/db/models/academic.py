@@ -30,13 +30,14 @@ from app.db.models.mixins import BigIntPkMixin, TimestampMixin, TimestampUpdateM
 class Course(BigIntPkMixin, TimestampUpdateMixin, Base):
     __tablename__ = "courses"
 
-    code: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
+    code: Mapped[str | None] = mapped_column(String(32), unique=True, nullable=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
-    credits: Mapped[int] = mapped_column(Integer, nullable=False)
+    credits: Mapped[int | None] = mapped_column(Integer, nullable=True)
     kind: Mapped[str] = mapped_column(String(32), nullable=False)
     difficulty: Mapped[str | None] = mapped_column(String(16), nullable=True)
     admin_locked: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     admin_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
 
 
 class CourseResource(BigIntPkMixin, TimestampUpdateMixin, Base):
@@ -224,6 +225,7 @@ class Curriculum(BigIntPkMixin, Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     effective_year: Mapped[int] = mapped_column(Integer, nullable=False)
     total_credits: Mapped[int] = mapped_column(Integer, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
 
     major: Mapped[Major] = relationship(back_populates="curricula")
     terms: Mapped[list[CurriculumTerm]] = relationship(back_populates="curriculum")

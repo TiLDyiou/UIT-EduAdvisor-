@@ -249,9 +249,98 @@ def parse_exam_rows(html: str) -> list[dict[str, str | None]]:
                 continue
             out.append(
                 {
-                    "course_code": cells[0],
+                    "course_code": _extract_course_code(cells[0]),
                     "exam_datetime": cells[1] if len(cells) > 1 else None,
                     "room": cells[-1],
                 }
             )
     return out
+
+
+def _grade_10_to_4(g10: float) -> float:
+    """Convert UIT grade scale 10 to scale 4."""
+    if g10 >= 9.0:
+        return 4.0
+    if g10 >= 8.0:
+        return 3.5
+    if g10 >= 7.0:
+        return 3.0
+    if g10 >= 6.0:
+        return 2.5
+    if g10 >= 5.0:
+        return 2.0
+    if g10 >= 4.0:
+        return 1.5
+    if g10 >= 3.0:
+        return 1.0
+    return 0.0
+
+
+def parse_grades_summary(html: str) -> dict[str, float | int | None]:
+    """Parse ĐTBC, ĐTBCTL and earned credits from /sinhvien/kqhoctap.
+
+    DAA page structure (last 4 <tr> of the grades table):
+      - "So tin chi da hoc"           → credits in td[3]
+      - "So tin chi tich luy"         → credits in td[3]
+      - "Diem trung binh chung"       → GPA (scale 10) in td[8]
+      - "Diem trung binh chung tich luy" → GPA (scale 10) in td[8]
+    Scale 4 is computed locally using UIT conversion table.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    result: dict[str, float | int | None] = {
+        "dtbc_10": None,
+        "dtbc_4": None,
+        "dtbctl_10": None,
+        "dtbctl_4": None,
+        "earned_credits": None,
+    }
+
+    all_trs = soup.find_all("tr")
+    if len(all_trs) < 4:
+        return result
+
+    decimal_re = re.compile(r"\d+[.,]\d+")
+
+    def _text(el) -> str:
+        return el.get_text(" ", strip=True) if el else ""
+
+    def _norm(text: str) -> str:
+        lowered = text.strip().lower()
+        # Vietnamese đ (U+0111) is not decomposed by NFKD, replace explicitly
+        lowered = lowered.replace("\u0111", "d").replace("\u0110", "d")
+        return unicodedata.normalize("NFKD", lowered).encode("ascii", "ignore").decode()
+
+    for tr in all_trs:
+        cells = tr.find_all("td")
+        if not cells:
+            continue
+        label = _norm(_text(cells[0]))
+
+        if "diem trung binh chung tich luy" in label:
+            # ĐTBCTL row — GPA in cells[6] (colspan=3 label reduces 10 cols to 8)
+            if len(cells) > 6:
+                m = decimal_re.search(_text(cells[6]))
+                if m:
+                    val = float(m.group(0).replace(",", "."))
+                    result["dtbctl_10"] = val
+                    result["dtbctl_4"] = _grade_10_to_4(val)
+
+        elif "diem trung binh chung" in label:
+            # ĐTBC row — GPA in cells[6]
+            if len(cells) > 6:
+                m = decimal_re.search(_text(cells[6]))
+                if m:
+                    val = float(m.group(0).replace(",", "."))
+                    result["dtbc_10"] = val
+                    result["dtbc_4"] = _grade_10_to_4(val)
+
+        elif "so tin chi tich luy" in label:
+            # Earned credits in the 4th cell (index 3), or next available int
+            for cell in cells[1:]:
+                txt = _text(cell).strip()
+                if re.fullmatch(r"\d+", txt):
+                    result["earned_credits"] = int(txt)
+                    break
+
+    return result
+

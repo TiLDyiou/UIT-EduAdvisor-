@@ -16,6 +16,11 @@ class GpaOverviewResponse(BaseModel):
     gpa_4: Decimal
     total_credits: int
     earned_credits: int
+    daa_dtbc_10: Decimal | None = None
+    daa_dtbc_4: Decimal | None = None
+    daa_dtbctl_10: Decimal | None = None
+    daa_dtbctl_4: Decimal | None = None
+    daa_earned_credits: int | None = None
 
 
 class SimulateEntry(BaseModel):

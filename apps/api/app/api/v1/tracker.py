@@ -20,7 +20,7 @@ from app.db.models.academic import (
     ElectiveGroupCourse,
     Enrollment,
 )
-from app.db.models.core_security import Student
+from app.db.models.core_security import Student, SyncJob
 from app.deps import get_current_student, get_db
 from app.schemas.m3 import (
     ElectiveGroupStatusResponse,
@@ -99,11 +99,43 @@ async def gpa_overview(
     enrollments = await _load_enrollments(db, student.id)
     rows = [_enrollment_to_row(e) for e in enrollments]
     result = compute_cumulative_gpa(rows)
+
+    # Get official DAA GPAs from the latest successful onboarding SyncJob
+    res = await db.execute(
+        select(SyncJob)
+        .where(
+            SyncJob.student_id == student.id,
+            SyncJob.status == "completed",
+            SyncJob.kind == "onboarding",
+        )
+        .order_by(SyncJob.finished_at.desc())
+        .limit(1)
+    )
+    job = res.scalar_one_or_none()
+
+    daa_dtbc_10 = None
+    daa_dtbc_4 = None
+    daa_dtbctl_10 = None
+    daa_dtbctl_4 = None
+    daa_earned_credits = None
+
+    if job and job.result_summary:
+        daa_dtbc_10 = job.result_summary.get("daa_dtbc_10")
+        daa_dtbc_4 = job.result_summary.get("daa_dtbc_4")
+        daa_dtbctl_10 = job.result_summary.get("daa_dtbctl_10")
+        daa_dtbctl_4 = job.result_summary.get("daa_dtbctl_4")
+        daa_earned_credits = job.result_summary.get("daa_earned_credits")
+
     return GpaOverviewResponse(
         gpa_10=result.gpa_10,
         gpa_4=result.gpa_4,
         total_credits=result.total_credits,
         earned_credits=result.earned_credits,
+        daa_dtbc_10=daa_dtbc_10,
+        daa_dtbc_4=daa_dtbc_4,
+        daa_dtbctl_10=daa_dtbctl_10,
+        daa_dtbctl_4=daa_dtbctl_4,
+        daa_earned_credits=daa_earned_credits,
     )
 
 

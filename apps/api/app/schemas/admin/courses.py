@@ -4,7 +4,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-ALLOWED_COURSE_KINDS = {"core", "elective", "thesis", "internship", "general"}
+ALLOWED_COURSE_KINDS = {"core", "elective", "thesis", "internship", "general", "foundation", "major", "other", "thesis_internship"}
 ALLOWED_COURSE_DIFFICULTIES = {"easy", "medium", "hard"}
 
 
@@ -13,19 +13,18 @@ def normalize_course_code(value: str) -> str:
 
 
 class AdminCourseBasePayload(BaseModel):
-    code: str = Field(min_length=2, max_length=32)
+    code: str | None = Field(default=None, min_length=2, max_length=32)
     name: str = Field(min_length=1, max_length=512)
-    credits: int = Field(gt=0, le=20)
+    credits: int | None = Field(default=None, gt=0, le=20)
     kind: str = Field(min_length=2, max_length=32)
     difficulty: str | None = Field(default=None, max_length=16)
 
     @field_validator("code")
     @classmethod
-    def _normalize_code(cls, value: str) -> str:
-        normalized = normalize_course_code(value)
-        if not normalized:
-            raise ValueError("code_required")
-        return normalized
+    def _normalize_code(cls, value: str | None) -> str | None:
+        if not value:
+            return None
+        return normalize_course_code(value)
 
     @field_validator("name")
     @classmethod
@@ -64,16 +63,14 @@ class AdminCourseUpdateRequest(BaseModel):
     credits: int | None = Field(default=None, gt=0, le=20)
     kind: str | None = Field(default=None, min_length=2, max_length=32)
     difficulty: str | None = Field(default=None, max_length=16)
+    is_active: bool | None = None
 
     @field_validator("code")
     @classmethod
     def _normalize_code(cls, value: str | None) -> str | None:
-        if value is None:
+        if not value:
             return None
-        normalized = normalize_course_code(value)
-        if not normalized:
-            raise ValueError("code_required")
-        return normalized
+        return normalize_course_code(value)
 
     @field_validator("name")
     @classmethod
@@ -110,12 +107,13 @@ class AdminCourseListItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    code: str
+    code: str | None
     name: str
-    credits: int
+    credits: int | None
     kind: str
     difficulty: str | None
     admin_locked: bool
+    is_active: bool
     admin_updated_at: datetime | None
     created_at: datetime
     updated_at: datetime
