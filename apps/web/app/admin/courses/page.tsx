@@ -16,6 +16,15 @@ type Course = {
 };
 type CourseList = { items: Course[] };
 
+type CoursePrerequisiteItem = {
+  prerequisite_id: number;
+  kind: "prerequisite" | "prior";
+};
+
+type CourseDetail = Course & {
+  prerequisites: CoursePrerequisiteItem[];
+};
+
 const COURSE_KIND_MAP: Record<string, string> = {
   general: "Môn Đại cương",
   foundation: "Môn cơ sở ngành",
@@ -40,6 +49,7 @@ export default function AdminCoursesPage() {
   const [items, setItems] = useState<Course[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingPrereqs, setEditingPrereqs] = useState<CoursePrerequisiteItem[] | null>(null);
 
   const editData = editingId ? items.find((i) => i.id === editingId) : null;
 
@@ -57,14 +67,30 @@ export default function AdminCoursesPage() {
     if (me) void refresh();
   }, [me]);
 
+  useEffect(() => {
+    if (!editingId) {
+      setEditingPrereqs(null);
+      return;
+    }
+    apiJson<CourseDetail>(`/api/v1/admin/courses/${editingId}`).then((r) => {
+      if (r.ok && r.data) {
+        setEditingPrereqs(r.data.prerequisites);
+      } else {
+        setEditingPrereqs([]);
+      }
+    });
+  }, [editingId]);
+
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!me) return;
     setError(null);
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const rawCode = String(fd.get("code") || "").trim();
     const payload = {
-      code: fd.get("code") ? String(fd.get("code")) : null,
-      name: String(fd.get("name") || ""),
+      code: rawCode ? rawCode : null,
+      name: String(fd.get("name") || "").trim(),
       credits: fd.get("credits") ? Number(fd.get("credits")) : null,
       kind: String(fd.get("kind") || ""),
       difficulty: String(fd.get("difficulty") || ""),
@@ -80,6 +106,15 @@ export default function AdminCoursesPage() {
         setError(r.error || "Không thể cập nhật môn học");
         return;
       }
+
+      if (editingPrereqs !== null) {
+        await apiJson(`/api/v1/admin/courses/${editingId}/prerequisites`, {
+          method: "PUT",
+          headers: { "X-CSRF-Token": me.csrf_token },
+          body: JSON.stringify({ prerequisites: editingPrereqs }),
+        });
+      }
+
       setItems((prev) => prev.map((c) => (c.id === editingId ? r.data! : c)));
       setEditingId(null);
     } else {
@@ -94,7 +129,7 @@ export default function AdminCoursesPage() {
       }
       setItems((prev) => [...prev, r.data!]);
     }
-    e.currentTarget.reset();
+    form.reset();
   }
 
   async function toggleActive(courseId: number, currentActive: boolean) {
@@ -210,6 +245,86 @@ export default function AdminCoursesPage() {
             </select>
           </div>
         </div>
+
+        {editingId && editingPrereqs !== null && (
+          <div className="border-t border-neutral-900 pt-4 space-y-3">
+            <label className="text-xs text-neutral-400 font-medium">Môn tiên quyết / Môn học trước</label>
+            <div className="flex flex-wrap gap-2">
+              {editingPrereqs.map((p) => {
+                const pCourse = items.find((i) => i.id === p.prerequisite_id);
+                return (
+                  <span
+                    key={p.prerequisite_id}
+                    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs ${
+                      p.kind === "prerequisite"
+                        ? "bg-rose-950/30 border-rose-900/50 text-rose-400"
+                        : "bg-blue-950/30 border-blue-900/50 text-blue-400"
+                    }`}
+                  >
+                    <span className="font-semibold uppercase text-[10px] tracking-wider opacity-80 mr-1">
+                      {p.kind === "prerequisite" ? "Tiên quyết" : "Học trước"}
+                    </span>
+                    {pCourse ? `${pCourse.code || "[Không mã]"} - ${pCourse.name}` : `ID: ${p.prerequisite_id}`}
+                    <button
+                      type="button"
+                      className="hover:opacity-70 ml-1"
+                      onClick={() => {
+                        setEditingPrereqs((prev) => (prev ? prev.filter((item) => item.prerequisite_id !== p.prerequisite_id) : []));
+                      }}
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </span>
+                );
+              })}
+              {editingPrereqs.length === 0 && (
+                <span className="text-xs text-neutral-500 italic py-1">Chưa có môn tiên quyết/học trước nào được gán</span>
+              )}
+            </div>
+            <div className="flex gap-2 w-full md:max-w-2xl">
+              <select
+                id="prereq-select"
+                className="flex-1 rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-2 text-sm text-neutral-200 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 truncate cursor-pointer"
+              >
+                <option value="">-- Chọn môn học --</option>
+                {items
+                  .filter((i) => i.id !== editingId && !editingPrereqs.some((p) => p.prerequisite_id === i.id))
+                  .map((i) => (
+                    <option key={i.id} value={i.id}>
+                      {i.code || "[Không mã]"} - {i.name}
+                    </option>
+                  ))}
+              </select>
+              <select
+                id="prereq-kind"
+                className="rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-2 text-sm text-neutral-200 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 shrink-0 cursor-pointer"
+              >
+                <option value="prerequisite">Môn tiên quyết</option>
+                <option value="prior">Môn học trước</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => {
+                  const sel = document.getElementById("prereq-select") as HTMLSelectElement;
+                  const kindSel = document.getElementById("prereq-kind") as HTMLSelectElement;
+                  if (sel && sel.value && kindSel && kindSel.value) {
+                    setEditingPrereqs((prev) => [
+                      ...(prev || []),
+                      { prerequisite_id: Number(sel.value), kind: kindSel.value as "prerequisite" | "prior" },
+                    ]);
+                    sel.value = "";
+                  }
+                }}
+                className="rounded-lg bg-neutral-800 px-4 py-2 text-sm font-medium text-neutral-300 hover:bg-neutral-700 hover:text-white transition-colors shrink-0"
+              >
+                Thêm môn
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-2">
           <button className="flex-1 rounded-lg bg-cyan-600 py-2.5 font-semibold text-black hover:bg-cyan-500 hover:shadow-lg hover:shadow-cyan-600/20 active:scale-[0.98] transition-all">
             {editingId ? "Lưu thay đổi" : "Tạo môn học"}

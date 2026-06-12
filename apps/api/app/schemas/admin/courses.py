@@ -126,9 +126,14 @@ class AdminCourseListResponse(BaseModel):
     offset: int
 
 
+class CoursePrerequisiteItem(BaseModel):
+    prerequisite_id: int
+    kind: str = Field(pattern="^(prerequisite|prior)$")
+
+
 class AdminCourseDetailResponse(AdminCourseListItem):
-    prerequisite_ids: list[int]
+    prerequisites: list[CoursePrerequisiteItem]
 
 
 class AdminCoursePrerequisitesRequest(BaseModel):
-    prerequisite_ids: list[int] = Field(default_factory=list)
+    prerequisites: list[CoursePrerequisiteItem] = Field(default_factory=list)

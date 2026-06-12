@@ -650,8 +650,8 @@ export default function AdminCurriculaPage() {
                         const filteredCourses = coursesList.filter(c => {
                           if (addedCourseIds.has(c.id)) return false;
                           if (!tSearch) return true;
-                          return c.name.toLowerCase().includes(tSearch.toLowerCase()) || 
-                                 c.code.toLowerCase().includes(tSearch.toLowerCase());
+                          return (c.name?.toLowerCase() || "").includes(tSearch.toLowerCase()) || 
+                                 (c.code?.toLowerCase() || "").includes(tSearch.toLowerCase());
                         });
 
                         return (
@@ -715,7 +715,7 @@ export default function AdminCurriculaPage() {
 
                             {/* Add course controls */}
                             <div className="border-t border-neutral-900 pt-3 space-y-2">
-                              <div className="flex gap-2">
+                              <div className="relative flex gap-2 w-full">
                                 <input
                                   type="text"
                                   placeholder="Tìm nhanh môn học..."
@@ -727,17 +727,44 @@ export default function AdminCurriculaPage() {
                                   <button
                                     type="button"
                                     onClick={() => setSearchTerms({ ...searchTerms, [tNum]: "" })}
-                                    className="text-[10px] text-neutral-500 hover:text-neutral-300 px-1"
+                                    className="text-[10px] text-neutral-500 hover:text-neutral-300 px-1 shrink-0"
                                   >
                                     Xoá
                                   </button>
                                 ) : null}
+
+                                {tSearch && (
+                                  <ul className="absolute top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-neutral-800 border border-neutral-700 rounded-lg shadow-2xl z-50 py-1">
+                                    {filteredCourses.length === 0 ? (
+                                      <li className="px-3 py-2 text-[11px] text-neutral-400 italic">
+                                        Không tìm thấy môn học phù hợp
+                                      </li>
+                                    ) : (
+                                      filteredCourses.map(c => (
+                                        <li
+                                          key={c.id}
+                                          className="px-3 py-2 text-[11px] text-neutral-200 hover:bg-cyan-600 hover:text-black cursor-pointer truncate transition-colors flex items-center gap-2"
+                                          onClick={() => {
+                                            const cSelect = document.getElementById(`course-select-${tNum}`) as HTMLSelectElement | null;
+                                            if (cSelect) {
+                                              cSelect.value = String(c.id);
+                                            }
+                                            setSearchTerms({ ...searchTerms, [tNum]: "" });
+                                          }}
+                                        >
+                                          <span className="font-mono text-cyan-400 font-semibold">{c.code}</span>
+                                          <span>{c.name} ({c.credits} TC)</span>
+                                        </li>
+                                      ))
+                                    )}
+                                  </ul>
+                                )}
                               </div>
                               
-                              <div className="flex gap-2">
+                              <div className="flex gap-2 w-full">
                                 <select
                                   id={`course-select-${tNum}`}
-                                  className="flex-1 rounded bg-neutral-900 border border-neutral-800 px-2 py-1 text-[11px] text-neutral-350 focus:outline-none focus:border-cyan-500 cursor-pointer text-neutral-300"
+                                  className="flex-1 min-w-0 rounded bg-neutral-900 border border-neutral-800 px-2 py-1 text-[11px] focus:outline-none focus:border-cyan-500 cursor-pointer text-neutral-300 truncate"
                                 >
                                   {filteredCourses.length === 0 ? (
                                     <option value="">-- Không có môn khả dụng --</option>
@@ -755,7 +782,7 @@ export default function AdminCurriculaPage() {
                                 
                                 <select
                                   id={`req-select-${tNum}`}
-                                  className="rounded bg-neutral-900 border border-neutral-800 px-2 py-1 text-[11px] text-neutral-300 focus:outline-none focus:border-cyan-500 cursor-pointer"
+                                  className="shrink-0 rounded bg-neutral-900 border border-neutral-800 px-2 py-1 text-[11px] text-neutral-300 focus:outline-none focus:border-cyan-500 cursor-pointer"
                                 >
                                   <option value="true">Bắt buộc</option>
                                   <option value="false">Tự chọn</option>
@@ -775,7 +802,7 @@ export default function AdminCurriculaPage() {
                                     );
                                     cSelect.value = "";
                                   }}
-                                  className="rounded bg-cyan-600 px-3 py-1 text-[11px] font-bold text-black hover:bg-cyan-500 transition-colors"
+                                  className="shrink-0 rounded bg-cyan-600 px-3 py-1 text-[11px] font-bold text-black hover:bg-cyan-500 transition-colors whitespace-nowrap"
                                 >
                                   Thêm
                                 </button>

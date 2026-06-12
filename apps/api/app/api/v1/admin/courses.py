@@ -50,13 +50,13 @@ def _course_query(search: str | None, kind: str | None, difficulty: str | None) 
     return query
 
 
-async def _load_prerequisite_ids(db: AsyncSession, course_id: int) -> list[int]:
+async def _load_prerequisites(db: AsyncSession, course_id: int) -> list[dict]:
     rows = await db.execute(
-        select(CoursePrerequisite.prerequisite_id)
+        select(CoursePrerequisite)
         .where(CoursePrerequisite.course_id == course_id)
         .order_by(CoursePrerequisite.prerequisite_id.asc())
     )
-    return list(rows.scalars().all())
+    return [{"prerequisite_id": r.prerequisite_id, "kind": r.kind} for r in rows.scalars().all()]
 
 
 async def _assert_no_prerequisite_cycle(
@@ -156,7 +156,7 @@ async def create_course(
     )
     await db.commit()
     await db.refresh(row)
-    return AdminCourseDetailResponse.model_validate({**row.__dict__, "prerequisite_ids": []})
+    return AdminCourseDetailResponse.model_validate({**row.__dict__, "prerequisites": []})
 
 
 async def _get_course_or_404(db: AsyncSession, course_id: int) -> Course:
@@ -174,8 +174,8 @@ async def get_course(
     _: Annotated[AdminUser, Depends(get_current_admin)],
 ) -> AdminCourseDetailResponse:
     row = await _get_course_or_404(db, course_id)
-    prerequisite_ids = await _load_prerequisite_ids(db, course_id)
-    return AdminCourseDetailResponse.model_validate({**row.__dict__, "prerequisite_ids": prerequisite_ids})
+    prerequisites = await _load_prerequisites(db, course_id)
+    return AdminCourseDetailResponse.model_validate({**row.__dict__, "prerequisites": prerequisites})
 
 
 @router.patch(
@@ -193,9 +193,9 @@ async def update_course(
     row = await _get_course_or_404(db, course_id)
     changes = body.model_dump(exclude_unset=True)
     if not changes:
-        prerequisite_ids = await _load_prerequisite_ids(db, course_id)
+        prerequisites = await _load_prerequisites(db, course_id)
         return AdminCourseDetailResponse.model_validate(
-            {**row.__dict__, "prerequisite_ids": prerequisite_ids}
+            {**row.__dict__, "prerequisites": prerequisites}
         )
 
     before = {
@@ -241,8 +241,8 @@ async def update_course(
     )
     await db.commit()
     await db.refresh(row)
-    prerequisite_ids = await _load_prerequisite_ids(db, row.id)
-    return AdminCourseDetailResponse.model_validate({**row.__dict__, "prerequisite_ids": prerequisite_ids})
+    prerequisites = await _load_prerequisites(db, row.id)
+    return AdminCourseDetailResponse.model_validate({**row.__dict__, "prerequisites": prerequisites})
 
 
 async def _course_usage_refs(db: AsyncSession, course_id: int) -> dict[str, int]:
@@ -353,7 +353,15 @@ async def set_course_prerequisites(
     admin: Annotated[AdminUser, Depends(get_current_admin)],
 ) -> AdminCourseDetailResponse:
     row = await _get_course_or_404(db, course_id)
-    deduped_prereq_ids = sorted(set(body.prerequisite_ids))
+    
+    seen = set()
+    deduped_prereqs = []
+    for p in body.prerequisites:
+        if p.prerequisite_id not in seen:
+            seen.add(p.prerequisite_id)
+            deduped_prereqs.append(p)
+            
+    deduped_prereq_ids = [p.prerequisite_id for p in deduped_prereqs]
 
     if deduped_prereq_ids:
         res = await db.execute(select(Course.id).where(Course.id.in_(deduped_prereq_ids)))
@@ -367,10 +375,10 @@ async def set_course_prerequisites(
 
     await _assert_no_prerequisite_cycle(db, course_id, deduped_prereq_ids)
 
-    current_prereq_ids = await _load_prerequisite_ids(db, course_id)
+    current_prereqs = await _load_prerequisites(db, course_id)
     await db.execute(delete(CoursePrerequisite).where(CoursePrerequisite.course_id == course_id))
-    for prerequisite_id in deduped_prereq_ids:
-        db.add(CoursePrerequisite(course_id=course_id, prerequisite_id=prerequisite_id))
+    for p in deduped_prereqs:
+        db.add(CoursePrerequisite(course_id=course_id, prerequisite_id=p.prerequisite_id, kind=p.kind))
 
     row.admin_locked = True
     row.admin_updated_at = datetime.now(UTC)
@@ -381,11 +389,11 @@ async def set_course_prerequisites(
         action="admin.course.prerequisites_set",
         target_type="course",
         target_id=str(course_id),
-        payload={"before": current_prereq_ids, "after": deduped_prereq_ids},
+        payload={"before": current_prereqs, "after": [p.model_dump() for p in deduped_prereqs]},
         ip_address=_client_ip(request),
     )
     await db.commit()
     await db.refresh(row)
     return AdminCourseDetailResponse.model_validate(
-        {**row.__dict__, "prerequisite_ids": deduped_prereq_ids}
+        {**row.__dict__, "prerequisites": [p.model_dump() for p in deduped_prereqs]}
     )

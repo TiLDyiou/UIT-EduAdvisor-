@@ -102,6 +102,7 @@ class CoursePrerequisite(Base):
         ForeignKey("courses.id", ondelete="CASCADE"),
         primary_key=True,
     )
+    kind: Mapped[str] = mapped_column(String(32), nullable=False, server_default="prerequisite")
 
     course: Mapped[Course] = relationship(foreign_keys=[course_id])
     prerequisite: Mapped[Course] = relationship(foreign_keys=[prerequisite_id])
