@@ -1,0 +1,101 @@
+Mã MH,Tên Môn Học,TC/SL,LT,TH
+Hệ Liên Kết,NT6,6,Sáng tạo,Là khả năng kết nối những thứ có liên quan lại với nhau để tạo thành một sản phẩm hữu dụng; thể hiện qua việc lên kế hoạch và tạo ra một sản phẩm.
+Hệ Liên Kết,KN6,6,Hành động thích ứng,Là khả năng thay đổi phương thức hoạt động (phương pháp) để đáp ứng những yêu cầu mới.
+SS003,Tư tưởng Hồ Chí MinhHo Chi Minh's ideology,2,2,0
+SS006,Pháp luật đại cươngIntroduction to Law,2,2,0
+SS007,Triết học Mác – LêninPhilosophy Marx-Lenin,3,3,0
+SS008,Kinh tế chính trị Mác – LêninMarxist Leninist political economy,2,2,0
+SS009,Chủ nghĩa xã hội khoa họcScientific socialism,2,2,0
+SS010,Lịch sử Đảng Cộng sản Việt NamHistory of Vietnamese communist party,2,2,0
+PE231,Giáo dục thể chất 1Physical Education 1,Tính riêng,0,0
+PE232,Giáo dục thể chất 2Physical Education 2,Tính riêng,0,0
+ME001,Giáo dục quốc phòngNational Defense and Security Education,Tính riêng,0,0
+MA003,Đại số tuyến tínhLinear algebra,3,3,0
+MA005,Xác suất thống kêStatistical Probability,3,3,0
+IT001,Nhập môn Lập trìnhIntroduction to Programming,4,3,1
+MM005,Nhập môn marketingIntroduction to marketting,2,2,0
+MM006,Tâm lý học đại cươngIntroduction to psychology,2,2,0
+MM007,Tư duy sáng tạo và xu hướng thiết kế truyền thôngCreative Thinking and Media Design Trends,2,2,0
+MM008,Kỹ năng truyền thông giao tiếpCommunication Skills,2,2,0
+SS004,Kỹ năng nghề nghiệpProfessional Skill,2,2,0
+MM101,Giới thiệu ngành TTĐPTIntroduction to Multimedia,1,1,0
+IT004,Cơ sở dữ liệuDatabase,4,3,1
+MM102,Lý luận truyền thông đại chúngFoundation of mass communication,3,3,0
+MM103,Cơ sở tạo hình và nguyên lý thị giácBasics of form creation and visual principle,2,2,0
+MM110,Màu sắc và tâm lý thị giác trong thiết kế truyền thôngColor and visual perception psychology in media design,2,2,0
+MM104,Viết nội dung đa phương tiệnMultimedia content writing​,3,3,0
+MM105,Nhập môn kỹ thuật sản xuất nội dung đa phương tiệnIntroduction to multimedia production,3,2,1(*)
+MM106,Thu thập và phân tích khám phá dữ liệu TTĐPTData collection and exploratory analysis for multimedia,3,2,1(*)
+MM107,Học máy ứng dụng trong TTĐPTApplied machine learning for multimedia,3,2,1(*)
+MM108,Tiếp thị sốDigital marketting,3,2,1
+IT002,Lập trình hướng đối tượngObject oriented programming,4,3,1
+MM109,Thiết kế đồ họaGraphic design ​principles,4,3,1(*)
+Hệ Liên Kết,Hướng ngành AI ứng dụng trong TTĐPT,0,0,0
+MM201,Truyền thông và dư luận xã hộiMedia and public discourse,4,3,1(*)
+MM202,Học sâu ứng dụng trong truyền thông đa phương tiệnApplied deep learning for multimedia,4,3,1(*)
+MM203,Xử lý ngôn ngữ tự nhiên cho truyền thông đa phương tiệnNatural Language Processing​ for multimedia,4,3,1(*)
+MM204,Xử lý ảnh số và video trong TTĐPTDigital image and video processing for multimedia,4,3,1(*)
+MM205,Phân tích và hiểu nội dung đa phương thứcMultimodal data analysis and understanding,4,3,1(*)
+MM206,Dữ liệu lớn ứng dụng trong truyền thông đa phương tiệnBig data applied in multimedia,4,3,1(*)
+MM207,Hệ thống khai phá dữ liệu mạng xã hộiDeveloping social network data mining system,4,3,1(*)
+MM221,Chuyên đề các vấn đề hiện đại trong TTĐPTSeminar on modern topics in multimedia,3,3,0
+MM222,An ninh thông tin trong truyền thông đa phương tiệnInformation security in multimedia,4,3,0
+IE106,Thiết kế giao diện người dùngUser interface design,4,3,1(*)
+SE347,Công nghệ Web và ứng dụngWeb technology and application,4,3,1(*)
+MM208,Thiết kế và sản xuất ấn phẩmPublication design & production,4,3,1(*)
+MM209,Nghiệp vụ truyền và thông báo chíPress communication profession,4,3,1(*)
+MM210,"Kỹ thuật quay phim biên kịch và hậu kỳVideo recording, screen writing and post processing techniques)",4,3,1(*)
+MM211,Thực tế ảo và thực tế tăng cườngVirtual and Augmented Reality,4,3,1(*)
+MM212,Hoạt hìnhAnimation,3,2,1(*)
+MM213,Quản lý dự án truyền thông đa phương tiệnMultimedia project management,4,2,1
+SE102,Nhập môn phát triển gameIntroduction to game programming,3,2,1(*)
+MM003,Quản trị sự kiệnEvent management,4,3,1(*)
+MM214,Chiến lược phát triển thương hiệuBrand Development Strategy,3,3,0
+MM215,Quan hệ công chúng trong marketingPublic relation for marketing,3,3,0
+MM216,Tối ưu hóa và tiếp thị trên công cụ tìm kiếmSearch engine optimization and marketing,4,3,1(*)
+MM217,Tiếp thị cho sản phẩm dịch vụMarketing for service products,3,3,0
+MM218,Xây dựng kênh tiếp thị trực tuyếnBuilding online marketing channel,3,3,0
+MM219,Quản trị mối quan hệ khách hàng định hướng dữ liệuData driven customer relationship management,4,3,1(*)
+MM220,Phân tích dữ liệu truyền thông sốDigital media data analytics,4,3,1(*)
+MM301,Đồ án TTĐPTMultimedia projects,2,0,2
+MM302,Thực tập doanh nghiệpInternship,2,0,2
+MM304,Khởi nghiệp ngành TTĐPTStartup in multimedia,2,2,0
+MM***,Môn chuyên đềSpecial subjects,4,3,1
+MM504,Đồ án tốt nghiệpCapstone Project,6,0,6
+MM506,Đồ án tốt nghiệp tại doanh nghiệpInsdustry capstone project,10,0,10
+MM505,Khóa luận tốt nghiệpGraduation thesis,10,0,10
+MM210,"Kỹ thuật quay phim biên kịch và hậu kỳVideo recording, screen writing and post processing techniques",4,3,1(*)
+IT001,Nhập môn lập trình / Introduction to Programming,4,3,1
+MM101,Giới thiệu ngành TTĐPT / Introduction to Multimedia,1,1,0
+MM008,Kỹ năng truyền thông giao tiếp / Communication Skills,2,2,0
+MM006,Tâm lý học đại cương / Introduction to psychology,2,2,0
+ME001,Giáo dục quốc phòng / National Defense and Security Education,Tính riêng,0,0
+SS007,Triết học Mác-Lê nin / Philosophy Marx-Lenin,3,3,0
+MA005,Xác suất thống kê / Statistical Probability,3,3,0
+MM007,Tư duy sáng tạo và xu hướng thiết kế truyền thông / Creative thinking and media design trends,2,2,0
+IT004,Cơ sở dữ liệu / Database,4,3,1
+MM005,Nhập môn marketing / Introduction to marketting,2,2,0
+MM103,Cơ sở tạo hình và nguyên lý thị giác / Basics of form creation and visual principle,2,2,0
+MM110,Màu sắc và tâm lý thị giác trong thiết kế truyền thông / Color and visual perception psychology in media design,2,2,0
+MM102,Lý luận truyền thông đại chúng / Foundation of mass communication,3,3,0
+MM104,Viết nội dung đa phương tiện / Multimedia content writing​,3,3,0
+SS006,Pháp luật đại cương / Introduction to Law,2,2,0
+MM109,Thiết kế đồ họa​ / Introduction to graphic design,4,3,1(*)
+IT002,Lập trình hướng đối tượng / Object-oriented programming,4,3,1(*)
+MM105,Nhập môn kỹ thuật sản xuất nội dung đa phương tiện / Introduction to multimedia production,4,3,1(*)
+MM106,Thu thập và phân tích khám phá dữ liệu TTĐPT / Data collection and exploratory analysis for multimedia,4,3,1(*)
+SS008,Kinh tế chính trị Mác -Lê nin / Marxist Leninist political economy,2,2,0
+MM107,Học máy ứng dụng trong TTĐPT / Applied machine learning for multimedia,4,2,1(*)
+MM108,Tiếp thị số / Digital Marketing,4,3,1
+SS009,Chủ nghĩa xã hội khoa học / Scientific socialism,2,2,0
+SS010,Lịch sử Đảng cộng sản Việt Nam / History of Vietnamese communist party,2,2,0
+PE231,Giáo dục thể chất 1 / Physical education 1,Tính riêng,0,0
+SS004,Kỹ năng nghề nghiệp / Professional Skill,2,2,0
+SS003,Tư tưởng Hồ Chí Minh / Ho Chi Minh's ideology,2,2,0
+PE232,Giáo dục thể chất 2 / Physical education 2,Tính riêng,0,0
+MM301,Đồ án TTĐPT / Project of MultiMedia,2,0,2
+MM302,Thực tập doanh nghiệp / Internship,2,0,2
+MM***,Chuyên đề tốt nghiệp / Special graduation subject,4,0,0
+MM304,Đồ án tốt nghiệp / Capstone Project,6,0,0
+MM305,Đồ án tốt nghiệp tại doanh nghiệp / Insdustry capstone project,10,0,10
+MM306,Khóa luận tốt nghiệp / Thesis,10,0,10

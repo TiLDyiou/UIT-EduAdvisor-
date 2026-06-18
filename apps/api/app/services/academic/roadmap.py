@@ -168,11 +168,12 @@ def resolve_roadmap(
                 else:
                     status = STATUS_FAILED
             else:
-                # Enrolled but no grade yet
+                # Enrolled but no numeric grade
                 if enrollment.is_current_term:
                     status = STATUS_IN_PROGRESS
                 else:
-                    status = STATUS_NOT_STARTED
+                    # Past term with no grade = exempted ("Miễn") → treat as passed
+                    status = STATUS_PASSED
         elif not prereqs_met:
             status = STATUS_LOCKED
         else:

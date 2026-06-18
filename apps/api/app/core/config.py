@@ -44,10 +44,11 @@ class Settings(BaseSettings):
     daa_base_url: str = "https://daa.uit.edu.vn"
     daa_login_path: str = "/user"
     daa_profile_path: str = "/user"
-    daa_grades_path: str = "/sinhvien/tracuu/kqht"
+    daa_grades_path: str = "/sinhvien/kqhoctap"
     daa_grades_summary_path: str = "/sinhvien/kqhoctap"
     daa_schedule_path: str = "/sinhvien/tkb"
     daa_exams_path: str = "/sinhvien/tracuu/lichthi"
+    daa_registration_path: str = "/sinhvien/dkhp/thongtindangky"
 
     moodle_base_url: str = "https://courses.uit.edu.vn"
     moodle_login_path: str = "/login/index.php"

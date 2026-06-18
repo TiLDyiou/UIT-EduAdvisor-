@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -263,7 +263,7 @@ function CourseNode({ node }: { node: RoadmapNode }) {
 
   return (
     <div
-      className={`relative rounded-lg border p-3 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg cursor-default ${cfg.bg} hover:ring-2 ${cfg.ring}`}
+      className={`relative rounded-lg border p-3 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:z-30 cursor-default ${cfg.bg} hover:ring-2 ${cfg.ring}`}
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >

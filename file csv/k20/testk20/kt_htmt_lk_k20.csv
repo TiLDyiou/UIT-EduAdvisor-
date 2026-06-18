@@ -1,0 +1,43 @@
+Mã MH UIT,Tên Môn Học UIT,TC UIT,Mã MH Đối Tác,Tên Môn Học Đối Tác,TC Đối Tác
+CE121,Lý thuyết mạch điện,4,ELEC1310,Introduction to Electrical Engineering,10
+PH002,Nhập môn mạch số,4,ELEC1710,Digital and Computer Electronics 1,10
+IT001,Nhập môn lập trình,4,ENGG1003,Introduction to Procedural Programming,10
+CE005,Giới thiệu ngành KTMT,1,ENGG1500,Introduction to Professional Engineering,10
+MA006,Giải tích,0,N/A,N/A,0
+MA003,Đại số tuyến tính,0,N/A,N/A,0
+IT002,Lập trình hướng đối tượng,4,SENG1110,Object Oriented Programming,10
+IT003,Cấu trúc dữ liệu và giải thuật,4,SENG1120,Data Structures,10
+CE124,Các thiết bị và mạch điện tử,4,ELEC2320,Electrical and Electronic Circuits,10
+CE103,Vi xử lý – Vi điều khiển,4,ELEC2720,Introduction to Embedded Computing,10
+MA005,Xác suất thống kê,3,STAT2110,Engineering Statistics,10
+IT006,Kiến trúc máy tính,3,ELEC4720,Programmable Logic Design,10
+CE119,Thực hành kiến trúc máy tính,0,N/A,N/A,0
+CE118,Thiết kế luận lý số,0,N/A,N/A,0
+MA004,Cấu trúc rời rạc,0,N/A,N/A,0
+IT004,Cơ sở dữ liệu,0,N/A,N/A,0
+IT007,Hệ điều hành,0,N/A,N/A,0
+SS004,Kỹ năng nghề nghiệp,2,ENGG2500,Sustainable Engineering Practices,10
+ENGG3500,ManagingEngineeringProjects,10,N/A,N/A,0
+ELEC3730,Digital and Computer Electronics 2,10,N/A,N/A,0
+PHYS1220,Advanced Physics II,10,N/A,N/A,0
+SENG2250,System and Network Security,10,N/A,N/A,0
+ELEC2430,Circuits and Signals,10,N/A,N/A,0
+ELEC3500,Telecommunication Networks,10,N/A,N/A,0
+ELEC4840A,Final Year Engineering Project Part A,10,N/A,N/A,0
+COMP3500,Security Attacks: Analysis and Mitigation Strategies,10,N/A,N/A,0
+ENGG3000,Engineering Work Integrated Learning,10,N/A,N/A,0
+ELEC4840B,Final Year Engineering Project Part B,20,N/A,N/A,0
+ELEC3240,Analog Electronics,10,N/A,N/A,0
+ELEC3540,Analog and Digital Communications,10,N/A,N/A,0
+IT001,Nhập môn lập trình,0,N/A,N/A,0
+IT006,Kiến trúc máy tính,0,N/A,N/A,0
+CE005,Giới thiệu ngành KTMT,0,N/A,N/A,0
+PH002,Nhập môn mạch số,0,N/A,N/A,0
+IT002,Lập trình hướng đối tượng,0,N/A,N/A,0
+CE121,Lý thuyết mạch điện,0,N/A,N/A,0
+IT003,Cấu trúc dữ liệu và giải thuật,0,N/A,N/A,0
+CE124,Các thiết bị và mạch điện tử,0,N/A,N/A,0
+SS004,Kỹ năng nghề nghiệp,0,N/A,N/A,0
+MA005,Xác suất thống kê,0,N/A,N/A,0
+CE103,Vi xử lý - Vi điều khiển,0,N/A,N/A,0
+ENGG3500,Managing Engineering Projects,0,N/A,N/A,0

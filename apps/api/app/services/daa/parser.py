@@ -119,14 +119,27 @@ def parse_grades_tables(html: str) -> list[dict[str, str | Decimal | int | None]
         name_headers = {"ten mon", "ten mon hoc", "ten hp", "ten hoc phan", "course name"}
         credit_headers = {"so tin chi", "tin chi", "tc", "credits"}
         term_headers = {"hoc ky", "ky", "term"}
-        grade_headers = {"diem", "diem tk", "diem tong ket", "tong ket", "grade", "final grade"}
+        grade_headers = {"diem", "diem tk", "diem tong ket", "tong ket", "grade", "final grade", "diem hp", "diem hoc phan", "iem hp"}
 
         if not any(k in col_idx for k in code_headers):
             continue
         body_rows = table.find_all("tr")[1:] if headers else table.find_all("tr")
+        current_term: str | None = None
         for tr in body_rows:
             cells = [td.get_text(" ", strip=True) for td in tr.find_all("td")]
+            # Detect term separator rows: "Học kỳ X - Năm học YYYY-YYYY" (colspan, usually 1 cell)
+            tds = tr.find_all("td")
+            if len(tds) >= 1 and tds[0].get("colspan"):
+                text = cells[0].strip()
+                m = re.search(r"H[oọ]c\s+k[yỳ]\s+(\d)\s*-\s*N[aă]m\s+h[oọ]c\s+(\d{4})\s*-\s*(\d{4})", text, re.I)
+                if m:
+                    current_term = f"HK{m.group(1)}_{m.group(2)}-{m.group(3)}"
+                continue
             if len(cells) < 2:
+                continue
+            # Skip summary rows like "Trung bình học kỳ"
+            joined = " ".join(cells).lower()
+            if "trung bình" in joined or "tín chỉ" in joined or "điểm trung bình" in joined:
                 continue
             code = None
             name = None
@@ -156,7 +169,7 @@ def parse_grades_tables(html: str) -> list[dict[str, str | Decimal | int | None]
                         "course_code": code,
                         "course_name": name,
                         "credits": credits,
-                        "term_code": term or "unknown",
+                        "term_code": term or current_term or "unknown",
                         "final_grade_10": grade,
                     }
                 )
@@ -209,6 +222,8 @@ def _parse_decimal_maybe(s: str) -> Decimal | None:
 
 def _norm_header(s: str) -> str:
     lowered = s.strip().lower()
+    # Vietnamese đ/Đ (U+0111/U+0110) are not decomposed by NFD; replace explicitly
+    lowered = lowered.replace("\u0111", "d").replace("\u0110", "d")
     normalized = unicodedata.normalize("NFD", lowered)
     no_marks = "".join(ch for ch in normalized if unicodedata.category(ch) != "Mn")
     compact = re.sub(r"[^a-z0-9]+", " ", no_marks)
@@ -344,3 +359,78 @@ def parse_grades_summary(html: str) -> dict[str, float | int | None]:
 
     return result
 
+
+def parse_registration_table(html: str) -> list[dict[str, str | int | None]]:
+    """Parse the ĐKHP registration page at /sinhvien/dkhp/thongtindangky.
+
+    Returns a list of registered courses with course_code, course_name,
+    credits, and term_code extracted from the page heading.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    rows_out: list[dict[str, str | int | None]] = []
+
+    # Extract term info from heading like "HỌC KỲ 2 NĂM 2025 - 2026"
+    term_code = "CURRENT"
+    heading_text = soup.get_text(" ", strip=True)
+    m = re.search(
+        r"H[ỌO]C\s+K[ỲY]\s+(\d)\s+N[ĂA]M\s+(\d{4})\s*-\s*(\d{4})",
+        heading_text,
+        re.I,
+    )
+    if m:
+        term_code = f"HK{m.group(1)}_{m.group(2)}-{m.group(3)}"
+
+    # Find the registration table (has headers like STT, MãMH, Lớp, Môn, Số TC)
+    seen_codes: set[str] = set()
+    for table in soup.select("table"):
+        headers = [_norm_header(th.get_text(" ", strip=True)) for th in table.find_all("th")]
+        if not headers:
+            first_row = table.find("tr")
+            if first_row:
+                headers = [_norm_header(td.get_text(" ", strip=True)) for td in first_row.find_all("td")]
+
+        # Look for a table with MãMH/Mã MH column
+        code_col = None
+        name_col = None
+        credit_col = None
+        for i, h in enumerate(headers):
+            if h in ("mamh", "ma mh", "ma mon", "ma hp"):
+                code_col = i
+            elif h in ("mon", "ten mon", "ten hoc phan", "ten hp"):
+                name_col = i
+            elif h in ("so tc", "tin chi", "tc", "so tin chi"):
+                credit_col = i
+
+        if code_col is None:
+            continue
+
+        for tr in table.find_all("tr")[1:]:
+            cells = [td.get_text(" ", strip=True) for td in tr.find_all("td")]
+            if len(cells) <= code_col:
+                continue
+
+            code = cells[code_col].strip().upper()
+            if not code or not _looks_like_course_code(code):
+                continue
+
+            # Skip duplicate course codes (same course with TH section)
+            if code in seen_codes:
+                continue
+            seen_codes.add(code)
+
+            name = cells[name_col].strip() if name_col is not None and name_col < len(cells) else None
+            credits = None
+            if credit_col is not None and credit_col < len(cells):
+                try:
+                    credits = int(cells[credit_col].strip())
+                except (ValueError, TypeError):
+                    pass
+
+            rows_out.append({
+                "course_code": code,
+                "course_name": name,
+                "credits": credits,
+                "term_code": term_code,
+            })
+
+    return rows_out

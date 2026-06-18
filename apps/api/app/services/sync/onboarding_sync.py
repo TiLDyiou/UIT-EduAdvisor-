@@ -24,6 +24,7 @@ from app.services.daa.parser import (
     parse_exam_rows,
     parse_grades_tables,
     parse_profile_name,
+    parse_registration_table,
     parse_schedule_rows,
     parse_grades_summary,
 )
@@ -337,7 +338,17 @@ async def run_onboarding_sync(
 
         await _emit(redis, job_id, "daa_grades", 35, "Đang đồng bộ điểm")
         grades_html = await daa_get_text(daa_client, settings.daa_grades_path)
+        # DEBUG: save HTML and log parse results
+        try:
+            with open("/tmp/daa_grades_debug.html", "w", encoding="utf-8") as f:
+                f.write(grades_html)
+            logger.warning("DEBUG: saved grades HTML to /tmp/daa_grades_debug.html (%d bytes)", len(grades_html))
+        except Exception as exc:
+            logger.warning("DEBUG: failed to save grades HTML: %s", exc)
         grade_rows = parse_grades_tables(grades_html)
+        logger.warning("DEBUG: parse_grades_tables returned %d rows", len(grade_rows))
+        for i, row in enumerate(grade_rows[:5]):
+            logger.warning("DEBUG: grade_row[%d] = %s", i, row)
         async with maker() as session:
             await _persist_grades(session, student_id, grade_rows)
             await session.commit()
@@ -345,6 +356,19 @@ async def run_onboarding_sync(
         # Crawl and parse GPA summary from /sinhvien/kqhoctap
         try:
             summary_html = await daa_get_text(daa_client, settings.daa_grades_summary_path)
+            # DEBUG: save summary HTML
+            try:
+                with open("/tmp/daa_grades_summary_debug.html", "w", encoding="utf-8") as f:
+                    f.write(summary_html)
+                logger.warning("DEBUG: saved grades summary HTML (%d bytes)", len(summary_html))
+                # Also try parsing grades from summary page
+                from app.services.daa.parser import parse_grades_tables as _pgt
+                summary_grade_rows = _pgt(summary_html)
+                logger.warning("DEBUG: parse_grades_tables on SUMMARY page returned %d rows", len(summary_grade_rows))
+                for i, row in enumerate(summary_grade_rows[:5]):
+                    logger.warning("DEBUG: summary_grade_row[%d] = %s", i, row)
+            except Exception as exc2:
+                logger.warning("DEBUG: summary debug failed: %s", exc2)
             summary_data = parse_grades_summary(summary_html)
             summary.update({
                 "daa_dtbc_10": summary_data.get("dtbc_10"),
@@ -356,6 +380,34 @@ async def run_onboarding_sync(
         except Exception as exc:
             logger.warning("Failed to parse grades summary from DAA: %s", exc)
 
+
+        # Fetch ĐKHP registration page for current semester courses
+        await _emit(redis, job_id, "daa_registration", 42, "Đang đồng bộ thông tin ĐKHP")
+        try:
+            reg_html = await daa_get_text(daa_client, settings.daa_registration_path)
+            reg_rows = parse_registration_table(reg_html)
+            logger.info("ĐKHP: parsed %d registered courses", len(reg_rows))
+            if reg_rows:
+                async with maker() as session:
+                    for row in reg_rows:
+                        code = str(row.get("course_code") or "").strip()
+                        if not code:
+                            continue
+                        c = await _ensure_course(
+                            session, code, str(row.get("course_name") or ""), row.get("credits")
+                        )
+                        term = str(row.get("term_code") or "CURRENT")[:32]
+                        await _upsert_enrollment(
+                            session,
+                            student_id=student_id,
+                            course_id=c.id,
+                            term_code=term,
+                            status="in_progress",
+                            final_grade_10=None,
+                        )
+                    await session.commit()
+        except Exception as exc:
+            logger.warning("ĐKHP sync failed (non-critical): %s", exc)
 
         await _emit(redis, job_id, "daa_schedule", 50, "Đang đồng bộ thời khóa biểu")
         sched_html = await daa_get_text(daa_client, settings.daa_schedule_path)

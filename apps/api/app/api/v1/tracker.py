@@ -285,11 +285,22 @@ async def roadmap(
 
     # Load student enrollments
     enrollments = await _load_enrollments(db, student.id)
-    # Determine current term (latest term_code among enrollments with no grade)
-    current_terms: set[str] = set()
+    # Determine current term: only the most recent term with no-grade enrollments
+    # is the real "current" term. Past terms with exemptions (grade=None) should not
+    # be considered current.
+    terms_with_no_grade: set[str] = set()
     for e in enrollments:
-        if e.final_grade_10 is None:
-            current_terms.add(e.term_code)
+        if e.final_grade_10 is None and e.term_code:
+            terms_with_no_grade.add(e.term_code)
+
+    # The actual current term is "CURRENT" or the latest HK term with no grades
+    current_terms: set[str] = set()
+    if "CURRENT" in terms_with_no_grade:
+        current_terms.add("CURRENT")
+    # Find the latest HK term with no grades (e.g., HK2_2025-2026)
+    hk_terms = sorted([t for t in terms_with_no_grade if t.startswith("HK")])
+    if hk_terms:
+        current_terms.add(hk_terms[-1])  # latest term only
 
     enrollment_infos = [
         EnrollmentInfo(
@@ -332,26 +343,79 @@ async def roadmap(
     credit_map = {entry.course.course_id: entry.course.credits for entry in curriculum_entries}
     eg_statuses = compute_elective_group_statuses(eg_rules, enrollment_infos, credit_map)
 
-    # Build response
-    node_responses = [
-        RoadmapNodeResponse(
-            course_id=n.course_id,
-            course_code=n.course_code,
-            course_name=n.course_name,
-            credits=n.credits,
-            term_number=n.term_number,
-            status=n.status,
-            grade_10=n.grade_10,
-            grade_4=n.grade_4,
-            grade_letter=grade_10_to_letter(n.grade_10) if n.grade_10 is not None else None,
-            prerequisites_met=n.prerequisites_met,
-            missing_prerequisites=n.missing_prerequisites,
-            elective_group_id=n.elective_group_id,
-            elective_group_name=n.elective_group_name,
-            is_required=n.is_required,
+    # Build actual term mapping: enrollment term_code → sequential kỳ number
+    # e.g., HK1_2024-2025 → 1, HK2_2024-2025 → 2, HK1_2025-2026 → 3, ...
+    enrollment_term_codes: set[str] = set()
+    course_actual_term: dict[int, str] = {}  # course_id → term_code
+    for e in enrollments:
+        if e.term_code and e.term_code != "CURRENT":
+            enrollment_term_codes.add(e.term_code)
+            course_actual_term[e.course_id] = e.term_code
+        elif e.term_code == "CURRENT":
+            course_actual_term.setdefault(e.course_id, "CURRENT")
+
+    # Sort term_codes chronologically by (start_year, semester_number)
+    # Format: HKN_YYYY-YYYY → sort key (YYYY, N)
+    import re as _re
+
+    def _term_sort_key(tc: str) -> tuple[int, int]:
+        m = _re.match(r"HK(\d)_(\d{4})-(\d{4})", tc)
+        if m:
+            return (int(m.group(2)), int(m.group(1)))  # (start_year, semester)
+        return (9999, 9)  # unknown terms go last
+
+    sorted_terms = sorted(enrollment_term_codes, key=_term_sort_key)
+    term_code_to_number = {tc: i + 1 for i, tc in enumerate(sorted_terms)}
+    # CURRENT maps to the latest actual term (same semester)
+    current_actual_term = len(sorted_terms) if sorted_terms else 0
+    if sorted_terms:
+        term_code_to_number["CURRENT"] = current_actual_term
+    else:
+        term_code_to_number["CURRENT"] = 1
+        current_actual_term = 0
+
+    # For non-enrolled courses: shift curriculum term to be AFTER current actual term
+    # Find the min curriculum term among non-enrolled courses
+    non_enrolled_curriculum_terms: list[int] = []
+    for n in nodes:
+        if n.course_id not in course_actual_term:
+            non_enrolled_curriculum_terms.append(n.term_number)
+    if non_enrolled_curriculum_terms:
+        min_remaining = min(non_enrolled_curriculum_terms)
+        # Offset so that the earliest non-enrolled group starts at current_actual_term + 1
+        term_offset = current_actual_term + 1 - min_remaining
+        term_offset = max(term_offset, 0)
+    else:
+        term_offset = 0
+
+    # Build response, overriding term_number
+    node_responses = []
+    for n in nodes:
+        actual_tc = course_actual_term.get(n.course_id)
+        if actual_tc and actual_tc in term_code_to_number:
+            # Enrolled course: use actual semester from DAA
+            actual_term = term_code_to_number[actual_tc]
+        else:
+            # Non-enrolled course: shift after current term
+            actual_term = n.term_number + term_offset
+        node_responses.append(
+            RoadmapNodeResponse(
+                course_id=n.course_id,
+                course_code=n.course_code,
+                course_name=n.course_name,
+                credits=n.credits,
+                term_number=actual_term,
+                status=n.status,
+                grade_10=n.grade_10,
+                grade_4=n.grade_4,
+                grade_letter=grade_10_to_letter(n.grade_10) if n.grade_10 is not None else None,
+                prerequisites_met=n.prerequisites_met,
+                missing_prerequisites=n.missing_prerequisites,
+                elective_group_id=n.elective_group_id,
+                elective_group_name=n.elective_group_name,
+                is_required=n.is_required,
+            )
         )
-        for n in nodes
-    ]
 
     eg_responses = [
         ElectiveGroupStatusResponse(
