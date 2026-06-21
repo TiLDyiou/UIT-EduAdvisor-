@@ -199,32 +199,6 @@ function GpaCardWithTooltip({
 function GpaBadge({ gpa }: { gpa: GpaOverview }) {
   return (
     <div className="space-y-6">
-      {/* Self-calculated academic values */}
-      <div>
-        <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest mb-3">Tự động tính (Học kỳ hiện tại)</p>
-        <div className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-[140px] rounded-xl border border-cyan-800/40 bg-gradient-to-br from-cyan-950/60 to-neutral-900/80 p-4 backdrop-blur">
-            <p className="text-xs uppercase tracking-wider text-cyan-400">GPA Thang 10 (Ước tính)</p>
-            <p className="mt-1 text-3xl font-bold tracking-tight text-white">
-              {gpa.gpa_10.toFixed(2)}
-            </p>
-          </div>
-          <div className="flex-1 min-w-[140px] rounded-xl border border-violet-800/40 bg-gradient-to-br from-violet-950/60 to-neutral-900/80 p-4 backdrop-blur">
-            <p className="text-xs uppercase tracking-wider text-violet-400">GPA Thang 4 (Ước tính)</p>
-            <p className="mt-1 text-3xl font-bold tracking-tight text-white">
-              {gpa.gpa_4.toFixed(2)}
-            </p>
-          </div>
-          <div className="flex-1 min-w-[140px] rounded-xl border border-neutral-700/40 bg-neutral-900/60 p-4 backdrop-blur">
-            <p className="text-xs uppercase tracking-wider text-neutral-400">Tín chỉ tích lũy</p>
-            <p className="mt-1 text-3xl font-bold tracking-tight text-white">
-              {gpa.earned_credits}
-              <span className="text-base text-neutral-500">/{gpa.total_credits}</span>
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Official values from school (DAA) */}
       <div>
         <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest mb-3">Thông tin chính thức từ trường (DAA)</p>
@@ -768,10 +742,10 @@ export default function TrackerPage() {
             <GpaBadge gpa={gpa} />
 
             {/* Preview banner */}
-            {roadmap.is_preview && <PreviewBanner />}
+            {roadmap.nodes.length > 0 && roadmap.is_preview && <PreviewBanner />}
 
             {/* Empty state */}
-            {roadmap.nodes.length === 0 && !roadmap.is_preview && <EmptyState />}
+            {roadmap.nodes.length === 0 && <EmptyState />}
 
             {/* Legend */}
             {roadmap.nodes.length > 0 && <StatusLegend />}

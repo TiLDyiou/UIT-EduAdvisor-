@@ -434,3 +434,50 @@ def parse_registration_table(html: str) -> list[dict[str, str | int | None]]:
             })
 
     return rows_out
+
+MAJOR_MAPPING = {
+    "ATTN": "Kỹ sư tài năng ngành An toàn Thông tin",
+    "KHTN": "Cử nhân tài năng ngành Khoa học Máy tính",
+    "ATBC": "Ngành Mạng máy tính và An toàn thông tin – Chương trình liên kết BCU",
+    "ATCL": "Ngành An toàn Thông tin – Chương trình Chất lượng cao",
+    "ATTT": "Ngành An toàn Thông tin",
+    "CNCL": "Ngành Công nghệ Thông tin – Chương trình Chất lượng cao định hướng Nhật Bản",
+    "CNTT": "Ngành Công nghệ Thông tin",
+    "CTTT": "Ngành Hệ thống Thông tin – Chương trình tiên tiến",
+    "HTCL": "Ngành Hệ thống Thông tin",
+    "HTTT": "Ngành Hệ thống Thông tin",
+    "KHBC": "Ngành Khoa học Máy tính – Chương trình liên kết BCU",
+    "KHCL": "Ngành Khoa học Máy tính – Chương trình Chất lượng cao",
+    "KHDL": "Ngành Khoa học Dữ liệu",
+    "KHMT": "Ngành Khoa học Máy tính",
+    "KHNT": "Ngành Khoa học Máy tính – Chuyên ngành Trí tuệ Nhân tạo",
+    "KTMT": "Ngành Kỹ thuật Máy tính",
+    "KTPM": "Ngành Kỹ thuật Phần mềm",
+    "MMCL": "Ngành Mạng máy tính và truyền thông dữ liệu – Chương trình Chất lượng cao",
+    "MMTT": "Ngành Mạng máy tính và truyền thông dữ liệu",
+    "MTCL": "Ngành Kỹ thuật Máy tính – Chương trình Chất lượng cao",
+    "MTIO": "Ngành Kỹ thuật Máy tính – Chuyên ngành Hệ thống nhúng và IoT",
+    "PMCL": "Ngành Kỹ thuật Phần mềm – Chương trình Chất lượng cao",
+    "TMCL": "Ngành Thương mại Điện tử – Chương trình Chất lượng cao",
+    "TMĐT": "Ngành Thương mại Điện tử",
+    "TTĐPT": "Truyền thông Đa phương tiện"
+}
+
+def parse_class_code_info(html: str) -> tuple[str | None, int | None]:
+    """Parse class code from DAA grades page to extract major_name and enrollment_year."""
+    soup = BeautifulSoup(html, "html.parser")
+    # Search for "Lớp sinh hoạt:" in table cells
+    for td in soup.find_all("td"):
+        text = td.get_text(" ", strip=True).lower()
+        if "lớp sinh hoạt" in text:
+            # The next sibling td or the text inside this td might contain the class code
+            next_td = td.find_next_sibling("td")
+            if next_td:
+                val = next_td.get_text(" ", strip=True)
+                m = re.match(r"^([a-zđ]+)(\d{4})", val, re.I)
+                if m:
+                    prefix = m.group(1).upper()
+                    year_str = m.group(2)
+                    major_name = MAJOR_MAPPING.get(prefix)
+                    return major_name, int(year_str)
+    return None, None

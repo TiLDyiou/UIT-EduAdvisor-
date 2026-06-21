@@ -70,13 +70,49 @@ async def _load_enrollments(db: AsyncSession, student_id) -> list[Enrollment]:
 
 
 async def _find_curriculum(db: AsyncSession, student: Student) -> Curriculum | None:
-    """Find the best matching curriculum for a student's major."""
-    res = await db.execute(
-        select(Curriculum)
-        .where(Curriculum.major_id == student.major_id)
-        .order_by(Curriculum.effective_year.desc())
-        .limit(1)
-    )
+    """Find the best matching curriculum for a student's major and enrollment year."""
+    from sqlalchemy import or_, and_
+    from app.db.models.core_security import Major
+    
+    major_prefix = ""
+    if student.major_id:
+        res_m = await db.execute(select(Major).where(Major.id == student.major_id))
+        m = res_m.scalar_one_or_none()
+        if m:
+            from app.services.daa.parser import MAJOR_MAPPING
+            for k, v in MAJOR_MAPPING.items():
+                if v.lower() == m.name.lower():
+                    major_prefix = k
+                    break
+
+    conditions = []
+    if student.major_id:
+        conditions.append(Curriculum.major_id == student.major_id)
+
+    # Handle cases where admin abbreviated the major and cohort (e.g. ATTT K19)
+    if major_prefix:
+        name_conds = [Curriculum.name.ilike(f"%{major_prefix}%")]
+        if student.enrollment_year:
+            k_cohort = f"K{student.enrollment_year - 2005}"
+            name_conds.append(Curriculum.name.ilike(f"%{k_cohort}%"))
+        conditions.append(and_(*name_conds))
+
+    if not conditions:
+        return None
+
+    query = select(Curriculum).where(or_(*conditions))
+    
+    # Compare effective_year
+    if student.enrollment_year:
+        query = query.where(
+            or_(
+                Curriculum.effective_year == student.enrollment_year,
+                Curriculum.effective_year.is_(None)
+            )
+        )
+    
+    query = query.order_by(Curriculum.effective_year.desc().nullslast()).limit(1)
+    res = await db.execute(query)
     return res.scalar_one_or_none()
 
 

@@ -101,6 +101,16 @@ async def _ensure_course(
     return c
 
 
+async def _ensure_major(session: AsyncSession, major_name: str):
+    from sqlalchemy import func
+    from app.db.models.core_security import Major
+    res = await session.execute(
+        select(Major).where(func.lower(Major.name) == major_name.lower()).limit(1)
+    )
+    return res.scalar_one_or_none()
+
+
+
 async def _persist_grades(session: AsyncSession, student_id, rows: list[dict[str, Any]]) -> None:
     for row in rows:
         code = str(row.get("course_code") or "").strip()
@@ -349,8 +359,23 @@ async def run_onboarding_sync(
         logger.warning("DEBUG: parse_grades_tables returned %d rows", len(grade_rows))
         for i, row in enumerate(grade_rows[:5]):
             logger.warning("DEBUG: grade_row[%d] = %s", i, row)
+        from app.services.daa.parser import parse_class_code_info
+        major_name, enrollment_year = parse_class_code_info(grades_html)
+
         async with maker() as session:
             await _persist_grades(session, student_id, grade_rows)
+            if major_name or enrollment_year:
+                res_st = await session.execute(
+                    select(Student).where(Student.id == student_id).limit(1)
+                )
+                st = res_st.scalar_one_or_none()
+                if st:
+                    if major_name:
+                        m = await _ensure_major(session, major_name)
+                        if m:
+                            st.major_id = m.id
+                    if enrollment_year:
+                        st.enrollment_year = enrollment_year
             await session.commit()
 
         # Crawl and parse GPA summary from /sinhvien/kqhoctap
