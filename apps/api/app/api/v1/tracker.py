@@ -25,12 +25,6 @@ from app.deps import get_current_student, get_db
 from app.schemas.m3 import (
     ElectiveGroupStatusResponse,
     GpaOverviewResponse,
-    GpaSimulateRequest,
-    GpaSimulateResponse,
-    RetakeEstimateRequest,
-    RetakeEstimateResponse,
-    ReverseCalculateRequest,
-    ReverseCalculateResponse,
     RoadmapNodeResponse,
     RoadmapResponse,
 )
@@ -38,9 +32,6 @@ from app.services.academic.gpa import (
     EnrollmentRow,
     compute_cumulative_gpa,
     grade_10_to_letter,
-    retake_estimate,
-    reverse_calculate,
-    simulate_gpa,
 )
 from app.services.academic.roadmap import (
     CourseInfo,
@@ -63,7 +54,7 @@ async def _load_enrollments(db: AsyncSession, student_id) -> list[Enrollment]:
     """Load all enrollments for a student, eagerly loading related course."""
     res = await db.execute(
         select(Enrollment)
-        .options(selectinload(Enrollment.course))
+        .options(selectinload(Enrollment.course), selectinload(Enrollment.grades))
         .where(Enrollment.student_id == student_id)
     )
     return list(res.scalars().all())
@@ -150,113 +141,25 @@ async def gpa_overview(
     job = res.scalar_one_or_none()
 
     daa_dtbc_10 = None
-    daa_dtbc_4 = None
     daa_dtbctl_10 = None
-    daa_dtbctl_4 = None
     daa_earned_credits = None
 
     if job and job.result_summary:
         daa_dtbc_10 = job.result_summary.get("daa_dtbc_10")
-        daa_dtbc_4 = job.result_summary.get("daa_dtbc_4")
         daa_dtbctl_10 = job.result_summary.get("daa_dtbctl_10")
-        daa_dtbctl_4 = job.result_summary.get("daa_dtbctl_4")
         daa_earned_credits = job.result_summary.get("daa_earned_credits")
 
     return GpaOverviewResponse(
         gpa_10=result.gpa_10,
-        gpa_4=result.gpa_4,
         total_credits=result.total_credits,
         earned_credits=result.earned_credits,
         daa_dtbc_10=daa_dtbc_10,
-        daa_dtbc_4=daa_dtbc_4,
         daa_dtbctl_10=daa_dtbctl_10,
-        daa_dtbctl_4=daa_dtbctl_4,
         daa_earned_credits=daa_earned_credits,
     )
 
 
-@router.post("/gpa/simulate", response_model=GpaSimulateResponse)
-async def gpa_simulate(
-    body: GpaSimulateRequest,
-    db: Annotated[AsyncSession, Depends(get_db)],
-    student: Annotated[Student, Depends(get_current_student)],
-) -> GpaSimulateResponse:
-    enrollments = await _load_enrollments(db, student.id)
-    current_rows = [_enrollment_to_row(e) for e in enrollments]
-    hypo_rows = [
-        EnrollmentRow(credits=entry.credits, final_grade_10=entry.hypothetical_grade_10)
-        for entry in body.entries
-    ]
-    current_result = compute_cumulative_gpa(current_rows)
-    simulated_result = simulate_gpa(current_rows, hypo_rows)
 
-    return GpaSimulateResponse(
-        current=GpaOverviewResponse(
-            gpa_10=current_result.gpa_10,
-            gpa_4=current_result.gpa_4,
-            total_credits=current_result.total_credits,
-            earned_credits=current_result.earned_credits,
-        ),
-        simulated=GpaOverviewResponse(
-            gpa_10=simulated_result.gpa_10,
-            gpa_4=simulated_result.gpa_4,
-            total_credits=simulated_result.total_credits,
-            earned_credits=simulated_result.earned_credits,
-        ),
-    )
-
-
-@router.post("/gpa/reverse", response_model=ReverseCalculateResponse)
-async def gpa_reverse(
-    body: ReverseCalculateRequest,
-    db: Annotated[AsyncSession, Depends(get_db)],
-    student: Annotated[Student, Depends(get_current_student)],
-) -> ReverseCalculateResponse:
-    enrollments = await _load_enrollments(db, student.id)
-    rows = [_enrollment_to_row(e) for e in enrollments]
-    current = compute_cumulative_gpa(rows)
-    result = reverse_calculate(
-        current_gpa_10=current.gpa_10,
-        earned_credits=current.total_credits,
-        target_gpa_10=body.target_gpa_10,
-        remaining_credits=body.remaining_credits,
-    )
-    return ReverseCalculateResponse(
-        required_avg_10=result.required_avg_10,
-        required_avg_4=result.required_avg_4,
-        achievable=result.achievable,
-    )
-
-
-@router.post("/gpa/retake", response_model=RetakeEstimateResponse)
-async def gpa_retake(
-    body: RetakeEstimateRequest,
-    db: Annotated[AsyncSession, Depends(get_db)],
-    student: Annotated[Student, Depends(get_current_student)],
-) -> RetakeEstimateResponse:
-    enrollments = await _load_enrollments(db, student.id)
-    # Find the enrollment by ID
-    idx = None
-    for i, e in enumerate(enrollments):
-        if e.id == body.enrollment_id:
-            idx = i
-            break
-    if idx is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="enrollment_not_found",
-        )
-
-    rows = [_enrollment_to_row(e) for e in enrollments]
-    result = retake_estimate(rows, idx, body.new_grade_10)
-    return RetakeEstimateResponse(
-        old_gpa_10=result.old_gpa_10,
-        new_gpa_10=result.new_gpa_10,
-        delta_gpa_10=result.delta_gpa_10,
-        old_gpa_4=result.old_gpa_4,
-        new_gpa_4=result.new_gpa_4,
-        delta_gpa_4=result.delta_gpa_4,
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -343,6 +246,7 @@ async def roadmap(
             course_id=e.course_id,
             final_grade_10=e.final_grade_10,
             is_current_term=e.term_code in current_terms,
+            detailed_grades={g.component: float(g.score) for g in e.grades}
         )
         for e in enrollments
     ]
@@ -409,12 +313,53 @@ async def roadmap(
     # Build response: Enrolled courses stay where they were taken.
     # Non-enrolled courses that were missed are shifted to the next available term.
     node_responses = []
+    pe_terms_used = set()
+    max_english_level = 0
+    import re
+    
+    # First pass: record PE courses that are already enrolled, and find max English level
     for n in nodes:
+        is_pe = "giáo dục thể chất" in n.course_name.lower()
+        if is_pe:
+            actual_tc = course_actual_term.get(n.course_id)
+            if actual_tc and actual_tc in term_code_to_number:
+                pe_terms_used.add(term_code_to_number[actual_tc])
+                
+        # English detection
+        m_eng = re.search(r'(?:anh văn|tiếng anh)\s+(\d+)', n.course_name.lower())
+        if m_eng:
+            actual_tc = course_actual_term.get(n.course_id)
+            if actual_tc: # meaning enrolled (passed or in_progress)
+                level = int(m_eng.group(1))
+                if level > max_english_level:
+                    max_english_level = level
+
+    for n in nodes:
+        is_gdqp = "giáo dục quốc phòng" in n.course_name.lower()
+        is_pe = "giáo dục thể chất" in n.course_name.lower()
+        
+        # English skip rule
+        m_eng = re.search(r'(?:anh văn|tiếng anh)\s+(\d+)', n.course_name.lower())
+        if m_eng:
+            level = int(m_eng.group(1))
+            if level < max_english_level:
+                continue
+
         actual_tc = course_actual_term.get(n.course_id)
-        if actual_tc and actual_tc in term_code_to_number:
+        
+        actual_status = n.status
+        if is_gdqp:
+            actual_term = n.term_number
+            if actual_term < current_actual_term:
+                actual_status = "passed"
+        elif actual_tc and actual_tc in term_code_to_number:
             actual_term = term_code_to_number[actual_tc]
         else:
             actual_term = max(current_actual_term + 1, n.term_number)
+            if is_pe:
+                while actual_term in pe_terms_used:
+                    actual_term += 1
+                pe_terms_used.add(actual_term)
             
         node_responses.append(
             RoadmapNodeResponse(
@@ -423,7 +368,7 @@ async def roadmap(
                 course_name=n.course_name,
                 credits=n.credits,
                 term_number=actual_term,
-                status=n.status,
+                status=actual_status,
                 grade_10=n.grade_10,
                 grade_4=n.grade_4,
                 grade_letter=grade_10_to_letter(n.grade_10) if n.grade_10 is not None else None,
@@ -432,6 +377,7 @@ async def roadmap(
                 elective_group_id=n.elective_group_id,
                 elective_group_name=n.elective_group_name,
                 is_required=n.is_required,
+                detailed_grades=n.detailed_grades,
             )
         )
 
@@ -448,6 +394,7 @@ async def roadmap(
     ]
 
     return RoadmapResponse(
+        total_credits=curriculum.total_credits,
         nodes=node_responses,
         elective_groups=eg_responses,
         is_preview=is_preview,

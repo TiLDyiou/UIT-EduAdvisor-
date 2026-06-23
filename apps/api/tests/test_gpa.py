@@ -66,8 +66,8 @@ class TestGrade10ToLetter:
 
 class TestIsPassed:
     def test_passed(self) -> None:
-        assert is_passed(Decimal("4.0")) is True
-        assert is_passed(Decimal("10")) is True
+        assert is_passed(Decimal("5.0")) is True
+        assert is_passed(Decimal("4.9")) is False
 
     def test_failed(self) -> None:
         assert is_passed(Decimal("3.9")) is False
@@ -99,12 +99,10 @@ class TestComputeCumulativeGpa:
 
         # Weighted sum 4: 3*3.0 + 4*2.0 + 3*4.0 = 9+8+12 = 29
         # GPA 4: 29/10 = 2.90
-        assert result.gpa_4 == Decimal("2.90")
 
     def test_empty(self) -> None:
         result = compute_cumulative_gpa([])
         assert result.gpa_10 == Decimal("0")
-        assert result.gpa_4 == Decimal("0")
         assert result.total_credits == 0
         assert result.earned_credits == 0
 

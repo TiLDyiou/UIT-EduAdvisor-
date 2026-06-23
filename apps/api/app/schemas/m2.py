@@ -33,6 +33,8 @@ class MeResponse(BaseModel):
     student_code_masked: str
     has_credential: bool
     csrf_token: str
+    major_name: str | None = None
+    enrollment_year: int | None = None
 
 
 class SyncEvent(BaseModel):

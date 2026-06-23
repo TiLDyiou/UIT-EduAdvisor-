@@ -11,7 +11,7 @@ from app.core.config import get_settings
 from app.core.security.audit import record_audit
 from app.core.security.vault_transit import VaultTransit
 from app.core.sessions import StudentSession, revoke_student_session
-from app.db.models.core_security import Student, StudentCredential
+from app.db.models.core_security import Major, Student, StudentCredential
 from app.deps import (
     get_current_student,
     get_current_student_session,
@@ -38,11 +38,18 @@ async def me(
         select(StudentCredential).where(StudentCredential.student_id == student.id).limit(1)
     )
     has_cred = r.scalar_one_or_none() is not None
+
+    major_r = await db.execute(select(Major).where(Major.id == student.major_id))
+    major = major_r.scalar_one_or_none()
+    major_name = major.name if major else None
+
     return MeResponse(
         student_id=student.id,
         student_code_masked=mask_student_code(plain),
         has_credential=has_cred,
         csrf_token=sess.csrf_token,
+        major_name=major_name,
+        enrollment_year=student.enrollment_year,
     )
 
 

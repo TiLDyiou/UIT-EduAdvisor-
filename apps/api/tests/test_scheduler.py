@@ -59,13 +59,13 @@ def _section(
 
 
 def _student(
-    gpa_4: Decimal = Decimal("3.0"),
+    gpa_10: Decimal = Decimal("7.0"),
     passed: set[int] | None = None,
     enrolled: set[int] | None = None,
     grades: dict[int, Decimal] | None = None,
 ) -> StudentContext:
     return StudentContext(
-        cumulative_gpa_4=gpa_4,
+        cumulative_gpa_10=gpa_10,
         passed_course_ids=passed or set(),
         enrolled_course_ids=enrolled or set(),
         grades=grades or {},
@@ -155,18 +155,18 @@ class TestSmartRecommend:
         assert any("+2 sở trường" in r for r in result[0].reasons)
 
     def test_hard_course_low_gpa_minus_3(self) -> None:
-        """Khó course with GPA <= 2.5 gets -3."""
+        """Khó course with GPA <= 6.0 gets -3."""
         candidates = [_candidate(kind="đại cương", difficulty="Khó")]
-        student = _student(gpa_4=Decimal("2.0"))
+        student = _student(gpa_10=Decimal("5.0"))
         result = smart_recommend(candidates, student, [], [], {})
         # +2 đại cương - 3 khó = -1
         assert result[0].score == -1
         assert "-3 môn khó, GPA thấp" in result[0].reasons
 
     def test_hard_course_ok_gpa_no_penalty(self) -> None:
-        """Khó course with GPA > 2.5 gets no penalty."""
+        """Khó course with GPA > 6.0 gets no penalty."""
         candidates = [_candidate(kind="chuyên ngành", difficulty="Khó")]
-        student = _student(gpa_4=Decimal("3.0"))
+        student = _student(gpa_10=Decimal("7.0"))
         result = smart_recommend(candidates, student, [], [], {})
         assert result[0].score == 5  # only +5 chuyên ngành
         assert "-3 môn khó" not in " ".join(result[0].reasons)
@@ -207,7 +207,7 @@ class TestSmartRecommend:
             _candidate(cid=2, kind="đại cương", difficulty="Dễ", credits=3, term=1),
             _candidate(cid=3, kind="đại cương", difficulty="Trung bình", credits=3, term=2),
         ]
-        student = _student(gpa_4=Decimal("3.5"))  # high enough to avoid -3 penalty
+        student = _student(gpa_10=Decimal("7.5"))  # high enough to avoid -3 penalty
         result = smart_recommend(candidates, student, [], [], {}, top_n=10)
         # All score +2 (đại cương), no penalty since gpa > 2.5
         # Tie-break: Dễ(0,3,1) < TB(1,3,2) < Khó(2,4,3)

@@ -41,6 +41,7 @@ class EnrollmentInfo:
     course_id: int
     final_grade_10: Decimal | None
     is_current_term: bool  # True if the enrollment is in the current term
+    detailed_grades: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -85,6 +86,7 @@ class RoadmapNode:
     elective_group_id: int | None
     elective_group_name: str | None
     is_required: bool
+    detailed_grades: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -197,6 +199,7 @@ def resolve_roadmap(
                 elective_group_id=entry.elective_group_id,
                 elective_group_name=entry.elective_group_name,
                 is_required=entry.is_required,
+                detailed_grades=enrollment.detailed_grades if enrollment else {},
             )
         )
 

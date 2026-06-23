@@ -24,6 +24,7 @@ interface RoadmapNode {
   elective_group_id: number | null;
   elective_group_name: string | null;
   is_required: boolean;
+  detailed_grades?: Record<string, number> | null;
 }
 
 interface ElectiveGroupStatus {
@@ -43,13 +44,10 @@ interface RoadmapData {
 
 interface GpaOverview {
   gpa_10: number;
-  gpa_4: number;
   total_credits: number;
   earned_credits: number;
   daa_dtbc_10?: number | null;
-  daa_dtbc_4?: number | null;
   daa_dtbctl_10?: number | null;
-  daa_dtbctl_4?: number | null;
   daa_earned_credits?: number | null;
 }
 
@@ -90,7 +88,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
     ring: "ring-amber-500/30",
   },
   failed: {
-    label: "Rớt",
+    label: "Chưa đạt",
     color: "text-red-300",
     bg: "bg-red-900/40 border-red-500/60",
     ring: "ring-red-500/30",
@@ -142,65 +140,44 @@ const STAGE_LABELS: Record<string, string> = {
 /* ------------------------------------------------------------------ */
 
 function GpaBadge({ gpa }: { gpa: GpaOverview }) {
-  const [isOpen, setIsOpen] = useState(false);
-
   return (
-    <div className="space-y-4 rounded-xl border border-neutral-800 bg-neutral-900/50 p-4">
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between outline-none group"
-      >
-        <p className="text-xs font-semibold text-cyan-400 uppercase tracking-widest group-hover:text-cyan-300 transition-colors">
-          Thông tin chính thức từ trường (DAA)
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="flex flex-col bg-neutral-900/50 p-5 rounded-xl border border-neutral-800/60 shadow-sm">
+        <p className="text-sm text-neutral-200 font-medium mb-1">Điểm trung bình chung tích lũy</p>
+        <p className="text-[10px] text-neutral-500 mb-4 flex-grow">
+          Chỉ tính điểm các môn đã tích lũy (từ 5,0 trở lên), dùng để phân loại kết quả và xếp hạng tốt nghiệp.
         </p>
-        <span className="text-neutral-500 text-xs">{isOpen ? "Thu gọn ▲" : "Mở rộng ▼"}</span>
-      </button>
-
-      {isOpen && (
-        <div className="flex flex-col gap-3 pt-2">
-           <div className="flex justify-between items-center bg-neutral-800/40 p-3 rounded-lg border border-neutral-700/50">
-             <div>
-                <p className="text-sm text-neutral-200 font-medium">Điểm trung bình chung (ĐTBC)</p>
-                <p className="text-[10px] text-neutral-500 mt-1 max-w-[280px]">Tính điểm tất cả các môn đã học (kể cả rớt), dùng để xét số tín chỉ được đăng ký, học vượt, chuyển ngành hoặc xét khóa luận.</p>
-             </div>
-             <div className="text-right">
-                <p className="text-lg font-bold text-emerald-400">{gpa.daa_dtbc_10?.toFixed(2) || "N/A"}</p>
-                {gpa.daa_dtbc_4 != null && <p className="text-[10px] text-neutral-500">Hệ 4: {gpa.daa_dtbc_4.toFixed(2)}</p>}
-             </div>
-           </div>
-
-           <div className="flex justify-between items-center bg-neutral-800/40 p-3 rounded-lg border border-neutral-700/50">
-             <div>
-                <p className="text-sm text-neutral-200 font-medium">Điểm trung bình chung tích lũy (ĐTBCTL)</p>
-                <p className="text-[10px] text-neutral-500 mt-1 max-w-[280px]">Chỉ tính điểm các môn đã tích lũy (từ 5,0 trở lên), dùng để phân loại kết quả và xếp hạng tốt nghiệp.</p>
-             </div>
-             <div className="text-right">
-                <p className="text-lg font-bold text-amber-400">{gpa.daa_dtbctl_10?.toFixed(2) || "N/A"}</p>
-                {gpa.daa_dtbctl_4 != null && <p className="text-[10px] text-neutral-500">Hệ 4: {gpa.daa_dtbctl_4.toFixed(2)}</p>}
-             </div>
-           </div>
-
-           {gpa.daa_earned_credits != null && gpa.daa_earned_credits > 0 && (
-             <div className="flex justify-between items-center bg-neutral-800/40 p-3 rounded-lg border border-neutral-700/50">
-               <div>
-                  <p className="text-sm text-neutral-200 font-medium">Tín chỉ tích lũy</p>
-               </div>
-               <div className="text-right">
-                  <p className="text-lg font-bold text-white">{gpa.daa_earned_credits} TC</p>
-               </div>
-             </div>
-           )}
+        <div className="mt-auto flex items-baseline gap-2">
+          <p className="text-3xl font-bold text-amber-400">{gpa.daa_dtbctl_10?.toFixed(2) || "N/A"}</p>
         </div>
-      )}
+      </div>
+
+      <div className="flex flex-col bg-neutral-900/50 p-5 rounded-xl border border-neutral-800/60 shadow-sm">
+        <p className="text-sm text-neutral-200 font-medium mb-1">Tín chỉ tích lũy</p>
+        <p className="text-[10px] text-neutral-500 mb-4 flex-grow">
+          Tổng số tín chỉ của các môn học đã tích lũy thành công.
+        </p>
+        <div className="mt-auto">
+          <p className="text-3xl font-bold text-white">
+            {gpa.daa_earned_credits || 0} <span className="text-base font-medium text-neutral-400">TC</span>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
 
 function TreeViewNode({ node }: { node: RoadmapNode }) {
   const cfg = statusCfg(node.status);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const hasDetails = Boolean(node.detailed_grades && Object.keys(node.detailed_grades).length > 0);
 
   return (
-    <div className="hs-accordion-selectable px-2 py-1.5 rounded-md cursor-pointer hover:bg-neutral-800/50 transition-colors group" role="treeitem">
+    <div 
+      className={`px-2 py-1.5 rounded-md transition-colors group ${hasDetails ? "cursor-pointer hover:bg-neutral-800/50" : ""}`} 
+      role="treeitem"
+      onClick={() => hasDetails && setIsExpanded(!isExpanded)}
+    >
       <div className="flex items-center gap-x-3">
         <div className={`shrink-0 h-2 w-2 rounded-full ${cfg.bg} border border-neutral-600`} />
         
@@ -214,14 +191,11 @@ function TreeViewNode({ node }: { node: RoadmapNode }) {
                <span className="text-[10px] text-neutral-500">{node.credits} TC</span>
                {node.status === "passed" && node.grade_10 !== null && (
                  <span className={`text-[10px] ${cfg.color}`}>
-                   Điểm: {node.grade_10.toFixed(1)} ({node.grade_letter})
+                   Điểm: {node.grade_10.toFixed(1)}
                  </span>
                )}
-               {node.status === "passed" && node.grade_10 === null && (
-                 <span className={`text-[10px] ${cfg.color}`}>Được miễn</span>
-               )}
                {node.status === "failed" && (
-                 <span className={`text-[10px] text-red-400`}>Rớt - Điểm: {node.grade_10?.toFixed(1)}</span>
+                 <span className={`text-[10px] text-red-400`}>Điểm: {node.grade_10?.toFixed(1)}</span>
                )}
                {node.status === "locked" && node.missing_prerequisites.length > 0 && (
                  <span className={`text-[10px] text-amber-500 truncate max-w-[200px]`}>Tiên quyết: {node.missing_prerequisites.join(", ")}</span>
@@ -232,12 +206,28 @@ function TreeViewNode({ node }: { node: RoadmapNode }) {
              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${cfg.color} bg-black/20`}>
                {cfg.label}
              </span>
-             {!node.is_required && (
+             {!node.is_required && !/(anh văn|tiếng anh)/i.test(node.course_name) && (
                <span className="text-[9px] font-medium text-violet-400 bg-violet-900/20 px-1 rounded">Tự chọn</span>
+             )}
+             {hasDetails && (
+               <span className="text-neutral-500 ml-1">
+                 <svg className={`size-3.5 transition-transform ${isExpanded ? "rotate-180" : ""}`} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+               </span>
              )}
           </div>
         </div>
       </div>
+      
+      {isExpanded && hasDetails && (
+        <div className="mt-2 ml-5 p-2 bg-neutral-900/50 rounded-lg border border-neutral-800/60 shadow-inner grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          {Object.entries(node.detailed_grades!).map(([comp, score]) => (
+            <div key={comp} className="flex flex-col">
+              <span className="text-neutral-500 text-[10px] uppercase tracking-wider">{comp}</span>
+              <span className="font-semibold text-neutral-300">{score.toFixed(1)}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -600,6 +590,7 @@ export default function TrackerPage() {
           term_number: asNumber(n.term_number),
           grade_10: asNullableNumber(n.grade_10),
           grade_4: asNullableNumber(n.grade_4),
+          detailed_grades: n.detailed_grades ?? null,
         })),
         elective_groups: (roadmapRaw.elective_groups ?? []).map((g) => ({
           ...g,
@@ -611,13 +602,10 @@ export default function TrackerPage() {
       };
       const normalizedGpa: GpaOverview = {
         gpa_10: asNumber(gpaRaw.gpa_10),
-        gpa_4: asNumber(gpaRaw.gpa_4),
         total_credits: asNumber(gpaRaw.total_credits),
         earned_credits: asNumber(gpaRaw.earned_credits),
         daa_dtbc_10: asNullableNumber(gpaRaw.daa_dtbc_10),
-        daa_dtbc_4: asNullableNumber(gpaRaw.daa_dtbc_4),
         daa_dtbctl_10: asNullableNumber(gpaRaw.daa_dtbctl_10),
-        daa_dtbctl_4: asNullableNumber(gpaRaw.daa_dtbctl_4),
         daa_earned_credits: asNullableNumber(gpaRaw.daa_earned_credits),
       };
 
@@ -660,25 +648,6 @@ export default function TrackerPage() {
             <h1 className="text-2xl font-bold tracking-tight text-white">Lộ trình học tập</h1>
           </div>
           <div className="flex gap-3">
-            {me?.has_credential && (
-              <button
-                type="button"
-                onClick={() => setShowResync((v) => !v)}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-                  showResync
-                    ? "bg-neutral-700 text-neutral-300 hover:bg-neutral-600"
-                    : "bg-gradient-to-r from-emerald-700 to-cyan-700 text-white shadow hover:from-emerald-600 hover:to-cyan-600"
-                }`}
-              >
-                {showResync ? "✕ Đóng" : "🔄 Cập nhật điểm DAA"}
-              </button>
-            )}
-            <Link
-              href="/tracker/gpa-tools"
-              className="rounded-lg bg-gradient-to-r from-violet-700 to-cyan-700 px-4 py-2 text-sm font-medium text-white shadow hover:from-violet-600 hover:to-cyan-600 transition-all"
-            >
-              🧮 GPA Tools
-            </Link>
           </div>
         </div>
 

@@ -27,7 +27,7 @@ from app.services.academic.roadmap import ElectiveGroupRule, EnrollmentInfo
 @dataclass(frozen=True)
 class StudentContext:
     """Minimal student info for recommendation scoring."""
-    cumulative_gpa_4: Decimal
+    cumulative_gpa_10: Decimal
     passed_course_ids: set[int]       # course IDs the student has passed
     enrolled_course_ids: set[int]     # currently enrolled (in-progress)
     grades: dict[int, Decimal]        # course_id → final_grade_10
@@ -131,8 +131,8 @@ def smart_recommend(
             score += 2
             reasons.append("+2 sở trường (tiếp nối môn điểm cao)")
 
-        # -3 khó AND gpa <= 2.5
-        if c.difficulty == "Khó" and student.cumulative_gpa_4 <= Decimal("2.5"):
+        # -3 khó AND gpa <= 6.0
+        if c.difficulty == "Khó" and student.cumulative_gpa_10 <= Decimal("6.0"):
             score -= 3
             reasons.append("-3 môn khó, GPA thấp")
 

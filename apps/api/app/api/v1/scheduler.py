@@ -238,7 +238,7 @@ async def recommend(
         )
 
     student_ctx = StudentContext(
-        cumulative_gpa_4=gpa_result.gpa_4,
+        cumulative_gpa_10=gpa_result.gpa_10,
         passed_course_ids=passed_ids,
         enrolled_course_ids=enrolled_ids,
         grades=grades,

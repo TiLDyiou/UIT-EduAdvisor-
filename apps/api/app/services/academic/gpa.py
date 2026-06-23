@@ -64,7 +64,6 @@ def is_passed(score_10: Decimal | None) -> bool:
 @dataclass(frozen=True)
 class GpaResult:
     gpa_10: Decimal
-    gpa_4: Decimal
     total_credits: int   # credits attempted (all enrolled with grades)
     earned_credits: int  # credits where passed
 
@@ -84,31 +83,26 @@ def compute_cumulative_gpa(rows: list[EnrollmentRow]) -> GpaResult:
     total_credits = 0
     earned_credits = 0
     weighted_sum_10 = Decimal("0")
-    weighted_sum_4 = Decimal("0")
 
     for r in rows:
         if r.final_grade_10 is None or r.credits <= 0:
             continue
         total_credits += r.credits
         weighted_sum_10 += r.final_grade_10 * r.credits
-        weighted_sum_4 += grade_10_to_4(r.final_grade_10) * r.credits
         if is_passed(r.final_grade_10):
             earned_credits += r.credits
 
     if total_credits == 0:
         return GpaResult(
             gpa_10=Decimal("0"),
-            gpa_4=Decimal("0"),
             total_credits=0,
             earned_credits=0,
         )
 
     gpa_10 = (weighted_sum_10 / total_credits).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    gpa_4 = (weighted_sum_4 / total_credits).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     return GpaResult(
         gpa_10=gpa_10,
-        gpa_4=gpa_4,
         total_credits=total_credits,
         earned_credits=earned_credits,
     )
@@ -129,7 +123,6 @@ def simulate_gpa(
 @dataclass(frozen=True)
 class ReverseResult:
     required_avg_10: Decimal
-    required_avg_4: Decimal
     achievable: bool
 
 
@@ -148,7 +141,6 @@ def reverse_calculate(
         achievable = current_gpa_10 >= target_gpa_10
         return ReverseResult(
             required_avg_10=Decimal("0"),
-            required_avg_4=Decimal("0"),
             achievable=achievable,
         )
 
@@ -167,7 +159,6 @@ def reverse_calculate(
 
     return ReverseResult(
         required_avg_10=clamped,
-        required_avg_4=grade_10_to_4(clamped),
         achievable=achievable,
     )
 
@@ -181,36 +172,30 @@ class RetakeResult:
     old_gpa_10: Decimal
     new_gpa_10: Decimal
     delta_gpa_10: Decimal
-    old_gpa_4: Decimal
-    new_gpa_4: Decimal
-    delta_gpa_4: Decimal
 
 
 def retake_estimate(
     enrollments: list[EnrollmentRow],
-    retake_index: int,
-    new_grade_10: Decimal,
+    retakes: dict[int, Decimal],
 ) -> RetakeResult:
-    """Estimate GPA change when retaking a specific enrollment.
+    """Estimate GPA change when retaking specific enrollments.
 
-    ``retake_index`` is the position in *enrollments* of the course to retake.
+    ``retakes`` is a mapping from position in *enrollments* to the new grade.
     The old grade is replaced by *new_grade_10*.
     """
     old = compute_cumulative_gpa(enrollments)
 
     updated = list(enrollments)
-    original = updated[retake_index]
-    updated[retake_index] = EnrollmentRow(
-        credits=original.credits,
-        final_grade_10=new_grade_10,
-    )
+    for retake_index, new_grade_10 in retakes.items():
+        original = updated[retake_index]
+        updated[retake_index] = EnrollmentRow(
+            credits=original.credits,
+            final_grade_10=new_grade_10,
+        )
     new = compute_cumulative_gpa(updated)
 
     return RetakeResult(
         old_gpa_10=old.gpa_10,
         new_gpa_10=new.gpa_10,
         delta_gpa_10=new.gpa_10 - old.gpa_10,
-        old_gpa_4=old.gpa_4,
-        new_gpa_4=new.gpa_4,
-        delta_gpa_4=new.gpa_4 - old.gpa_4,
     )

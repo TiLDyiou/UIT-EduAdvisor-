@@ -74,7 +74,7 @@ async def build_realtime_context_block(db: AsyncSession, student: Student) -> st
     lines = [
         f"Ngành: {major_name}",
         f"Năm nhập học (hồ sơ): {st.enrollment_year}",
-        f"GPA (thang 10): {gpa.gpa_10} | GPA (thang 4): {gpa.gpa_4} | "
+        f"GPA (thang 10): {gpa.gpa_10} | "
         f"Tín chỉ tích lũy (có điểm): {gpa.total_credits} | Tín chỉ đạt: {gpa.earned_credits}",
         f"Môn đang học/chưa có điểm cuối kỳ: {', '.join(current_courses) if current_courses else '(không có trong DB)'}",
         f"Môn chưa đạt (đã có điểm): {', '.join(failed_courses) if failed_courses else '(không)'}",

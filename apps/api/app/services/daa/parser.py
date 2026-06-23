@@ -120,6 +120,20 @@ def parse_grades_tables(html: str) -> list[dict[str, str | Decimal | int | None]
         credit_headers = {"so tin chi", "tin chi", "tc", "credits"}
         term_headers = {"hoc ky", "ky", "term"}
         grade_headers = {"diem", "diem tk", "diem tong ket", "tong ket", "grade", "final grade", "diem hp", "diem hoc phan", "iem hp"}
+        
+        comp_matchers = {
+            "Quá trình": {"diem qt", "diem qua trinh", "qt"},
+            "Giữa kỳ": {"diem gk", "diem giua ky", "gk"},
+            "Thực hành": {"diem th", "diem thuc hanh", "th"},
+            "Cuối kỳ": {"diem ck", "diem cuoi ky", "ck"}
+        }
+        
+        comp_idx = {}
+        for comp_name, matchers in comp_matchers.items():
+            for h, i in col_idx.items():
+                if h in matchers:
+                    comp_idx[comp_name] = i
+                    break
 
         if not any(k in col_idx for k in code_headers):
             continue
@@ -163,6 +177,13 @@ def parse_grades_tables(html: str) -> list[dict[str, str | Decimal | int | None]
                     term = val or term
                 if h in grade_headers:
                     grade = _parse_decimal_maybe(val)
+            
+            detailed_grades = {}
+            for comp_name, i in comp_idx.items():
+                if i < len(cells):
+                    comp_grade = _parse_decimal_maybe(cells[i])
+                    if comp_grade is not None:
+                        detailed_grades[comp_name] = comp_grade
             if code:
                 rows_out.append(
                     {
@@ -171,6 +192,7 @@ def parse_grades_tables(html: str) -> list[dict[str, str | Decimal | int | None]
                         "credits": credits,
                         "term_code": term or current_term or "unknown",
                         "final_grade_10": grade,
+                        "detailed_grades": detailed_grades,
                     }
                 )
     return rows_out

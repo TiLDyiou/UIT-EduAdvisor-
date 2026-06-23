@@ -13,13 +13,11 @@ from pydantic import BaseModel, Field
 
 class GpaOverviewResponse(BaseModel):
     gpa_10: Decimal
-    gpa_4: Decimal
+
     total_credits: int
     earned_credits: int
     daa_dtbc_10: Decimal | None = None
-    daa_dtbc_4: Decimal | None = None
     daa_dtbctl_10: Decimal | None = None
-    daa_dtbctl_4: Decimal | None = None
     daa_earned_credits: int | None = None
 
 
@@ -39,28 +37,32 @@ class GpaSimulateResponse(BaseModel):
 
 
 class ReverseCalculateRequest(BaseModel):
+    current_gpa_10: Decimal = Field(ge=0, le=10)
+    earned_credits: int = Field(ge=0)
     target_gpa_10: Decimal = Field(ge=0, le=10)
     remaining_credits: int = Field(ge=1)
 
 
 class ReverseCalculateResponse(BaseModel):
     required_avg_10: Decimal
-    required_avg_4: Decimal
+
     achievable: bool
 
 
-class RetakeEstimateRequest(BaseModel):
+class RetakeEntry(BaseModel):
     enrollment_id: int
     new_grade_10: Decimal = Field(ge=0, le=10)
+
+
+class RetakeEstimateRequest(BaseModel):
+    retakes: list[RetakeEntry] = Field(min_length=1)
 
 
 class RetakeEstimateResponse(BaseModel):
     old_gpa_10: Decimal
     new_gpa_10: Decimal
     delta_gpa_10: Decimal
-    old_gpa_4: Decimal
-    new_gpa_4: Decimal
-    delta_gpa_4: Decimal
+
 
 
 # ---------------------------------------------------------------------------
@@ -82,6 +84,7 @@ class RoadmapNodeResponse(BaseModel):
     elective_group_id: int | None = None
     elective_group_name: str | None = None
     is_required: bool
+    detailed_grades: dict[str, float] | None = None
 
 
 class ElectiveGroupStatusResponse(BaseModel):
@@ -94,6 +97,7 @@ class ElectiveGroupStatusResponse(BaseModel):
 
 
 class RoadmapResponse(BaseModel):
+    total_credits: int | None = None
     nodes: list[RoadmapNodeResponse]
     elective_groups: list[ElectiveGroupStatusResponse]
-    is_preview: bool  # True when student has no enrollment data
+    is_preview: bool = False# True when student has no enrollment data

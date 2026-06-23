@@ -172,7 +172,7 @@ export default function HomePage() {
               theme="violet"
             />
             <FeatureCard
-              href="/tracker/gpa-tools"
+              href="/gpa-tools"
               title="GPA Tools Suite"
               description="Bộ công cụ thông minh tính điểm học phần, dự toán điểm số mục tiêu và tối ưu hóa lộ trình cải thiện GPA."
               icon={Calculator}

@@ -29,7 +29,7 @@ const NAV_ITEMS = [
   },
   {
     title: "GPA Tools",
-    url: "/tracker/gpa-tools",
+    url: "/gpa-tools",
     icon: Calculator,
   },
   {

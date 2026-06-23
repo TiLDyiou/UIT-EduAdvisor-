@@ -202,7 +202,6 @@ async def _cmd_gpa(db: AsyncSession, cmd: NormalizedCommand, student: Student) -
     return (
         f"GPA tich luy:\n"
         f"  Thang 10: {result.gpa_10}\n"
-        f"  Thang 4:  {result.gpa_4}\n"
         f"  Tin chi tich luy: {result.earned_credits}/{result.total_credits}"
     )
 

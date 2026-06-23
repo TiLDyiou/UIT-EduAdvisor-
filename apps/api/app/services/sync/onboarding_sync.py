@@ -148,6 +148,23 @@ async def _persist_grades(session: AsyncSession, student_id, rows: list[dict[str
         else:
             en.final_grade_10 = row.get("final_grade_10")
             en.status = "recorded"
+            
+        await session.flush()
+        
+        detailed_grades = row.get("detailed_grades")
+        if detailed_grades:
+            from app.db.models.academic import Grade
+            await session.execute(delete(Grade).where(Grade.enrollment_id == en.id))
+            from datetime import datetime, timezone
+            for comp_name, score in detailed_grades.items():
+                g = Grade(
+                    enrollment_id=en.id,
+                    component=comp_name,
+                    score=score,
+                    weight=0,
+                    recorded_at=datetime.now(timezone.utc),
+                )
+                session.add(g)
 
 
 async def _persist_schedule(session: AsyncSession, student_id, rows: list[dict[str, Any]]) -> None:
