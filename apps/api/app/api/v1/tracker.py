@@ -106,7 +106,7 @@ async def _find_curriculum(db: AsyncSession, student: Student) -> Curriculum | N
     if student.enrollment_year:
         query = query.where(
             or_(
-                Curriculum.effective_year == student.enrollment_year,
+                Curriculum.effective_year <= student.enrollment_year,
                 Curriculum.effective_year.is_(None)
             )
         )
@@ -118,7 +118,7 @@ async def _find_curriculum(db: AsyncSession, student: Student) -> Curriculum | N
 
 def _enrollment_to_row(e: Enrollment) -> EnrollmentRow:
     return EnrollmentRow(
-        credits=e.course.credits if e.course else 0,
+        credits=e.course.credits or 0 if e.course else 0,
         final_grade_10=e.final_grade_10,
     )
 
@@ -308,9 +308,9 @@ async def roadmap(
                 CurriculumEntry(
                     course=CourseInfo(
                         course_id=c.id,
-                        code=c.code,
+                        code=c.code or "",
                         name=c.name,
-                        credits=c.credits,
+                        credits=c.credits or 0,
                     ),
                     term_number=term.term_number,
                     is_required=cc.is_required,
@@ -379,8 +379,7 @@ async def roadmap(
     credit_map = {entry.course.course_id: entry.course.credits for entry in curriculum_entries}
     eg_statuses = compute_elective_group_statuses(eg_rules, enrollment_infos, credit_map)
 
-    # Build actual term mapping: enrollment term_code → sequential kỳ number
-    # e.g., HK1_2024-2025 → 1, HK2_2024-2025 → 2, HK1_2025-2026 → 3, ...
+    # Map DAA term codes to chronological sequence numbers
     enrollment_term_codes: set[str] = set()
     course_actual_term: dict[int, str] = {}  # course_id → term_code
     for e in enrollments:
@@ -390,19 +389,16 @@ async def roadmap(
         elif e.term_code == "CURRENT":
             course_actual_term.setdefault(e.course_id, "CURRENT")
 
-    # Sort term_codes chronologically by (start_year, semester_number)
-    # Format: HKN_YYYY-YYYY → sort key (YYYY, N)
     import re as _re
 
     def _term_sort_key(tc: str) -> tuple[int, int]:
         m = _re.match(r"HK(\d)_(\d{4})-(\d{4})", tc)
         if m:
             return (int(m.group(2)), int(m.group(1)))  # (start_year, semester)
-        return (9999, 9)  # unknown terms go last
+        return (9999, 9)
 
     sorted_terms = sorted(enrollment_term_codes, key=_term_sort_key)
     term_code_to_number = {tc: i + 1 for i, tc in enumerate(sorted_terms)}
-    # CURRENT maps to the latest actual term (same semester)
     current_actual_term = len(sorted_terms) if sorted_terms else 0
     if sorted_terms:
         term_code_to_number["CURRENT"] = current_actual_term
@@ -410,30 +406,16 @@ async def roadmap(
         term_code_to_number["CURRENT"] = 1
         current_actual_term = 0
 
-    # For non-enrolled courses: shift curriculum term to be AFTER current actual term
-    # Find the min curriculum term among non-enrolled courses
-    non_enrolled_curriculum_terms: list[int] = []
-    for n in nodes:
-        if n.course_id not in course_actual_term:
-            non_enrolled_curriculum_terms.append(n.term_number)
-    if non_enrolled_curriculum_terms:
-        min_remaining = min(non_enrolled_curriculum_terms)
-        # Offset so that the earliest non-enrolled group starts at current_actual_term + 1
-        term_offset = current_actual_term + 1 - min_remaining
-        term_offset = max(term_offset, 0)
-    else:
-        term_offset = 0
-
-    # Build response, overriding term_number
+    # Build response: Enrolled courses stay where they were taken.
+    # Non-enrolled courses that were missed are shifted to the next available term.
     node_responses = []
     for n in nodes:
         actual_tc = course_actual_term.get(n.course_id)
         if actual_tc and actual_tc in term_code_to_number:
-            # Enrolled course: use actual semester from DAA
             actual_term = term_code_to_number[actual_tc]
         else:
-            # Non-enrolled course: shift after current term
-            actual_term = n.term_number + term_offset
+            actual_term = max(current_actual_term + 1, n.term_number)
+            
         node_responses.append(
             RoadmapNodeResponse(
                 course_id=n.course_id,

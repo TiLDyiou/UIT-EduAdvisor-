@@ -472,12 +472,17 @@ def parse_class_code_info(html: str) -> tuple[str | None, int | None]:
         if "lớp sinh hoạt" in text:
             # The next sibling td or the text inside this td might contain the class code
             next_td = td.find_next_sibling("td")
+            val = ""
             if next_td:
                 val = next_td.get_text(" ", strip=True)
-                m = re.match(r"^([a-zđ]+)(\d{4})", val, re.I)
-                if m:
-                    prefix = m.group(1).upper()
-                    year_str = m.group(2)
-                    major_name = MAJOR_MAPPING.get(prefix)
-                    return major_name, int(year_str)
+            # Fallback to checking the current td if next_td is empty
+            if not val:
+                val = td.get_text(" ", strip=True)
+
+            m = re.search(r"([a-zđ]+)(\d{4})", val, re.I)
+            if m:
+                prefix = m.group(1).upper()
+                year_str = m.group(2)
+                major_name = MAJOR_MAPPING.get(prefix)
+                return major_name, int(year_str)
     return None, None

@@ -31,7 +31,7 @@ _LETTER_BANDS: list[tuple[Decimal, str]] = [
     (Decimal("4.0"), "D"),
 ]
 
-PASS_THRESHOLD = Decimal("4.0")
+PASS_THRESHOLD = Decimal("5.0")
 
 
 def grade_10_to_4(score_10: Decimal) -> Decimal:

@@ -107,9 +107,15 @@ async def _ensure_major(session: AsyncSession, major_name: str):
     res = await session.execute(
         select(Major).where(func.lower(Major.name) == major_name.lower()).limit(1)
     )
+    m = res.scalar_one_or_none()
+    if m:
+        return m
+    
+    clean_name = major_name.lower().replace("ngành ", "").strip()
+    res = await session.execute(
+        select(Major).where(Major.name.ilike(f"%{clean_name}%")).limit(1)
+    )
     return res.scalar_one_or_none()
-
-
 
 async def _persist_grades(session: AsyncSession, student_id, rows: list[dict[str, Any]]) -> None:
     for row in rows:
