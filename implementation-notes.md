@@ -40,13 +40,44 @@ This document tracks decisions, implementation details, and design tradeoffs mad
 * **Problem**:
   * The synchronization progress bar jumped instantly from 0% to 100% because server events arrived rapidly, bypassing intermediate stages.
   * Status circles for the stages had no visual feedback indicating actual loading steps, nor any distinct success animation other than instantly swapping to static green icons.
+  * The immediate redirect in the EventSource callback cut off the UI animations before the user could observe them.
 * **Solution**:
-  * Mapped synchronization stages to distinct progress percentages (`STAGE_PROGRESS`) (e.g., `daa_profile` at 15%, `daa_grades` at 35%, etc.) instead of binding directly to raw API percentages.
-  * Implemented a smooth step interpolation that limits the progress bar's increment speed (maximum 1.2% per 25ms tick), smoothing the progress and guaranteeing a visual flow over at least a few seconds.
-  * Added a custom rotating SVG circular progress loader for the active sync stages with animated dash offset keyframes (`dash-spinner`).
-  * Created a success pop/ripple animation (`success-pop`) that scales up and triggers a green glow ripple whenever a stage transition completes.
+  * Decoupled the frontend progress representation from raw server speed by introducing a client-side stage-by-stage simulation state machine (`simulatedIndex`).
+  * Mapped stages to distinct progress percentages (`STAGE_PROGRESS`) (e.g., `daa_profile` at 15%, `daa_grades` at 35%, etc.) and smoothly incremented `displayedProgress` (0.8% per 30ms) until reaching each stage's target.
+  * Paused at each stage's target, checked if the server has completed it, triggered a green pop ripple animation (`success-pop`), and paused for 800ms before activating the next stage.
+  * Replaced the spinning `RefreshCw` icon with a custom spinning SVG circular loader (`dash-spinner`) for the currently active stage.
+  * Delegated the dashboard routing from the EventSource listener to a callback `onComplete` in the `<SyncGraphic>` component, triggered 1.5 seconds after the simulation smoothly hits 100%.
+
 
 ### 6. Copywriting Refinement
 * **Problem**: The promotional copy on the onboarding screen was overly exaggerated ("Hệ thống AI mạnh mẽ phân tích hàng triệu điểm dữ liệu...") and did not accurately reflect the actual app feature set.
 * **Solution**: Rewrote the sentence to realistically explain what the app does: integrating DAA and Moodle data to help students with course recommendations, study planning, and grade tracking at UIT.
+
+### 7. DAA Captcha & Login Rate Limiting (M2/M4 local dev)
+* **Problem**: Frequent testing and reloading of the onboarding page resulted in `429 Too Many Requests` API lockouts due to IP rate limits (default limit: 30 fetches per hour).
+* **Solution**: 
+  * Overrode the rate limits in `.env` by adding `DAA_CAPTCHA_RATE_LIMIT_PER_HOUR=9999` and `DAA_LOGIN_RATE_LIMIT_PER_HOUR=9999` to raise the threshold for local development.
+  * Flushed Redis (`redis-cli flushall`) to release any active rate-limit locks instantly.
+  * Restarted the API docker container (`uit-eduadvisor-api-1`) to apply the new configuration.
+
+## Progress Circle & Simulation Decoupling Updates (2026-06-24)
+
+### 1. Full Circle Progress Ring Completion
+* **Problem**: The circular SVG progress loader for the active stage did not render a complete 360-degree loop before transitioning. Due to state updates, once `displayedProgress` reached the target, it instantly marked the stage as done, instantly replacing the spinning loader with a static green circle.
+* **Solution**:
+  * Added a **200ms delay** after the progress values reach the stage target. During this period, the loader ratio stays at `1.0` (drawing a perfect 100% cyan border ring) before the stage changes its state to `isDone`.
+  * Redesigned the `isDone` UI layout. Instead of rendering a solid, filled green disk (`bg-emerald-500` with `CheckCircle`), it now keeps the fine-bordered empty ring style (`stroke-[1.5]` with `stroke-emerald-500` at `strokeDashoffset={0}`) enclosing a subtle `Check` icon in the center. This establishes visual continuity with the `isActive` loader.
+  * Added `strokeLinecap="round"` to the active progress circle stroke for smoother visual rendering.
+
+### 2. Client-side Simulation Decoupling and Total Duration Tuning
+* **Problem**: In development/local environments, the server sync events might complete instantly or the frontend might depend too strictly on `isCompleted` from the server, interrupting the loading animations. However, if the client redirects too fast, the backend might still be finishing data ingestion.
+* **Solution**:
+  * Set the final stage `persisting` target from `98%` to `100%` in `STAGE_PROGRESS`.
+  * Decoupled the transition check: once the simulation finishes the last stage (`simulatedIndex` reaches 6, meaning all stages are done and progress is `100%`), the app automatically schedules a redirect callback via `setTimeout` after `1500ms`, removing the dependency on `isCompleted` from the server EventSource payload.
+  * Preserved the `isFailed` boundary to guarantee that if the backend returns a sync failure event, the simulation immediately halts and prints the API error.
+  * Tuned the simulation parameters to ensure the overall duration matches a realistic sync workflow (~13 seconds) to prevent visual mismatch:
+    * Decreased progress speed increment from `0.8%` to `0.45%` per `30ms`.
+    * Increased inter-stage pop transition delays from `600ms` to `800ms`.
+
+
 

@@ -10,7 +10,15 @@ import {
 } from "@/lib/ai-mate-db";
 import { apiBaseUrl, apiFetch, parseApiError } from "@/lib/api";
 import { parseSseJsonStream } from "@/lib/sse";
-import { Send, X, Pin, Loader2, AlertTriangle, FileText, Trash2 } from "lucide-react";
+import {
+  Send,
+  X,
+  Pin,
+  Loader2,
+  AlertTriangle,
+  FileText,
+  Trash2,
+} from "lucide-react";
 
 type Me = { student_id: string; csrf_token: string };
 type Source = {
@@ -31,27 +39,51 @@ function newId() {
   return `m_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
-function FormattedText({ text, role }: { text: string; role?: "user" | "assistant" }) {
+function FormattedText({
+  text,
+  role,
+}: {
+  text: string;
+  role?: "user" | "assistant";
+}) {
   const lines = text.split("\n");
   const isUser = role === "user";
-  
+
   return (
     <div className="space-y-1">
       {lines.map((line, i) => {
         if (!line.trim()) return <div key={i} className="h-1.5" />; // Empty lines = spacer
-        
+
         const isBullet = !isUser && line.trimStart().startsWith("- ");
         const content = isBullet ? line.trimStart().slice(2) : line;
-        
+
         // Parse inline bold/italic
         const parts = content.split(/(\*\*.*?\*\*|\*.*?\*)/g);
-        
+
         const lineContent = parts.map((part, j) => {
-          if (part.startsWith("**") && part.endsWith("**") && part.length >= 4) {
-            return <strong key={j} className={`font-semibold ${isUser ? "text-white" : "text-white/90"}`}>{part.slice(2, -2)}</strong>;
+          if (
+            part.startsWith("**") &&
+            part.endsWith("**") &&
+            part.length >= 4
+          ) {
+            return (
+              <strong
+                key={j}
+                className={`font-semibold ${isUser ? "text-white" : "text-white/90"}`}
+              >
+                {part.slice(2, -2)}
+              </strong>
+            );
           }
           if (part.startsWith("*") && part.endsWith("*") && part.length >= 2) {
-            return <em key={j} className={`italic ${isUser ? "text-white/80" : "text-neutral-400"}`}>{part.slice(1, -1)}</em>;
+            return (
+              <em
+                key={j}
+                className={`italic ${isUser ? "text-white/80" : "text-neutral-400"}`}
+              >
+                {part.slice(1, -1)}
+              </em>
+            );
           }
           return <span key={j}>{part}</span>;
         });
@@ -59,12 +91,14 @@ function FormattedText({ text, role }: { text: string; role?: "user" | "assistan
         if (isBullet) {
           return (
             <div key={i} className="pl-3 relative">
-              <span className="absolute left-0 top-[0.3em] text-[8px] text-neutral-500">●</span>
+              <span className="absolute left-0 top-[0.3em] text-[8px] text-neutral-500">
+                ●
+              </span>
               {lineContent}
             </div>
           );
         }
-        
+
         return <div key={i}>{lineContent}</div>;
       })}
     </div>
@@ -79,7 +113,9 @@ export function UITMateWidget() {
   const [streaming, setStreaming] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isOverloaded, setIsOverloaded] = useState<{ seconds: number } | null>(null);
+  const [isOverloaded, setIsOverloaded] = useState<{ seconds: number } | null>(
+    null,
+  );
   const [lastSources, setLastSources] = useState<Source[]>([]);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [hasOpenedBefore, setHasOpenedBefore] = useState(true);
@@ -101,55 +137,68 @@ export function UITMateWidget() {
 
   // ─── Drag – pure refs, zero re-renders during drag ───────────────────────
   const isDragging = useRef(false);
-  const dragTarget = useRef<'bubble' | 'window' | null>(null);
-  const dragStart = useRef({ mouseX: 0, mouseY: 0, bubbleX: 0, bubbleY: 0, wLeft: 0, wTop: 0 });
+  const dragTarget = useRef<"bubble" | "window" | null>(null);
+  const dragStart = useRef({
+    mouseX: 0,
+    mouseY: 0,
+    bubbleX: 0,
+    bubbleY: 0,
+    wLeft: 0,
+    wTop: 0,
+  });
   const dragDistance = useRef(0);
 
   const bubbleRef = useRef<HTMLDivElement>(null);
   const windowRef = useRef<HTMLDivElement>(null);
-  const windowSide = useRef<'left' | 'right'>('left');
+  const windowSide = useRef<"left" | "right">("left");
 
-  const applyWindowStyle = useCallback((el: HTMLDivElement, bx: number, by: number) => {
-    const isMobile = window.innerWidth < 640;
-    if (isMobile) {
-      el.style.left = "16px";
-      el.style.right = "16px";
-      el.style.top = "16px";
-      el.style.bottom = "96px";
-      el.style.width = "auto";
-      el.style.height = "auto";
-    } else {
-      const W = 380, H = 520;
-      let side = windowSide.current;
+  const applyWindowStyle = useCallback(
+    (el: HTMLDivElement, bx: number, by: number) => {
+      const isMobile = window.innerWidth < 640;
+      if (isMobile) {
+        el.style.left = "16px";
+        el.style.right = "16px";
+        el.style.top = "16px";
+        el.style.bottom = "96px";
+        el.style.width = "auto";
+        el.style.height = "auto";
+      } else {
+        const W = 380,
+          H = 520;
+        let side = windowSide.current;
 
-      if (dragTarget.current !== 'window') {
-        if (side === 'left' && bx - W - 16 < 16) {
-          side = 'right';
-        } else if (side === 'right' && bx + 72 + W > window.innerWidth - 16) {
-          if (bx - W - 16 >= 16) {
-            side = 'left';
+        if (dragTarget.current !== "window") {
+          if (side === "left" && bx - W - 16 < 16) {
+            side = "right";
+          } else if (side === "right" && bx + 72 + W > window.innerWidth - 16) {
+            if (bx - W - 16 >= 16) {
+              side = "left";
+            }
           }
         }
+
+        windowSide.current = side;
+
+        let left = side === "right" ? bx + 72 : bx - W - 16;
+        let top = by - H + 56;
+
+        if (left < 16) left = 16;
+        if (left + W > window.innerWidth - 16)
+          left = window.innerWidth - W - 16;
+        if (top < 16) top = 16;
+        if (top + H > window.innerHeight - 16)
+          top = window.innerHeight - H - 16;
+
+        el.style.left = `${left}px`;
+        el.style.top = `${top}px`;
+        el.style.right = "";
+        el.style.bottom = "";
+        el.style.width = `${W}px`;
+        el.style.height = `${H}px`;
       }
-      
-      windowSide.current = side;
-
-      let left = side === 'right' ? bx + 72 : bx - W - 16;
-      let top = by - H + 56;
-
-      if (left < 16) left = 16;
-      if (left + W > window.innerWidth - 16) left = window.innerWidth - W - 16;
-      if (top < 16) top = 16;
-      if (top + H > window.innerHeight - 16) top = window.innerHeight - H - 16;
-
-      el.style.left = `${left}px`;
-      el.style.top = `${top}px`;
-      el.style.right = "";
-      el.style.bottom = "";
-      el.style.width = `${W}px`;
-      el.style.height = `${H}px`;
-    }
-  }, []);
+    },
+    [],
+  );
 
   // ─── Thread ───────────────────────────────────────────────────────────────
   const [threadId, setThreadId] = useState<string>("");
@@ -263,23 +312,29 @@ export function UITMateWidget() {
       document.body.style.userSelect = "";
 
       // Compute final clamped bubble position
-      const bx = Math.max(16, Math.min(window.innerWidth - 72, positionRef.current.x));
-      const by = Math.max(16, Math.min(window.innerHeight - 72, positionRef.current.y));
+      const bx = Math.max(
+        16,
+        Math.min(window.innerWidth - 72, positionRef.current.x),
+      );
+      const by = Math.max(
+        16,
+        Math.min(window.innerHeight - 72, positionRef.current.y),
+      );
 
       // Commit to left/top with transition still disabled (avoids animated teleport)
       if (bubbleRef.current) {
         bubbleRef.current.style.left = `${bx}px`;
         bubbleRef.current.style.top = `${by}px`;
-        bubbleRef.current.style.transform = '';
-        bubbleRef.current.style.willChange = '';
+        bubbleRef.current.style.transform = "";
+        bubbleRef.current.style.willChange = "";
       }
       if (windowRef.current) {
         // dragTarget still set here so applyWindowStyle skips side-flip logic
         applyWindowStyle(windowRef.current, bx, by);
-        windowRef.current.style.transform = '';
-        windowRef.current.style.willChange = '';
-        windowRef.current.style.backdropFilter = '';
-        (windowRef.current.style as any).webkitBackdropFilter = '';
+        windowRef.current.style.transform = "";
+        windowRef.current.style.willChange = "";
+        windowRef.current.style.backdropFilter = "";
+        (windowRef.current.style as any).webkitBackdropFilter = "";
       }
 
       dragTarget.current = null;
@@ -287,14 +342,17 @@ export function UITMateWidget() {
       // Restore CSS transitions only after the position commit has been painted
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          if (bubbleRef.current) bubbleRef.current.style.transition = '';
-          if (windowRef.current) windowRef.current.style.transition = '';
+          if (bubbleRef.current) bubbleRef.current.style.transition = "";
+          if (windowRef.current) windowRef.current.style.transition = "";
         });
       });
 
       positionRef.current = { x: bx, y: by };
       setPosition({ x: bx, y: by });
-      localStorage.setItem("uit_mate_position", JSON.stringify({ x: bx, y: by }));
+      localStorage.setItem(
+        "uit_mate_position",
+        JSON.stringify({ x: bx, y: by }),
+      );
     };
 
     const onMouseMove = (e: MouseEvent) => onMove(e.clientX, e.clientY);
@@ -316,7 +374,11 @@ export function UITMateWidget() {
     };
   }, [applyWindowStyle]);
 
-  const handleStart = (clientX: number, clientY: number, target: 'bubble' | 'window') => {
+  const handleStart = (
+    clientX: number,
+    clientY: number,
+    target: "bubble" | "window",
+  ) => {
     isDragging.current = true;
     dragTarget.current = target;
     document.body.style.cursor = "grabbing";
@@ -336,14 +398,14 @@ export function UITMateWidget() {
 
     // Kill CSS transitions + promote to compositor layer
     if (bubbleRef.current) {
-      bubbleRef.current.style.transition = 'none';
-      bubbleRef.current.style.willChange = 'transform';
+      bubbleRef.current.style.transition = "none";
+      bubbleRef.current.style.willChange = "transform";
     }
     if (windowRef.current) {
-      windowRef.current.style.transition = 'none';
-      windowRef.current.style.willChange = 'transform';
-      windowRef.current.style.backdropFilter = 'none';
-      (windowRef.current.style as any).webkitBackdropFilter = 'none';
+      windowRef.current.style.transition = "none";
+      windowRef.current.style.willChange = "transform";
+      windowRef.current.style.backdropFilter = "none";
+      (windowRef.current.style as any).webkitBackdropFilter = "none";
     }
   };
 
@@ -509,7 +571,12 @@ export function UITMateWidget() {
 
   async function handleClearChat() {
     if (!threadId) return;
-    if (!window.confirm("Bạn có chắc chắn muốn xoá toàn bộ lịch sử chat hiện tại?")) return;
+    if (
+      !window.confirm(
+        "Bạn có chắc chắn muốn xoá toàn bộ lịch sử chat hiện tại?",
+      )
+    )
+      return;
     await aiMateDbDeleteThread(threadId);
     setMessages([]);
     setStreaming("");
@@ -524,49 +591,54 @@ export function UITMateWidget() {
   return (
     <>
       {/* ── Draggable Chat Bubble (hidden when chat is open) ──────────── */}
-      {!isOpen && <div
-        ref={bubbleRef}
-        style={{ position: "fixed", zIndex: 9999 }}
-        onMouseDown={(e) => handleStart(e.clientX, e.clientY, 'bubble')}
-        onTouchStart={(e) => {
-          const touch = e.touches[0];
-          if (touch) handleStart(touch.clientX, touch.clientY, 'bubble');
-        }}
-        onClick={handleBubbleClick}
-        className="w-14 h-14 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow-lg shadow-black/50 active:scale-95 transition-transform select-none group relative overflow-visible"
-      >
-        {/* Glow ring */}
-        <div className="absolute inset-0 rounded-full bg-neutral-600/20 animate-ping opacity-75 pointer-events-none group-hover:animate-none" />
+      {!isOpen && (
+        <div
+          ref={bubbleRef}
+          style={{ position: "fixed", zIndex: 9999 }}
+          onMouseDown={(e) => handleStart(e.clientX, e.clientY, "bubble")}
+          onTouchStart={(e) => {
+            const touch = e.touches[0];
+            if (touch) handleStart(touch.clientX, touch.clientY, "bubble");
+          }}
+          onClick={handleBubbleClick}
+          className="w-14 h-14 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow-lg shadow-black/50 active:scale-95 transition-transform select-none group relative overflow-visible"
+        >
+          {/* Glow ring */}
+          <div className="absolute inset-0 rounded-full bg-neutral-600/20 animate-ping opacity-75 pointer-events-none group-hover:animate-none" />
 
-        <img
-          src="/ai.png"
-          alt="UIT Mate"
-          className="w-full h-full rounded-full object-cover pointer-events-none select-none border-2 border-transparent transition-colors"
-          draggable={false}
-        />
-        
-        {/* Unread / Typing Badge on Bubble */}
-        {!isOpen && (hasUnread || busy) && (
-          <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-neutral-900 shadow-sm animate-in zoom-in fade-in">
-            {busy && (
-              <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-75" />
-            )}
-          </div>
-        )}
+          <img
+            src="/ai.png"
+            alt="UIT Mate"
+            className="w-full h-full rounded-full object-cover pointer-events-none select-none border-2 border-transparent transition-colors"
+            draggable={false}
+          />
 
-        {/* Welcome Popup for new users */}
-        {!isOpen && !hasOpenedBefore && (
-          <div className="absolute bottom-[calc(100%+14px)] right-0 w-56 p-3.5 bg-neutral-900/95 backdrop-blur-md border border-neutral-800 rounded-2xl rounded-br-sm shadow-2xl shadow-black/80 flex flex-col gap-1.5 animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-500 pointer-events-none">
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-              <p className="text-xs text-white font-semibold tracking-wide">UIT Mate</p>
+          {/* Unread / Typing Badge on Bubble */}
+          {!isOpen && (hasUnread || busy) && (
+            <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-neutral-900 shadow-sm animate-in zoom-in fade-in">
+              {busy && (
+                <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-75" />
+              )}
             </div>
-            <p className="text-[11px] text-neutral-300 leading-relaxed">
-              Bạn có thắc mắc về điểm số, TKB hay quy chế đào tạo? Hãy hỏi mình nhé!
-            </p>
-          </div>
-        )}
-      </div>}
+          )}
+
+          {/* Welcome Popup for new users */}
+          {!isOpen && !hasOpenedBefore && (
+            <div className="absolute bottom-[calc(100%+14px)] right-0 w-56 p-3.5 bg-neutral-900/95 backdrop-blur-md border border-neutral-800 rounded-2xl rounded-br-sm shadow-2xl shadow-black/80 flex flex-col gap-1.5 animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-500 pointer-events-none">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                <p className="text-xs text-white font-semibold tracking-wide">
+                  UIT Mate
+                </p>
+              </div>
+              <p className="text-[11px] text-neutral-300 leading-relaxed">
+                Bạn có thắc mắc về điểm số hay quy chế đào tạo? Hãy hỏi mình
+                nhé!
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Chat Window ──────────────────────────────────────────────────
           IMPORTANT: left/top are intentionally absent from the style prop.
@@ -582,10 +654,10 @@ export function UITMateWidget() {
         >
           {/* Header */}
           <div
-            onMouseDown={(e) => handleStart(e.clientX, e.clientY, 'window')}
+            onMouseDown={(e) => handleStart(e.clientX, e.clientY, "window")}
             onTouchStart={(e) => {
               const touch = e.touches[0];
-              if (touch) handleStart(touch.clientX, touch.clientY, 'window');
+              if (touch) handleStart(touch.clientX, touch.clientY, "window");
             }}
             className="p-4 bg-neutral-950/80 border-b border-neutral-850 flex items-center justify-between select-none cursor-grab active:cursor-grabbing"
           >
@@ -709,9 +781,11 @@ export function UITMateWidget() {
                     )}
 
                     {m.sources?.map((s, idx) => {
-                      const shortTitle = s.document_title?.includes("1393") ? "QĐ 1393" 
-                                       : s.document_title?.includes("790") ? "QĐ 790" 
-                                       : "Quy chế";
+                      const shortTitle = s.document_title?.includes("1393")
+                        ? "QĐ 1393"
+                        : s.document_title?.includes("790")
+                          ? "QĐ 790"
+                          : "Quy chế";
                       return (
                         <button
                           key={idx}
@@ -770,7 +844,10 @@ export function UITMateWidget() {
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                 <div className="leading-relaxed">
                   <p className="font-semibold mb-0.5">Hệ thống đang quá tải!</p>
-                  <p>Có quá nhiều người dùng cùng lúc. Vui lòng chờ {isOverloaded.seconds} giây rồi thử lại nhé.</p>
+                  <p>
+                    Có quá nhiều người dùng cùng lúc. Vui lòng chờ{" "}
+                    {isOverloaded.seconds} giây rồi thử lại nhé.
+                  </p>
                 </div>
               </div>
             )}
@@ -815,17 +892,21 @@ export function UITMateWidget() {
       {/* Source Viewer Modal */}
       {viewerSource && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
-          <div 
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setViewerSource(null)}
           />
           <div className="relative w-full max-w-6xl bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl flex flex-col h-[85vh] animate-in fade-in zoom-in-95 duration-200">
             <div className="p-4 border-b border-neutral-800 flex items-center justify-between bg-neutral-950/50 rounded-t-2xl shrink-0">
               <div>
-                <h3 className="text-sm font-semibold text-white">Trình xem Quy chế</h3>
-                <p className="text-xs text-neutral-400 mt-0.5">{viewerSource.document_title}</p>
+                <h3 className="text-sm font-semibold text-white">
+                  Trình xem Quy chế
+                </h3>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  {viewerSource.document_title}
+                </p>
               </div>
-              <button 
+              <button
                 onClick={() => setViewerSource(null)}
                 className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors"
               >
@@ -833,16 +914,20 @@ export function UITMateWidget() {
               </button>
             </div>
             <div className="flex-1 flex overflow-hidden rounded-b-2xl">
-              <iframe 
+              <iframe
                 src={`${apiBaseUrl()}/api/v1/ai-mate/documents/${viewerSource.document_id}/pdf#search=${encodeURIComponent((viewerSource.content || "").slice(0, 80))}`}
                 className="flex-1 h-full border-0 bg-neutral-800"
                 title={viewerSource.document_title}
               />
               <div className="w-80 shrink-0 border-l border-neutral-800 p-5 overflow-y-auto bg-neutral-900 hidden md:block">
-                 <h4 className="text-xs font-bold text-neutral-500 mb-4 uppercase tracking-wider">Đoạn trích xuất</h4>
-                 <div className="text-sm text-neutral-300 leading-relaxed">
-                   <FormattedText text={viewerSource.content || "Đang xử lý..."} />
-                 </div>
+                <h4 className="text-xs font-bold text-neutral-500 mb-4 uppercase tracking-wider">
+                  Đoạn trích xuất
+                </h4>
+                <div className="text-sm text-neutral-300 leading-relaxed">
+                  <FormattedText
+                    text={viewerSource.content || "Đang xử lý..."}
+                  />
+                </div>
               </div>
             </div>
           </div>

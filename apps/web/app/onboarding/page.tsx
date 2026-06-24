@@ -14,6 +14,7 @@ import {
   User,
   Bot,
   Calendar,
+  Check,
 } from "lucide-react";
 
 import { apiFetch } from "@/lib/api";
@@ -43,39 +44,93 @@ const STAGE_LABELS: Record<string, string> = {
   failed: "Lỗi",
 };
 
+const STAGE_PROGRESS: Record<string, number> = {
+  daa_profile: 15,
+  daa_grades: 35,
+  daa_schedule: 55,
+  daa_exams: 75,
+  moodle_authenticating: 90,
+  persisting: 100,
+};
+
+const STAGE_ORDER = [
+  "daa_profile",
+  "daa_grades",
+  "daa_schedule",
+  "daa_exams",
+  "moodle_authenticating",
+  "persisting",
+];
+
 function SyncGraphic({
   events,
   error,
+  onComplete,
 }: {
   events: SyncEvent[];
   error: string | null;
+  onComplete: () => void;
 }) {
   const latest = events[events.length - 1];
-  const targetProgress = latest?.progress_percent ?? 0;
   const isFailed = latest?.stage === "failed" || !!error;
   const isCompleted = latest?.stage === "completed";
 
   const [buffer, setBuffer] = useState(10);
   const [displayedProgress, setDisplayedProgress] = useState(0);
+  const [simulatedIndex, setSimulatedIndex] = useState(0);
+  const [completedStages, setCompletedStages] = useState<Set<string>>(new Set());
+  const [activeStage, setActiveStage] = useState<string | null>("daa_profile");
 
-  // Smoothly animate displayed progress
+  // Simulation state machine for real-time visual progress
   useEffect(() => {
-    if (isCompleted) {
-      setDisplayedProgress(100);
-      return;
+    if (isFailed) return;
+
+    const currentStage = STAGE_ORDER[simulatedIndex];
+    if (!currentStage) {
+      // Tự động chuyển hướng sau 1.5 giây khi đã hoàn thành các bước
+      const delayTimer = setTimeout(() => {
+        onComplete();
+      }, 1500);
+      return () => clearTimeout(delayTimer);
     }
-    const step = () => {
+
+    const stageTarget = STAGE_PROGRESS[currentStage] ?? 0;
+
+    const timer = setInterval(() => {
       setDisplayedProgress((prev) => {
-        if (prev >= targetProgress) return targetProgress;
-        const diff = targetProgress - prev;
-        const inc = diff > 0 ? Math.max(0.8, diff * 0.1) : 0;
-        const next = prev + inc;
-        return next >= targetProgress ? targetProgress : next;
+        if (prev >= stageTarget) {
+          clearInterval(timer);
+
+          // Trì hoãn 200ms để vòng tròn cyan hoàn tất vẽ full circle 100%
+          setTimeout(() => {
+            setCompletedStages((prevSet) => {
+              const next = new Set(prevSet);
+              next.add(currentStage);
+              return next;
+            });
+            setActiveStage(null);
+
+            // Chờ thêm 800ms cho hiệu ứng success-pop chạy xong rồi mới qua stage tiếp theo
+            setTimeout(() => {
+              const nextIndex = simulatedIndex + 1;
+              setSimulatedIndex(nextIndex);
+              if (nextIndex < STAGE_ORDER.length) {
+                setActiveStage(STAGE_ORDER[nextIndex]);
+              } else {
+                setActiveStage(null);
+              }
+            }, 800);
+          }, 200);
+
+          return stageTarget;
+        }
+        // Giảm tốc độ xuống 0.45 để progress chạy từ từ, mượt mà và an toàn về mặt thời gian
+        return Math.min(stageTarget, prev + 0.45);
       });
-    };
-    const timer = setInterval(step, 30);
+    }, 30);
+
     return () => clearInterval(timer);
-  }, [targetProgress, isCompleted]);
+  }, [simulatedIndex, isFailed, onComplete]);
 
   // LinearBuffer effect
   useEffect(() => {
@@ -96,29 +151,22 @@ function SyncGraphic({
     return () => clearInterval(timer);
   }, [displayedProgress, isCompleted, isFailed]);
 
-  const stages = [
-    "daa_profile",
-    "daa_grades",
-    "daa_schedule",
-    "daa_exams",
-    "moodle_authenticating",
-    "persisting",
-  ];
-
-  const completedStages = new Set<string>();
-  let activeStage: string | null = null;
-  for (const ev of events) {
-    if (ev.stage !== "completed" && ev.stage !== "failed") {
-      completedStages.add(ev.stage);
-    }
-  }
-  if (latest && latest.stage !== "completed" && latest.stage !== "failed") {
-    completedStages.delete(latest.stage);
-    activeStage = latest.stage;
-  }
+  const stages = STAGE_ORDER;
 
   return (
     <div className="w-full max-w-xl space-y-6 animate-in fade-in slide-in-from-right-8 duration-700 z-20">
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        @keyframes success-pop {
+          0% { transform: scale(0.98); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+          50% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+      `,
+        }}
+      />
+
       <div className="space-y-2.5">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-xs font-semibold mb-1 shadow-[0_0_12px_rgba(34,211,238,0.25)]">
           <Activity className="w-3.5 h-3.5 animate-pulse" />
@@ -167,10 +215,20 @@ function SyncGraphic({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-        {stages.map((stage) => {
-          const isDone = completedStages.has(stage) || isCompleted;
+        {stages.map((stage, idx) => {
+          const isDone = completedStages.has(stage) || (isCompleted && idx < simulatedIndex);
           const isActive = stage === activeStage && !isCompleted && !isFailed;
           const label = STAGE_LABELS[stage] || stage;
+
+          // Calculate current stage progress ratio for the active stage circle
+          let ratio = 0;
+          if (isDone) {
+            ratio = 1.0;
+          } else if (isActive) {
+            const prevTarget = idx > 0 ? (STAGE_PROGRESS[STAGE_ORDER[idx - 1]] ?? 0) : 0;
+            const stageTarget = STAGE_PROGRESS[stage] ?? 100;
+            ratio = Math.min(1.0, Math.max(0.0, (displayedProgress - prevTarget) / (stageTarget - prevTarget)));
+          }
 
           return (
             <div
@@ -182,16 +240,55 @@ function SyncGraphic({
                     ? "bg-cyan-500/15 border-cyan-500/40 shadow-[0_0_15px_rgba(34,211,238,0.15)] scale-[1.01]"
                     : "bg-slate-900/40 border-slate-800/80"
               }`}
+              style={
+                isDone
+                  ? { animation: "success-pop 0.6s ease-out forwards" }
+                  : undefined
+              }
             >
               <div className="flex-shrink-0">
                 {isDone ? (
-                  <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shadow-[0_0_8px_rgba(16,185,129,0.4)]">
-                    <CheckCircle className="w-3 h-3 text-slate-950" />
+                  <div className="relative w-5 h-5 flex items-center justify-center animate-in zoom-in duration-300">
+                    <svg className="w-5 h-5 -rotate-90">
+                      <circle
+                        cx="10"
+                        cy="10"
+                        r="8"
+                        className="stroke-slate-800 fill-none stroke-[1.5]"
+                      />
+                      <circle
+                        cx="10"
+                        cy="10"
+                        r="8"
+                        className="stroke-emerald-500 fill-none stroke-[1.5]"
+                        strokeDasharray="50.27"
+                        strokeDashoffset={0}
+                      />
+                    </svg>
+                    <Check className="w-3 h-3 text-emerald-400 absolute animate-in fade-in zoom-in duration-300" />
                   </div>
                 ) : isActive ? (
-                  <RefreshCw className="w-5 h-5 animate-spin text-cyan-400" />
+                  <div className="relative w-5 h-5 flex items-center justify-center">
+                    <svg className="w-5 h-5 -rotate-90">
+                      <circle
+                        cx="10"
+                        cy="10"
+                        r="8"
+                        className="stroke-slate-800 fill-none stroke-[1.5]"
+                      />
+                      <circle
+                        cx="10"
+                        cy="10"
+                        r="8"
+                        className="stroke-cyan-400 fill-none stroke-[1.5] transition-all duration-100 ease-out"
+                        strokeDasharray="50.27"
+                        strokeDashoffset={50.27 * (1 - ratio)}
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </div>
                 ) : (
-                  <div className="w-5 h-5 rounded-full border border-slate-700" />
+                  <div className="w-5 h-5 rounded-full border border-slate-800 bg-slate-950/40" />
                 )}
               </div>
               <span
@@ -499,7 +596,6 @@ export default function OnboardingPage() {
       }
       if (payload.stage === "completed") {
         es.close();
-        setTimeout(() => router.push("/tracker"), 1200);
       }
     };
     es.onerror = () => {
@@ -741,7 +837,11 @@ export default function OnboardingPage() {
           {rightPanelView === "default" && <DefaultGraphic />}
           {rightPanelView === "privacy" && <PrivacyPolicyPanel />}
           {rightPanelView === "sync" && (
-            <SyncGraphic events={syncEvents} error={error} />
+            <SyncGraphic
+              events={syncEvents}
+              error={error}
+              onComplete={() => router.push("/tracker")}
+            />
           )}
         </div>
       </div>
