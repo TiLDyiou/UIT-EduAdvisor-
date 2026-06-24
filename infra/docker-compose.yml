@@ -82,6 +82,11 @@ services:
       REDIS_PORT: 6379
       VAULT_ADDR: ${VAULT_ADDR}
       VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID}
+      AI_GEMINI_API_KEY: ${AI_GEMINI_API_KEY:-}
+      AI_GEMINI_MODEL: ${AI_GEMINI_MODEL:-gemini-2.0-flash}
+      AI_EMBEDDING_MODEL: ${AI_EMBEDDING_MODEL:-text-embedding-004}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-120b}
     depends_on:
       postgres:
         condition: service_healthy
@@ -111,6 +116,11 @@ services:
       REDIS_PORT: 6379
       VAULT_ADDR: ${VAULT_ADDR}
       VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID}
+      AI_GEMINI_API_KEY: ${AI_GEMINI_API_KEY:-}
+      AI_GEMINI_MODEL: ${AI_GEMINI_MODEL:-gemini-2.0-flash}
+      AI_EMBEDDING_MODEL: ${AI_EMBEDDING_MODEL:-text-embedding-004}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-120b}
     depends_on:
       postgres:
         condition: service_healthy

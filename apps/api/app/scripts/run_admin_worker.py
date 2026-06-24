@@ -23,7 +23,7 @@ from app.services.admin_jobs import (
 )
 from app.services.ai_mate.gemini import batch_embed_texts
 from app.services.excel_import import preview_course_offerings_file, preview_exam_schedule_xlsx
-from app.services.policy_ingest import chunk_text, extract_policy_text
+from app.services.policy_ingest import chunk_policy_text, chunk_text, extract_policy_text
 
 logger = logging.getLogger(__name__)
 SUPPORTED_KINDS = {"policy_ingest", "course_offering_import", "exam_schedule_import"}
@@ -43,14 +43,15 @@ async def _handle_policy_ingest(db, job) -> None:
     if not text:
         raise ValueError("empty_policy_text")
 
-    chunks = chunk_text(text, size=1200, overlap=200)
-    if not chunks:
+    chunk_dicts = chunk_policy_text(text, doc.title)
+    if not chunk_dicts:
         raise ValueError("no_policy_chunks")
+    chunks = [c["content"] for c in chunk_dicts]
 
     job.current_stage = "embedding_chunks"
     job.progress_percent = 55
     settings = get_settings()
-    vectors = await batch_embed_texts(settings, chunks)
+    vectors = await batch_embed_texts(settings, chunks, title=doc.title)
 
     job.current_stage = "saving_chunks"
     job.progress_percent = 70

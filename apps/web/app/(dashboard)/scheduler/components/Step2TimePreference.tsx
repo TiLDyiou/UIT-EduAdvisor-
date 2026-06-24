@@ -1,31 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { TimeSlot } from "@/lib/scheduler";
+import { CalendarDays, Loader2, Sparkles, XCircle, CheckCircle2, CalendarClock, AlertCircle } from "lucide-react";
 
 interface Props {
-  onBack: () => void;
   onSolve: (slots: TimeSlot[] | null) => void;
   loading: boolean;
+  error?: string | null;
 }
 
 const DAYS = [
-  { label: "THỨ 2", value: 2 },
-  { label: "THỨ 3", value: 3 },
-  { label: "THỨ 4", value: 4 },
-  { label: "THỨ 5", value: 5 },
-  { label: "THỨ 6", value: 6 },
-  { label: "THỨ 7", value: 7 },
+  { label: "Thứ 2", value: 2 },
+  { label: "Thứ 3", value: 3 },
+  { label: "Thứ 4", value: 4 },
+  { label: "Thứ 5", value: 5 },
+  { label: "Thứ 6", value: 6 },
+  { label: "Thứ 7", value: 7 },
   { label: "CN", value: 8 },
 ];
 
-const PERIODS = Array.from({ length: 12 }, (_, i) => i + 1);
+const PERIODS = Array.from({ length: 10 }, (_, i) => i + 1);
 
-export default function Step2TimePreference({ onBack, onSolve, loading }: Props) {
-  // We store 'busy' slots. By default, all are free (null available_slots in API means all free)
-  // But here we'll let user mark slots they ARE available or NOT.
-  // Actually, the solver takes 'available_slots'. So we select available ones.
-  // Let's default to all selected (all available).
+const getPeriodTime = (p: number) => {
+  switch (p) {
+    case 1: return "07:30 - 08:15";
+    case 2: return "08:15 - 09:00";
+    case 3: return "09:00 - 09:45";
+    case 4: return "09:45 - 10:30";
+    case 5: return "10:30 - 11:15";
+    case 6: return "13:00 - 13:45";
+    case 7: return "13:45 - 14:30";
+    case 8: return "14:30 - 15:15";
+    case 9: return "15:15 - 16:00";
+    case 10: return "16:00 - 16:45";
+    default: return "";
+  }
+};
+
+export default function Step2TimePreference({ onSolve, loading, error }: Props) {
   const [availableSlots, setAvailableSlots] = useState<Set<string>>(() => {
     const initial = new Set<string>();
     DAYS.forEach(d => {
@@ -65,14 +78,16 @@ export default function Step2TimePreference({ onBack, onSolve, loading }: Props)
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
-      <section className="bg-[#0a0a0a] border border-[#1a1a1a] p-6 rounded-sm relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-2 text-[10px] font-mono text-neutral-800">CONFIG_AVAIL_02</div>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold tracking-tight text-white">Thời gian biểu mong muốn</h2>
-            <p className="text-sm text-neutral-400 max-w-md">
-              Chọn các buổi bạn <span className="text-cyan-400 font-bold">CÓ THỂ</span> đi học. Hệ thống sẽ né các buổi không được chọn.
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <section className="bg-neutral-900 border border-neutral-800 p-8 rounded-2xl relative overflow-hidden group">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold tracking-tight text-white flex items-center gap-2">
+              <CalendarDays className="w-5 h-5 text-indigo-400" />
+              Tùy Chọn Thời Gian Biểu
+            </h2>
+            <p className="text-sm text-neutral-400 max-w-xl leading-relaxed">
+              Bạn rảnh vào những khung giờ nào? Hệ thống sẽ ưu tiên và né các buổi bận của bạn để tìm ra thời khóa biểu tối ưu nhất.
             </p>
           </div>
           
@@ -83,92 +98,109 @@ export default function Step2TimePreference({ onBack, onSolve, loading }: Props)
                 DAYS.forEach(d => PERIODS.forEach(p => all.add(`${d.value}-${p}`)));
                 setAvailableSlots(all);
               }}
-              className="px-3 py-1 text-[10px] font-mono border border-neutral-800 text-neutral-500 hover:text-white hover:border-neutral-600 transition-all"
+              className="px-4 py-2 border border-neutral-700 hover:bg-neutral-800 rounded-lg text-sm text-neutral-300 font-medium transition-colors flex items-center gap-2"
             >
-              CHỌN TẤT CẢ
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Đặt tất cả là rảnh
             </button>
             <button 
               onClick={() => setAvailableSlots(new Set())}
-              className="px-3 py-1 text-[10px] font-mono border border-neutral-800 text-neutral-500 hover:text-white hover:border-neutral-600 transition-all"
+              className="px-4 py-2 border border-neutral-700 hover:bg-neutral-800 rounded-lg text-sm text-neutral-300 font-medium transition-colors flex items-center gap-2"
             >
-              BỎ CHỌN HẾT
+              <XCircle className="w-4 h-4 text-red-400" /> Đặt tất cả là bận
             </button>
           </div>
         </div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
       </section>
 
-      <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-4 md:p-8 overflow-x-auto custom-scrollbar">
-        <div className="min-w-[700px]">
-          <div className="grid grid-cols-[80px_repeat(7,1fr)] gap-2">
-            {/* Header */}
-            <div className="h-10" />
-            {DAYS.map(d => (
-              <button 
-                key={d.value}
-                onClick={() => toggleDay(d.value)}
-                className="h-10 flex items-center justify-center text-[10px] font-mono font-bold tracking-widest text-neutral-500 hover:text-cyan-400 transition-colors uppercase"
-              >
-                {d.label}
-              </button>
-            ))}
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden shadow-lg shadow-black/10">
+        <div className="p-6 overflow-x-auto custom-scrollbar">
+          <div className="min-w-[800px]">
+            <div className="grid grid-cols-[80px_repeat(7,1fr)] gap-2">
+              {/* Header */}
+              <div className="h-12" />
+              {DAYS.map(d => (
+                <button 
+                  key={d.value}
+                  onClick={() => toggleDay(d.value)}
+                  className="h-12 flex items-center justify-center font-medium text-sm text-neutral-400 hover:text-indigo-400 transition-colors bg-neutral-950/50 rounded-lg"
+                >
+                  {d.label}
+                </button>
+              ))}
 
-            {/* Periods */}
-            {PERIODS.map(p => (
-              <React.Fragment key={p}>
-                <div className="h-12 flex items-center justify-end pr-4 text-[10px] font-mono text-neutral-600">
-                  TIẾT {p}
-                </div>
-                {DAYS.map(d => {
-                  const isAvailable = availableSlots.has(`${d.value}-${p}`);
-                  return (
-                    <button
-                      key={`${d.value}-${p}`}
-                      onClick={() => toggleSlot(d.value, p)}
-                      className={`h-12 border transition-all duration-200 group relative ${
-                        isAvailable 
-                          ? 'bg-cyan-500/10 border-cyan-500/30 hover:bg-cyan-500/20' 
-                          : 'bg-neutral-900/20 border-neutral-800/50 hover:bg-neutral-800/30'
-                      }`}
-                    >
-                      {isAvailable && (
-                        <div className="absolute inset-1 border border-cyan-500/20 opacity-50" />
-                      )}
-                      <div className={`w-1.5 h-1.5 rounded-full absolute top-1 right-1 ${isAvailable ? 'bg-cyan-500 animate-pulse' : 'bg-transparent'}`} />
-                    </button>
-                  );
-                })}
-              </React.Fragment>
-            ))}
+              {/* Periods */}
+              {PERIODS.map(p => (
+                <React.Fragment key={p}>
+                  <div className="h-12 flex flex-col items-end justify-center pr-4 font-medium">
+                    <span className="text-xs text-neutral-300">Tiết {p}</span>
+                    <span className="text-[10px] text-neutral-500">{getPeriodTime(p)}</span>
+                  </div>
+                  {DAYS.map(d => {
+                    const isAvailable = availableSlots.has(`${d.value}-${p}`);
+                    return (
+                      <button
+                        key={`${d.value}-${p}`}
+                        onClick={() => toggleSlot(d.value, p)}
+                        className={`h-12 rounded-lg transition-all duration-200 group relative overflow-hidden ${
+                          isAvailable 
+                            ? 'bg-neutral-950/20 border border-neutral-800 hover:bg-neutral-850/40' 
+                            : 'bg-red-500/5 border border-red-500/20 hover:bg-red-500/10'
+                        }`}
+                        title={`${d.label} - Tiết ${p} (${getPeriodTime(p)}) (${isAvailable ? "Rảnh" : "Bận"})`}
+                      >
+                        {!isAvailable && (
+                          <svg className="absolute inset-0 w-full h-full text-red-500/50 animate-in fade-in zoom-in-75 duration-200" preserveAspectRatio="none">
+                            <line x1="0" y1="0" x2="100%" y2="100%" stroke="currentColor" strokeWidth="1.5" />
+                            <line x1="100%" y1="0" x2="0" y2="100%" stroke="currentColor" strokeWidth="1.5" />
+                          </svg>
+                        )}
+                      </button>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-4">
-        <button
-          onClick={onBack}
-          className="px-8 py-3 border border-neutral-800 text-neutral-400 font-mono text-sm tracking-widest hover:bg-neutral-900 transition-all"
-        >
-          {"<"} QUAY LẠI
-        </button>
-        
+      <div className="flex flex-col sm:flex-row items-center justify-end gap-4 pt-4">
         <button
           disabled={loading}
           onClick={handleSolve}
-          className="px-12 py-3 bg-white text-black font-mono text-sm font-bold tracking-widest hover:bg-cyan-400 transition-all flex items-center gap-3 disabled:opacity-50"
+          className="w-full sm:w-auto px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold transition-all shadow-md shadow-indigo-900/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
         >
           {loading ? (
             <>
-              <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-              SOLVING...
+              <Loader2 className="w-5 h-5 animate-spin" /> Đang tính toán...
             </>
           ) : (
-            "BẮT ĐẦU XẾP LỊCH >"
+            <>
+              <Sparkles className="w-5 h-5" /> Tìm Lịch Học Tối Ưu
+            </>
           )}
         </button>
       </div>
+
+      {error && (
+        <>
+          <style dangerouslySetInnerHTML={{ __html: `
+            @keyframes errorWiggle {
+              0%, 100% { transform: translateX(0); }
+              20%, 60% { transform: translateX(-4px); }
+              40%, 80% { transform: translateX(4px); }
+            }
+            .error-wiggle-anim {
+              animation: errorWiggle 0.4s ease-in-out;
+            }
+          `}} />
+          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 mt-4 animate-in slide-in-from-top-4 error-wiggle-anim duration-300">
+            <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+            <p className="text-sm text-red-300 leading-relaxed">{error}</p>
+          </div>
+        </>
+      )}
     </div>
   );
 }
-
-// React import for Fragment if needed, or use <>
-import React from "react";

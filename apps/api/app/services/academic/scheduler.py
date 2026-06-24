@@ -13,42 +13,43 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Sequence
 
 from app.services.academic.excel_parser import Section
-from app.services.academic.gpa import PASS_THRESHOLD
 from app.services.academic.roadmap import ElectiveGroupRule, EnrollmentInfo
-
 
 # ---------------------------------------------------------------------------
 # Data types for recommendation
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class StudentContext:
     """Minimal student info for recommendation scoring."""
+
     cumulative_gpa_10: Decimal
-    passed_course_ids: set[int]       # course IDs the student has passed
-    enrolled_course_ids: set[int]     # currently enrolled (in-progress)
-    grades: dict[int, Decimal]        # course_id → final_grade_10
+    passed_course_ids: set[int]  # course IDs the student has passed
+    enrolled_course_ids: set[int]  # currently enrolled (in-progress)
+    grades: dict[int, Decimal]  # course_id → final_grade_10
 
 
 @dataclass(frozen=True)
 class CandidateCourse:
     """A course eligible for recommendation."""
+
     course_id: int
     course_code: str
     course_name: str
     credits: int
-    kind: str               # "chuyên ngành", "đại cương", etc.
-    difficulty: str | None   # "Khó", "Trung bình", "Dễ" or None
-    term_number: int         # position in the model curriculum
+    kind: str  # "chuyên ngành", "đại cương", etc.
+    difficulty: str | None  # "Khó", "Trung bình", "Dễ" or None
+    term_number: int  # position in the model curriculum
     prerequisite_ids: list[int] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
 class ScoredCourse:
     """A recommended course with its score breakdown."""
+
     course_id: int
     course_code: str
     course_name: str
@@ -176,10 +177,12 @@ def smart_recommend(
 # Schedule solver (CSP / Backtracking)
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class TimeSlot:
     """One occupied timeslot: a (day, period) pair."""
-    day: int     # 2..7
+
+    day: int  # 2..7
     period: int  # 1..13
 
 
@@ -208,8 +211,10 @@ def _sections_conflict(a: Section, b: Section) -> bool:
 @dataclass
 class ScheduleSolution:
     """One valid schedule assignment."""
+
     sections: list[Section]
     conflict_free: bool = True
+    missing_courses: list[str] = field(default_factory=list)
 
 
 def solve_schedule(
@@ -217,7 +222,7 @@ def solve_schedule(
     all_sections: list[Section],
     available_slots: set[tuple[int, int]] | None = None,
     *,
-    max_solutions: int = 3,
+    max_solutions: int = 7,
     timeout_seconds: float = 7.0,
 ) -> tuple[list[ScheduleSolution], list[str]]:
     """Find up to *max_solutions* non-conflicting schedules.
@@ -245,12 +250,13 @@ def solve_schedule(
     # Group sections by course_code.
     sections_by_course: dict[str, list[Section]] = {}
     for s in all_sections:
-        if s.course_code in course_codes:
+        base_cc = s.course_code[:-2] if s.course_code.endswith((".1", ".2")) else s.course_code
+        if base_cc in course_codes:
             # Filter by available slots if provided.
             if available_slots is not None:
                 if any((s.day_of_week, p) not in available_slots for p in s.periods):
                     continue
-            sections_by_course.setdefault(s.course_code, []).append(s)
+            sections_by_course.setdefault(base_cc, []).append(s)
 
     # Some courses may also have lab sections (is_lab=True) that need
     # to be scheduled alongside their theory section.  Group them:
@@ -263,6 +269,7 @@ def solve_schedule(
     @dataclass
     class CourseOption:
         """A set of sections that must be chosen together (theory + lab)."""
+
         sections: list[Section]
 
     course_options: dict[str, list[CourseOption]] = {}
@@ -279,7 +286,7 @@ def solve_schedule(
         labs: dict[str, list[Section]] = {}
 
         for s in sects:
-            if s.is_lab or s.teaching_type in ("HT1", "HT2"):
+            if s.is_lab or s.teaching_type in ("HT1", "HT2") or s.course_code.endswith((".1", ".2")):
                 # Lab section: base is section_code without the last ".N" suffix.
                 # e.g. "CE118.Q11.1" → base "CE118.Q11"
                 parts = s.section_code.rsplit(".", 1)
@@ -313,14 +320,13 @@ def solve_schedule(
     # Backtracking solver.
     ordered_courses = list(course_options.keys())
     solutions: list[ScheduleSolution] = []
+    if not ordered_courses:
+        return [], warnings
+    seen_section_codes: set[tuple[str, ...]] = set()
     deadline = time.monotonic() + timeout_seconds
 
-    def _occupied(schedule: list[Section]) -> set[tuple[int, int]]:
-        occ: set[tuple[int, int]] = set()
-        for s in schedule:
-            for p in s.periods:
-                occ.add((s.day_of_week, p))
-        return occ
+    def solution_key(sections: list[Section]) -> tuple[str, ...]:
+        return tuple(sorted(s.section_code for s in sections))
 
     def _option_conflicts(occupied: set[tuple[int, int]], option: CourseOption) -> bool:
         for s in option.sections:
@@ -329,28 +335,92 @@ def solve_schedule(
                     return True
         return False
 
-    def backtrack(idx: int, current: list[Section], occupied: set[tuple[int, int]]) -> None:
+    def backtrack(
+        idx: int,
+        current: list[Section],
+        occupied: set[tuple[int, int]],
+        skips_count: int,
+        allowed_skips: int,
+        missing_courses: list[str],
+    ) -> None:
         if len(solutions) >= max_solutions:
             return
         if time.monotonic() > deadline:
             return
+        if skips_count > allowed_skips:
+            return
+        if skips_count + (len(ordered_courses) - idx) < allowed_skips:
+            return
 
         if idx == len(ordered_courses):
-            solutions.append(ScheduleSolution(sections=list(current)))
+            if skips_count == allowed_skips:
+                if not current:
+                    return
+                key = solution_key(current)
+                if key not in seen_section_codes:
+                    seen_section_codes.add(key)
+                    solutions.append(
+                        ScheduleSolution(
+                            sections=list(current), missing_courses=list(missing_courses)
+                        )
+                    )
             return
 
         cc = ordered_courses[idx]
+
+        # Branch 1: Try to schedule the course (no skip)
         for option in course_options[cc]:
             if _option_conflicts(occupied, option):
                 continue
-            # Choose this option.
             new_occ = set(occupied)
             for s in option.sections:
                 for p in s.periods:
                     new_occ.add((s.day_of_week, p))
-            backtrack(idx + 1, current + option.sections, new_occ)
+            backtrack(
+                idx + 1,
+                current + option.sections,
+                new_occ,
+                skips_count,
+                allowed_skips,
+                missing_courses,
+            )
 
-    backtrack(0, [], set())
+        # Branch 2: Skip the course
+        if skips_count < allowed_skips:
+            # Find conflicting course codes in the already scheduled sections
+            conflicting_codes = set()
+            for opt in course_options[cc]:
+                for opt_sec in opt.sections:
+                    for sched_sec in current:
+                        # Check overlap
+                        if opt_sec.day_of_week == sched_sec.day_of_week and (
+                            set(opt_sec.periods) & set(sched_sec.periods)
+                        ):
+                            conflicting_codes.add(sched_sec.course_code)
+
+            if conflicting_codes:
+                conflict_str = ", ".join(sorted(conflicting_codes))
+                reason = f"Không có môn {cc} vì trùng lịch với môn {conflict_str}"
+            else:
+                reason = f"Không có môn {cc} vì không xếp được lịch"
+
+            backtrack(
+                idx + 1,
+                current,
+                occupied,
+                skips_count + 1,
+                allowed_skips,
+                missing_courses + [reason],
+            )
+
+    for allowed_skips in range(len(ordered_courses) + 1):
+        if len(solutions) >= max_solutions:
+            break
+        if time.monotonic() > deadline:
+            break
+        backtrack(0, [], set(), 0, allowed_skips, [])
+        if solutions:
+            break
 
     # If some courses had no options and thus weren't in the solver,
     # the solutions are partial. Mark that in warnings already done above.

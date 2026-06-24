@@ -13,19 +13,15 @@ import time
 from datetime import date
 from decimal import Decimal
 
-import pytest
-
 from app.services.academic.excel_parser import Section, parse_periods
 from app.services.academic.ics_export import generate_ics, stable_uid
-from app.services.academic.roadmap import ElectiveGroupRule, EnrollmentInfo
+from app.services.academic.roadmap import ElectiveGroupRule
 from app.services.academic.scheduler import (
     CandidateCourse,
-    ScheduleSolution,
     StudentContext,
     smart_recommend,
     solve_schedule,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -218,8 +214,11 @@ class TestSmartRecommend:
         candidates = [_candidate(cid=10, kind="chuyên ngành")]
         eg_rules = [
             ElectiveGroupRule(
-                group_id=1, group_name="EG1", rule_type="courses",
-                required_value=2, course_ids=[10, 11],
+                group_id=1,
+                group_name="EG1",
+                rule_type="courses",
+                required_value=2,
+                course_ids=[10, 11],
             )
         ]
         result = smart_recommend(candidates, _student(), eg_rules, [], {10: 3, 11: 3})
@@ -232,7 +231,11 @@ class TestSmartRecommend:
             _candidate(cid=2, code="CS102", kind="đại cương"),
         ]
         result = smart_recommend(
-            candidates, _student(), [], [], {},
+            candidates,
+            _student(),
+            [],
+            [],
+            {},
             available_course_codes={"CS101"},
             top_n=10,
         )
@@ -271,22 +274,26 @@ class TestSolveSchedule:
         assert len(solutions[0].sections) == 2
 
     def test_conflict_detection(self) -> None:
-        """Two courses on same day+periods → no solution found."""
+        """Two courses on same day+periods → relaxed solver drops 1 course."""
         sections = [
             _section(code="CS101", section_code="CS101.Q11", day=2, periods=[1, 2, 3]),
             _section(code="CS102", section_code="CS102.Q11", day=2, periods=[2, 3, 4]),
         ]
         solutions, warnings = solve_schedule(["CS101", "CS102"], sections)
-        assert len(solutions) == 0
+        assert len(solutions) == 2
+        assert len(solutions[0].missing_courses) == 1
+        assert "vì trùng lịch với môn" in solutions[0].missing_courses[0]
 
-    def test_max_three_solutions(self) -> None:
-        """Solver returns at most 3 solutions."""
+    def test_max_solutions(self) -> None:
+        """Solver returns at most max_solutions."""
         sections = [
             _section(code="CS101", section_code=f"CS101.Q{i}", day=d, periods=[1, 2])
             for i, d in enumerate([2, 3, 4, 5, 6], start=1)
         ]
-        solutions, warnings = solve_schedule(["CS101"], sections)
+        solutions, warnings = solve_schedule(["CS101"], sections, max_solutions=3)
         assert len(solutions) <= 3
+        solutions_default, warnings = solve_schedule(["CS101"], sections)
+        assert len(solutions_default) <= 7
 
     def test_missing_course_warning(self) -> None:
         """Course with no sections generates a warning."""
@@ -307,13 +314,46 @@ class TestSolveSchedule:
         assert len(solutions) == 1
         assert solutions[0].sections[0].section_code == "CS101.Q12"
 
+    def test_available_slots_filter_with_sunday(self) -> None:
+        """Sections on Sunday are filterable using day=8 available slot constraint."""
+        sections = [
+            _section(code="CS101", section_code="CS101.Q11", day=8, periods=[1, 2]),
+            _section(code="CS101", section_code="CS101.Q12", day=3, periods=[6, 7]),
+        ]
+        # Only Sunday morning is available.
+        available = {(8, 1), (8, 2)}
+        solutions, warnings = solve_schedule(["CS101"], sections, available)
+        assert len(solutions) == 1
+        assert solutions[0].sections[0].section_code == "CS101.Q11"
+
     def test_theory_plus_lab_pairing(self) -> None:
         """Theory + lab sections of same group are picked together."""
         sections = [
             _section(code="CE118", section_code="CE118.Q11", day=2, periods=[1, 2, 3]),
             _section(
-                code="CE118", section_code="CE118.Q11.1", day=3, periods=[6, 7, 8],
-                is_lab=True, teaching_type="HT1",
+                code="CE118",
+                section_code="CE118.Q11.1",
+                day=3,
+                periods=[6, 7, 8],
+                is_lab=True,
+                teaching_type="HT1",
+            ),
+        ]
+        solutions, warnings = solve_schedule(["CE118"], sections)
+        assert len(solutions) == 1
+        assert len(solutions[0].sections) == 2  # theory + lab
+
+    def test_theory_plus_lab_suffix_pairing(self) -> None:
+        """Theory (CE118) + lab sections with suffix (CE118.1) are paired and picked together."""
+        sections = [
+            _section(code="CE118", section_code="CE118.Q11", day=2, periods=[1, 2, 3]),
+            _section(
+                code="CE118.1",
+                section_code="CE118.Q11.1",
+                day=3,
+                periods=[6, 7, 8],
+                is_lab=True,
+                teaching_type="HT1",
             ),
         ]
         solutions, warnings = solve_schedule(["CE118"], sections)
@@ -363,7 +403,9 @@ class TestSolveSchedulePerformance:
 
         start_time = time.monotonic()
         solutions, _ = solve_schedule(
-            [f"C{i}" for i in range(5)], sections, timeout_seconds=7.0,
+            [f"C{i}" for i in range(5)],
+            sections,
+            timeout_seconds=7.0,
         )
         elapsed = time.monotonic() - start_time
 
@@ -441,6 +483,7 @@ class TestGenerateIcs:
 
         # Extract UIDs.
         import re
+
         uids1 = set(re.findall(r"UID:(.+)", ics1.decode()))
         uids2 = set(re.findall(r"UID:(.+)", ics2.decode()))
         assert uids1 == uids2

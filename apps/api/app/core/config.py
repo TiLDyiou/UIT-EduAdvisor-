@@ -26,7 +26,7 @@ class Settings(BaseSettings):
 
     api_host: str = "0.0.0.0"
     api_port: int = 8000
-    api_cors_origins: str = "http://localhost:3000"
+    api_cors_origins: str = "*"
 
     postgres_host: str = "postgres"
     postgres_port: int = 5432
@@ -79,12 +79,17 @@ class Settings(BaseSettings):
     # --- M6: AI Mate (Gemini + RAG; secrets must not appear in repr) ---
     ai_gemini_api_key: str = Field(default="", repr=False)
     ai_gemini_model: str = "gemini-2.0-flash"
-    ai_embedding_model: str = "text-embedding-004"
-    ai_chat_rate_limit_per_hour: int = 30
+    ai_embedding_model: str = "gemini-embedding-2"
+    ai_chat_rate_limit_per_minute: int = 27
+    ai_chat_rate_limit_per_hour: int = 200
     ai_chat_timeout_seconds: float = 60.0
     ai_stream_first_byte_seconds: float = 3.0
     ai_summary_retention_days: int = 90
     ai_public_policy_retrieve_per_hour: int = 120
+
+    # --- Groq ---
+    groq_api_key: str = Field(default="", repr=False)
+    groq_model: str = "openai/gpt-oss-120b"
 
     # --- M7: Remote Bot (tokens are secrets; set repr=False) ---
     telegram_bot_token: str = Field(default="", repr=False)

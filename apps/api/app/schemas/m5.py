@@ -58,7 +58,7 @@ class RecommendResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 class AvailableSlot(BaseModel):
-    day: int = Field(ge=2, le=7, description="2=Mon … 7=Sat")
+    day: int = Field(ge=2, le=8, description="2=Mon … 8=Sun")
     period: int = Field(ge=1, le=13)
 
 
@@ -81,6 +81,7 @@ class SolutionSectionSchema(BaseModel):
 
 class ScheduleSolution(BaseModel):
     sections: list[SolutionSectionSchema]
+    missing_courses: list[str] = Field(default_factory=list)
 
 
 class ScheduleResponse(BaseModel):

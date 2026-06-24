@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { schedulerService, Section, RecommendedCourse, ScheduleSolution, TimeSlot } from "@/lib/scheduler";
+import { schedulerService, Section, ScheduleSolution, TimeSlot } from "@/lib/scheduler";
 import Step1CourseSelection from "./components/Step1CourseSelection";
 import Step2TimePreference from "./components/Step2TimePreference";
 import Step3Results from "./components/Step3Results";
+import { ChevronLeft, CalendarClock, AlertCircle } from "lucide-react";
 
 type Step = "selection" | "preference" | "results";
 
@@ -17,6 +18,37 @@ export default function SchedulerPage() {
   const [solutions, setSolutions] = useState<ScheduleSolution[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    const saved = localStorage.getItem("scheduler_state");
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        if (data.step) setStep(data.step);
+        if (data.sections) setSections(data.sections);
+        if (data.selectedCourseCodes) setSelectedCourseCodes(data.selectedCourseCodes);
+        if (data.availableSlots) setAvailableSlots(data.availableSlots);
+        if (data.solutions) setSolutions(data.solutions);
+      } catch (e) {
+        console.error("Failed to parse scheduler state", e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem("scheduler_state", JSON.stringify({
+        step,
+        sections,
+        selectedCourseCodes,
+        availableSlots,
+        solutions
+      }));
+    }
+  }, [step, sections, selectedCourseCodes, availableSlots, solutions, isClient]);
 
   const handleNextToPreference = (selected: string[]) => {
     setSelectedCourseCodes(selected);
@@ -34,55 +66,69 @@ export default function SchedulerPage() {
         available_slots: slots,
       });
       if (res.ok && res.data) {
-        setSolutions(res.data.solutions);
-        setStep("results");
+        if (res.data.solutions.length === 0) {
+          const hasBusySlots = slots && slots.length < 70;
+          if (hasBusySlots) {
+            setError("Không xếp được lịch học nào phù hợp do trùng với khung giờ bận của bạn. Vui lòng mở rộng khung giờ rảnh (nhấp bỏ bớt các ô đỏ X) để xếp lịch.");
+          } else {
+            setError("Không xếp được lịch học nào phù hợp cho các môn đã chọn. Vui lòng quay lại bước trước để thay đổi danh sách môn học.");
+          }
+        } else {
+          setSolutions(res.data.solutions);
+          setStep("results");
+        }
       } else {
-        setError(res.error || "failed_to_solve");
+        setError(res.error || "Không thể tạo lịch học. Vui lòng thử lại.");
       }
     } catch (err) {
-      setError("system_error");
+      setError("Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleGoBack = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (step === "results") setStep("preference");
+    else if (step === "preference") setStep("selection");
+    else window.location.href = "/";
+  };
+
+  if (!isClient) return null;
+
   return (
-    <div>
-      {/* Status Bar / Header */}
-      <header className="border-b border-[#1a1a1a] bg-[#0a0a0a]/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="text-neutral-500 hover:text-white transition-colors">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </Link>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]"></span>
-              <h1 className="text-sm font-mono tracking-wider uppercase font-semibold">UIT_SCHEDULER_V1.0</h1>
+    <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans">
+      <header className="sticky top-0 z-50 border-b border-neutral-800/50 bg-neutral-950/80 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <button onClick={handleGoBack} className="text-neutral-400 hover:text-white transition-colors flex items-center gap-2 group cursor-pointer">
+              <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+              <span className="text-sm font-medium hidden sm:inline">Quay lại</span>
+            </button>
+            <div className="w-px h-6 bg-neutral-800 hidden sm:block"></div>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                <CalendarClock className="w-4 h-4 text-indigo-400" />
+              </div>
+              <h1 className="text-base font-semibold text-white tracking-tight">Xếp Lịch Học Thông Minh</h1>
             </div>
           </div>
           
-          <nav className="flex items-center gap-8">
+          <nav className="hidden md:flex items-center">
             <StepIndicator current={step} />
           </nav>
-
-          <div className="hidden md:block">
-            <div className="text-[10px] font-mono text-neutral-600 text-right leading-none">
-              <p>SYS_STATUS: OPERATIONAL</p>
-              <p>MEM_USAGE: LOW</p>
-            </div>
-          </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {error && (
-          <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-sm flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-sm font-mono uppercase">{error}</p>
+      <main className="max-w-7xl mx-auto px-6 py-10">
+        <div className="md:hidden mb-8">
+          <StepIndicator current={step} />
+        </div>
+
+        {error && step !== "preference" && (
+          <div className="mb-8 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+            <p className="text-sm text-red-300 leading-relaxed">{error}</p>
           </div>
         )}
 
@@ -92,14 +138,15 @@ export default function SchedulerPage() {
               sections={sections}
               setSections={setSections}
               onNext={handleNextToPreference}
+              initialSelectedCodes={selectedCourseCodes}
             />
           )}
           
           {step === "preference" && (
             <Step2TimePreference 
-              onBack={() => setStep("selection")}
               onSolve={handleSolve}
               loading={loading}
+              error={error}
             />
           )}
 
@@ -112,37 +159,42 @@ export default function SchedulerPage() {
           )}
         </div>
       </main>
-
-      {/* Decorative Grid Overlay */}
-      <div className="fixed inset-0 pointer-events-none z-[-1] opacity-[0.03]" 
-           style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}>
-      </div>
     </div>
   );
 }
 
 function StepIndicator({ current }: { current: Step }) {
   const steps: { key: Step; label: string }[] = [
-    { key: "selection", label: "SELECT" },
-    { key: "preference", label: "AVAIL" },
-    { key: "results", label: "SOLVE" },
+    { key: "selection", label: "Chọn Môn" },
+    { key: "preference", label: "Thời Gian" },
+    { key: "results", label: "Kết Quả" },
   ];
 
+  const currentIndex = steps.findIndex(s => s.key === current);
+
   return (
-    <div className="flex items-center gap-4">
-      {steps.map((s, idx) => (
-        <div key={s.key} className="flex items-center gap-2">
-          <span className={`text-[10px] font-mono ${current === s.key ? 'text-cyan-400' : 'text-neutral-600'}`}>
-            0{idx + 1}
-          </span>
-          <span className={`text-xs font-mono tracking-widest ${current === s.key ? 'text-white font-bold' : 'text-neutral-500'}`}>
-            {s.label}
-          </span>
-          {idx < steps.length - 1 && (
-            <div className="w-4 h-[1px] bg-neutral-800 ml-2" />
-          )}
-        </div>
-      ))}
+    <div className="flex items-center gap-2">
+      {steps.map((s, idx) => {
+        const isPast = idx < currentIndex;
+        const isCurrent = idx === currentIndex;
+        
+        return (
+          <div key={s.key} className="flex items-center gap-2">
+            <div className={`flex items-center justify-center h-7 px-3 rounded-full text-xs font-medium transition-colors ${
+              isCurrent 
+                ? 'bg-indigo-500 text-white' 
+                : isPast 
+                  ? 'bg-neutral-800 text-neutral-300' 
+                  : 'bg-neutral-900 text-neutral-500'
+            }`}>
+              {idx + 1}. {s.label}
+            </div>
+            {idx < steps.length - 1 && (
+              <div className={`w-6 h-px ${isPast ? 'bg-neutral-700' : 'bg-neutral-800'}`} />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

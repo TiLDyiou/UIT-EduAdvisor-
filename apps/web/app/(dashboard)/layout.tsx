@@ -1,5 +1,6 @@
 import { Header } from "@/components/Layouts/Header";
 import { Sidebar } from "@/components/Layouts/Sidebar";
+import { UITMateWidget } from "@/components/UITMateWidget";
 
 export default function DashboardLayout({
   children,
@@ -21,6 +22,8 @@ export default function DashboardLayout({
           </div>
         </main>
       </div>
+
+      <UITMateWidget />
     </div>
   );
 }

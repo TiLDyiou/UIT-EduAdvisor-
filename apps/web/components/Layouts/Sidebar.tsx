@@ -8,7 +8,6 @@ import { apiFetch } from "@/lib/api";
 import {
   LayoutDashboard,
   Calendar,
-  MessageSquare,
   Settings,
   Shield,
   GraduationCap,
@@ -36,11 +35,6 @@ const NAV_ITEMS = [
     title: "UIT Scheduler",
     url: "/scheduler",
     icon: Calendar,
-  },
-  {
-    title: "AI Mate",
-    url: "/ai-mate",
-    icon: MessageSquare,
   },
   {
     title: "Cài đặt",

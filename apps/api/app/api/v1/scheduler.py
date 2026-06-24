@@ -146,7 +146,7 @@ async def upload_tkb(file: UploadFile) -> UploadTkbResponse:
     )
 
 
-@router.post("/recommend", response_model=RecommendResponse)
+@router.post("/suggest-courses", response_model=RecommendResponse)
 async def recommend(
     db: Annotated[AsyncSession, Depends(get_db)],
     student: Annotated[Student, Depends(get_current_student)],
@@ -292,7 +292,7 @@ async def solve(body: ScheduleRequest) -> ScheduleResponse:
     sections = [_schema_to_section(s) for s in body.sections]
 
     available_slots: set[tuple[int, int]] | None = None
-    if body.available_slots:
+    if body.available_slots is not None:
         available_slots = {(slot.day, slot.period) for slot in body.available_slots}
 
     solutions, warnings = solve_schedule(
@@ -309,12 +309,13 @@ async def solve(body: ScheduleRequest) -> ScheduleResponse:
                         course_name=s.course_name,
                         day_of_week=s.day_of_week,
                         periods=s.periods,
-                        room=s.room,
-                        instructor_name=s.instructor_name,
+                        room=s.room if s.room else "",
+                        instructor_name=s.instructor_name if s.instructor_name else "",
                         is_lab=s.is_lab,
                     )
                     for s in sol.sections
-                ]
+                ],
+                missing_courses=sol.missing_courses,
             )
             for sol in solutions
         ],

@@ -64,6 +64,7 @@ export interface SolutionSection {
 
 export interface ScheduleSolution {
   sections: SolutionSection[];
+  missing_courses?: string[];
 }
 
 export interface ScheduleResponse {
@@ -85,7 +86,7 @@ export const schedulerService = {
   },
 
   getRecommendations: async (availableCourseCodes?: string[]) => {
-    return apiJson<RecommendResponse>("/api/v1/scheduler/recommend", {
+    return apiJson<RecommendResponse>("/api/v1/scheduler/suggest-courses", {
       method: "POST",
       body: JSON.stringify(availableCourseCodes || null),
     });

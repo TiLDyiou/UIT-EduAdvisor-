@@ -1,11 +1,11 @@
-/**
- * Browser calls use NEXT_PUBLIC_API_URL (same-origin + rewrite to FastAPI).
- */
 export function apiBaseUrl(): string {
   if (typeof window === "undefined") {
-    return "";
+    // In SSR, Node fetch requires an absolute URL. Use internal docker URL.
+    return (process.env.API_INTERNAL_URL || "http://api:8000").replace(/\/$/, "");
   }
-  return (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
+  // In browser, use relative path so Next.js rewrites() can proxy it.
+  // This avoids CORS issues entirely.
+  return "";
 }
 
 function buildUrl(path: string): string {
@@ -48,6 +48,7 @@ export async function apiFormData<T>(
   init: RequestInit = {},
 ): Promise<{ ok: boolean; status: number; data: T | null; error: string | null }> {
   const r = await apiFetch(path, {
+    method: "POST",
     ...init,
     body: formData,
   });

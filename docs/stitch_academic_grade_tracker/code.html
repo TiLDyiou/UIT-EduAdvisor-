@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GPA Simulation &amp; Estimation Suite</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary-fixed": "#d5e3ff",
+                      "on-tertiary-fixed": "#002111",
+                      "surface-container": "#eceef0",
+                      "on-primary": "#ffffff",
+                      "on-secondary-container": "#375582",
+                      "inverse-surface": "#2d3133",
+                      "surface-container-highest": "#e0e3e5",
+                      "secondary-fixed-dim": "#aac8fc",
+                      "primary-container": "#1a2b44",
+                      "surface-dim": "#d8dadc",
+                      "primary-fixed-dim": "#b6c7e7",
+                      "on-tertiary-fixed-variant": "#005232",
+                      "outline-variant": "#c5c6ce",
+                      "on-surface-variant": "#44474d",
+                      "error-container": "#ffdad6",
+                      "surface-container-low": "#f2f4f6",
+                      "surface-container-high": "#e6e8ea",
+                      "secondary": "#415f8d",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary-container": "#accaff",
+                      "on-background": "#191c1e",
+                      "inverse-on-surface": "#eff1f3",
+                      "on-tertiary": "#ffffff",
+                      "on-secondary-fixed": "#001b3c",
+                      "tertiary-fixed-dim": "#7ed9a6",
+                      "surface-variant": "#e0e3e5",
+                      "inverse-primary": "#b6c7e7",
+                      "secondary-fixed": "#d5e3ff",
+                      "on-error-container": "#93000a",
+                      "on-surface": "#191c1e",
+                      "on-primary-fixed-variant": "#374762",
+                      "tertiary": "#001b0d",
+                      "on-tertiary-container": "#48a274",
+                      "on-error": "#ffffff",
+                      "primary": "#04162e",
+                      "surface": "#f7f9fb",
+                      "on-secondary-fixed-variant": "#284774",
+                      "on-primary-fixed": "#091c34",
+                      "tertiary-fixed": "#9af5c1",
+                      "outline": "#75777e",
+                      "error": "#ba1a1a",
+                      "on-primary-container": "#8292b0",
+                      "surface-tint": "#4f5f7b",
+                      "tertiary-container": "#00321d",
+                      "surface-bright": "#f7f9fb",
+                      "on-secondary": "#ffffff",
+                      "background": "#f7f9fb"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "base": "8px",
+                      "gutter": "24px",
+                      "margin-mobile": "16px",
+                      "container-max": "1280px",
+                      "margin-desktop": "40px"
+              },
+              "fontFamily": {
+                      "label-md": [
+                              "Hanken Grotesk"
+                      ],
+                      "body-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "body-sm": [
+                              "Hanken Grotesk"
+                      ],
+                      "label-sm": [
+                              "Hanken Grotesk"
+                      ],
+                      "body-md": [
+                              "Hanken Grotesk"
+                      ],
+                      "display-lg": [
+                              "\"Source Serif 4\""
+                      ],
+                      "headline-md": [
+                              "\"Source Serif 4\""
+                      ],
+                      "headline-sm": [
+                              "\"Source Serif 4\""
+                      ],
+                      "display-lg-mobile": [
+                              "\"Source Serif 4\""
+                      ]
+              },
+              "fontSize": {
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "14px",
+                                      "letterSpacing": "0.04em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-lg": [
+                              "40px",
+                              {
+                                      "lineHeight": "48px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-md": [
+                              "28px",
+                              {
+                                      "lineHeight": "34px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg-mobile": [
+                              "32px",
+                              {
+                                      "lineHeight": "38px",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased flex">
+<!-- SideNavBar (Shared Component) -->
+<nav class="fixed left-0 top-0 h-screen flex flex-col p-4 w-64 z-40 bg-surface-container-low border-r border-outline-variant">
+<!-- Header -->
+<div class="flex items-center gap-4 mb-8 px-2">
+<div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-on-primary font-headline-sm text-headline-sm">
+                A
+            </div>
+<div>
+<h1 class="font-headline-sm text-headline-sm text-primary">Academic Portal</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant">GPA Tracking Tool</p>
+</div>
+</div>
+<!-- CTA -->
+<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-3 rounded-lg mb-8 hover:bg-primary/90 transition-colors">
+            New Semester
+        </button>
+<!-- Main Navigation -->
+<div class="flex-1 flex flex-col gap-2">
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant/50 hover:bg-surface-container-high transition-all rounded-lg scale-95 duration-150 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<!-- ACTIVE STATE LOGIC: This page is the GPA Calculator -->
+<a class="flex items-center gap-3 bg-secondary-container text-on-secondary-container rounded-lg px-4 py-3 transition-all scale-95 duration-150 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">calculate</span>
+<span>GPA Calculator</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant/50 hover:bg-surface-container-high transition-all rounded-lg scale-95 duration-150 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">history_edu</span>
+<span>Course History</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant/50 hover:bg-surface-container-high transition-all rounded-lg scale-95 duration-150 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span>Semester Planning</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant/50 hover:bg-surface-container-high transition-all rounded-lg scale-95 duration-150 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+</div>
+<!-- Footer Navigation -->
+<div class="flex flex-col gap-2 border-t border-outline-variant pt-4 mt-4">
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant/50 hover:bg-surface-container-high transition-all rounded-lg scale-95 duration-150 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+<span>Support</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-variant/50 hover:bg-surface-container-high transition-all rounded-lg scale-95 duration-150 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span>Sign Out</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="flex-1 ml-64 flex flex-col min-h-screen">
+<!-- TopNavBar (Shared Component) -->
+<header class="sticky top-0 z-50 flex justify-between items-center px-margin-desktop w-full h-16 bg-surface border-b border-outline-variant">
+<div class="font-display-lg text-display-lg text-primary text-xl">
+                ScholarlyTrack
+            </div>
+<div class="flex items-center gap-4">
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container rounded-full border-none focus:ring-2 focus:ring-primary font-body-sm text-body-sm text-on-surface" placeholder="Search..." type="text"/>
+</div>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer duration-200">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant ml-2">
+<img alt="User profile photo" class="w-full h-full object-cover" data-alt="A professional headshot of a university student looking directly at the camera, soft natural lighting, light neutral background, high resolution, modern corporate aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjsEsShuyH9t_EUd9JevJsiIw9LKaMC2FdFFcpxaECbbRbAFOb4siI058m2xUm_YEZa8CZ9tXeWVriMVUNsKw87yIipRfYh2xaP8Z3FqZmkSPwQTap7vpxhlJJFDyq-m6-rICwwGW3F8zydoQkgwccDEUcZOuYdt_NQAI3nzGcfExY5GXp8btQ3UjbusqjohRBXoxOcXf0ELqQc_SdMbyU2RVwaBeSWSWj6H_jz1p1RMz28wajS-CwDC61mmaCE_wcpSdfR756eqw"/>
+</div>
+</div>
+</header>
+<!-- Main Page Content -->
+<main class="flex-1 p-gutter md:p-margin-desktop w-full">
+<div class="max-w-container-max mx-auto space-y-8">
+<!-- Page Header -->
+<div class="flex flex-col gap-2">
+<p class="font-label-md text-label-md text-secondary tracking-widest uppercase">GPA Suite</p>
+<h1 class="font-display-lg text-display-lg text-primary">Bộ công cụ GPA</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Tính toán, mô phỏng và lập chiến lược cải thiện điểm số học tập của bạn với độ chính xác cao.</p>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- GPA Summary (Col 1-4) -->
+<div class="lg:col-span-4 bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300 relative overflow-hidden flex flex-col justify-between">
+<!-- Decorative subtle gradient blob -->
+<div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none"></div>
+<div>
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<h2 class="font-headline-sm text-headline-sm text-primary">Tổng quan GPA</h2>
+</div>
+<div class="space-y-6">
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-1">GPA Tích luỹ (Thang 10)</p>
+<div class="flex items-baseline gap-1">
+<span class="font-display-lg text-display-lg text-primary">7.85</span>
+<span class="font-body-md text-body-md text-on-surface-variant">/ 10</span>
+</div>
+</div>
+<div class="w-full bg-surface-container rounded-full h-2 overflow-hidden">
+<div class="bg-secondary h-full rounded-full w-[78%]"></div>
+</div>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-surface-variant flex justify-between items-center">
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Tín chỉ tích luỹ</p>
+<p class="font-headline-sm text-headline-sm text-on-surface">112 <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">/ 140 TC</span></p>
+</div>
+<div class="px-3 py-1 bg-tertiary-fixed-dim/20 text-on-tertiary-fixed-variant rounded-full font-label-sm text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">trending_up</span> Khá giỏi
+                            </div>
+</div>
+</div>
+<!-- Reverse Calculator (Col 5-12) -->
+<div class="lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">track_changes</span>
+<h2 class="font-headline-sm text-headline-sm text-primary">Reverse Calculator</h2>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-6">Tính toán điểm trung bình cần đạt cho các tín chỉ còn lại để đạt được mục tiêu GPA tốt nghiệp.</p>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+<!-- Input Group 1 -->
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface">GPA mục tiêu (thang 10)</label>
+<input class="w-full bg-surface border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface transition-colors outline-none" step="0.1" type="number" value="8.0"/>
+</div>
+<!-- Input Group 2 -->
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface">Tín chỉ còn lại</label>
+<input class="w-full bg-surface border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface transition-colors outline-none" type="number" value="28"/>
+</div>
+</div>
+<div class="p-4 bg-surface rounded-lg border border-surface-variant mb-6 flex items-start gap-3">
+<span class="material-symbols-outlined text-secondary mt-0.5">lightbulb</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant italic">
+                                Chương trình đào tạo ngành Khoa học Máy tính cần ít nhất 140 tín chỉ để tốt nghiệp. Số tín chỉ bạn đã tích luỹ là 112, bạn còn 28 tín chỉ.
+                            </p>
+</div>
+<!-- Result Card -->
+<div class="bg-primary-container rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 border border-primary/20">
+<div>
+<p class="font-label-md text-label-md text-on-primary-container mb-1">Điểm TB cần đạt cho 28 tín chỉ còn lại</p>
+<p class="font-body-sm text-body-sm text-primary-fixed-dim">Mục tiêu khả thi. Cần nỗ lực duy trì phong độ.</p>
+</div>
+<div class="flex items-baseline gap-1 bg-surface-container-lowest px-6 py-3 rounded-lg shadow-sm">
+<span class="font-display-lg text-display-lg text-primary">8.45</span>
+<span class="font-body-md text-body-md text-on-surface-variant">/ 10</span>
+</div>
+</div>
+</div>
+<!-- Retake Estimator (Col 1-12) -->
+<div class="lg:col-span-12 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden flex flex-col">
+<div class="p-6 border-b border-surface-variant flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface-bright">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">replay</span>
+<h2 class="font-headline-sm text-headline-sm text-primary">Retake Estimator</h2>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Mô phỏng sự thay đổi của GPA khi học lại và cải thiện điểm các môn học cũ.</p>
+</div>
+<button class="px-4 py-2 bg-surface border border-outline-variant text-primary font-label-md text-label-md rounded-lg hover:bg-surface-container transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                                Thêm môn học
+                            </button>
+</div>
+<div class="p-6">
+<!-- Header Row (Desktop) -->
+<div class="hidden md:grid grid-cols-12 gap-4 pb-3 border-b border-surface-variant font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+<div class="col-span-5">Môn học (Điểm cũ)</div>
+<div class="col-span-2">Tín chỉ</div>
+<div class="col-span-3">Điểm mới dự kiến</div>
+<div class="col-span-2 text-right">Thao tác</div>
+</div>
+<!-- List of Retakes -->
+<div class="space-y-4 pt-4">
+<!-- Item 1 -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4 bg-surface rounded-lg border border-surface-variant hover:border-outline-variant transition-colors group">
+<div class="col-span-1 md:col-span-5 flex flex-col">
+<label class="md:hidden font-label-sm text-label-sm text-on-surface-variant mb-1">Môn học</label>
+<div class="relative w-full">
+<select class="w-full bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-4 py-2 font-body-md text-body-md text-on-surface appearance-none outline-none cursor-pointer">
+<option>CS101 - Nhập môn Lập trình (5.0)</option>
+<option>MA102 - Giải tích 2 (6.5)</option>
+<option>PH101 - Vật lý đại cương (6.0)</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+<div class="col-span-1 md:col-span-2 flex justify-between md:block">
+<span class="md:hidden font-label-sm text-label-sm text-on-surface-variant">Tín chỉ</span>
+<span class="font-body-md text-body-md text-on-surface">3 TC</span>
+</div>
+<div class="col-span-1 md:col-span-3 flex flex-col">
+<label class="md:hidden font-label-sm text-label-sm text-on-surface-variant mb-1">Điểm mới dự kiến</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-4 py-2 font-body-md text-body-md text-on-surface outline-none" step="0.1" type="number" value="8.5"/>
+</div>
+<div class="col-span-1 md:col-span-2 flex justify-end">
+<button class="p-2 text-on-surface-variant hover:text-error transition-colors rounded-lg hover:bg-error-container/50">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4 bg-surface rounded-lg border border-surface-variant hover:border-outline-variant transition-colors group">
+<div class="col-span-1 md:col-span-5 flex flex-col">
+<label class="md:hidden font-label-sm text-label-sm text-on-surface-variant mb-1">Môn học</label>
+<div class="relative w-full">
+<select class="w-full bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-4 py-2 font-body-md text-body-md text-on-surface appearance-none outline-none cursor-pointer">
+<option>MA102 - Giải tích 2 (6.5)</option>
+<option>CS101 - Nhập môn Lập trình (5.0)</option>
+<option selected="">PH101 - Vật lý đại cương (6.0)</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+<div class="col-span-1 md:col-span-2 flex justify-between md:block">
+<span class="md:hidden font-label-sm text-label-sm text-on-surface-variant">Tín chỉ</span>
+<span class="font-body-md text-body-md text-on-surface">4 TC</span>
+</div>
+<div class="col-span-1 md:col-span-3 flex flex-col">
+<label class="md:hidden font-label-sm text-label-sm text-on-surface-variant mb-1">Điểm mới dự kiến</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary rounded-lg px-4 py-2 font-body-md text-body-md text-on-surface outline-none" step="0.1" type="number" value="8.0"/>
+</div>
+<div class="col-span-1 md:col-span-2 flex justify-end">
+<button class="p-2 text-on-surface-variant hover:text-error transition-colors rounded-lg hover:bg-error-container/50">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Retake Impact Result -->
+<div class="mt-8 bg-surface-container rounded-xl p-6 border border-outline-variant flex flex-col md:flex-row items-center justify-between gap-6">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined">moving</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant">Tác động lên GPA Tích luỹ</p>
+<p class="font-body-md text-body-md text-on-surface mt-1">
+                                            Từ <span class="font-semibold">7.85</span> lên <span class="font-semibold text-primary">8.02</span>
+</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-1">GPA Mới Dự Kiến</p>
+<div class="flex items-center gap-2 justify-end">
+<span class="font-display-lg text-display-lg text-primary">8.02</span>
+<span class="px-2 py-1 bg-tertiary-fixed-dim/30 text-on-tertiary-fixed-variant rounded font-label-sm text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span> +0.17
+                                        </span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

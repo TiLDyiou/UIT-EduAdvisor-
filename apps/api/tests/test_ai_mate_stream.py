@@ -70,7 +70,7 @@ async def _fake_stream(*args, **kwargs):
 
 @pytest.mark.asyncio
 async def test_chat_stream_emits_meta_delta_done(client, redis_async_client, student_row, monkeypatch) -> None:
-    monkeypatch.setenv("AI_GEMINI_API_KEY", "test-key-not-used")
+    monkeypatch.setenv("GROQ_API_KEY", "test-key-not-used")
     from app.core.config import get_settings
 
     get_settings.cache_clear()

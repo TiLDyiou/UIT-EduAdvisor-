@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
+import { BarChart2, Target, Repeat, Lightbulb, Plus, Trash2 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
@@ -88,7 +89,7 @@ function CourseAutocomplete({
     <div ref={wrapperRef} className="relative w-full">
       <input
         type="text"
-        className="w-full rounded-lg border border-neutral-700 bg-neutral-800/60 px-3 py-2 text-sm text-white focus:border-amber-600 focus:outline-none"
+        className="w-full bg-neutral-950/50 border border-neutral-700 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 rounded-lg px-4 py-2.5 text-sm text-white transition-colors outline-none"
         placeholder="Chọn môn"
         value={isOpen ? query : displayValue}
         onChange={(e) => {
@@ -150,21 +151,52 @@ function normalizeGpaOverview(raw: unknown): GpaOverview {
 /* Section Components                                                 */
 /* ------------------------------------------------------------------ */
 
-function GpaSummaryCard({ gpa, label }: { gpa: GpaOverview; label: string }) {
+function GpaOverviewCard({
+  gpa,
+  roadmapTotalCredits,
+}: {
+  gpa: GpaOverview;
+  roadmapTotalCredits: number;
+}) {
+  const gpaPercent = Math.min(100, Math.round((gpa.gpa_10 / 10) * 100));
+
   return (
-    <div className="rounded-xl border border-neutral-700/40 bg-neutral-900/60 p-4 backdrop-blur">
-      <p className="text-xs uppercase tracking-wider text-neutral-400 mb-2">
-        {label}
-      </p>
-      <div className="flex items-baseline gap-6">
-        <div>
-          <span className="text-2xl font-bold text-white">
-            {gpa.gpa_10.toFixed(2)}
-          </span>
-          <span className="ml-1 text-xs text-neutral-500">/10</span>
+    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300 relative overflow-hidden flex flex-col justify-between h-full">
+      <div className="absolute -top-10 -right-10 w-32 h-32 bg-violet-600/10 rounded-full blur-2xl pointer-events-none"></div>
+      <div>
+        <div className="flex items-center gap-2 mb-6">
+          <BarChart2 className="w-5 h-5 text-violet-400" strokeWidth={2.5} />
+          <h2 className="text-lg font-semibold text-white">Tổng quan GPA</h2>
         </div>
-        <div className="text-sm text-neutral-400">
-          {gpa.earned_credits}/{gpa.total_credits} TC
+        <div className="space-y-6">
+          <div>
+            <p className="text-xs text-neutral-400 uppercase tracking-wider mb-1">
+              GPA Tích luỹ (Thang 10)
+            </p>
+            <div className="flex items-baseline gap-1">
+              <span className="text-4xl font-bold text-violet-300">
+                {gpa.gpa_10.toFixed(2)}
+              </span>
+              <span className="text-sm text-neutral-500">/ 10</span>
+            </div>
+          </div>
+          <div className="w-full bg-neutral-800 rounded-full h-2 overflow-hidden">
+            <div
+              className="bg-violet-500 h-full rounded-full transition-all duration-500"
+              style={{ width: `${gpaPercent}%` }}
+            ></div>
+          </div>
+        </div>
+      </div>
+      <div className="mt-8 pt-6 border-t border-neutral-800 flex justify-between items-center">
+        <div>
+          <p className="text-xs text-neutral-400 mb-1">Tín chỉ tích luỹ</p>
+          <p className="text-lg font-semibold text-white">
+            {gpa.earned_credits}{" "}
+            <span className="text-sm text-neutral-500 font-normal">
+              / {roadmapTotalCredits || "?"} TC
+            </span>
+          </p>
         </div>
       </div>
     </div>
@@ -221,84 +253,99 @@ function ReverseCalculatorSection({
   }, [calculate]);
 
   return (
-    <section className="rounded-xl border border-violet-800/30 bg-gradient-to-br from-violet-950/20 to-neutral-900/50 p-5">
-      <h2 className="text-lg font-semibold text-violet-300 mb-4">
-        🎯 Reverse Calculator
-      </h2>
-      <p className="text-sm text-neutral-300 mb-2">
-        GPA hiện tại:{" "}
-        <span className="font-semibold text-violet-300">
-          {currentGpa.gpa_10.toFixed(2)}
-        </span>
-      </p>
-      <p className="text-xs text-neutral-400 mb-4">
-        Tính điểm trung bình các môn còn lại để đạt mục tiêu GPA tốt nghiệp.
-      </p>
+    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300 h-full flex flex-col justify-between">
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <Target className="w-5 h-5 text-amber-400" strokeWidth={2.5} />
+          <h2 className="text-lg font-semibold text-white">
+            Reverse Calculator
+          </h2>
+        </div>
+        <p className="text-sm text-neutral-400 mb-6">
+          Tính toán điểm trung bình cần đạt cho các tín chỉ còn lại để đạt được
+          mục tiêu GPA tốt nghiệp.
+        </p>
 
-      <div className="flex flex-wrap gap-4">
-        <div>
-          <label className="text-xs text-neutral-400 block mb-1">
-            GPA mục tiêu (thang 10)
-          </label>
-          <input
-            type="number"
-            value={targetGpa}
-            onChange={(e) => setTargetGpa(e.target.value)}
-            onBlur={(e) => {
-              let val = Number(e.target.value);
-              if (isNaN(val)) val = 7.0;
-              if (val > 10) val = 10;
-              if (val < 0) val = 0;
-              setTargetGpa(val.toString());
-            }}
-            className="w-28 rounded-lg border border-neutral-700 bg-neutral-800/60 px-3 py-2 text-sm text-white focus:border-violet-600 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-neutral-300">
+              GPA mục tiêu (thang 10)
+            </label>
+            <input
+              type="number"
+              value={targetGpa}
+              onChange={(e) => setTargetGpa(e.target.value)}
+              onBlur={(e) => {
+                let val = Number(e.target.value);
+                if (isNaN(val)) val = 7.0;
+                if (val > 10) val = 10;
+                if (val < 0) val = 0;
+                setTargetGpa(val.toString());
+              }}
+              className="w-full bg-neutral-950/50 border border-neutral-700 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 rounded-lg px-4 py-3 text-sm text-white transition-colors outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-neutral-300">
+              Tín chỉ còn lại
+            </label>
+            <input
+              type="number"
+              value={remainingCredits}
+              onChange={(e) => setRemainingCredits(e.target.value)}
+              onBlur={(e) => {
+                let val = Number(e.target.value);
+                if (isNaN(val)) val = defaultRemainingCredits;
+                if (val > 200) val = 200;
+                if (val < 1) val = 1;
+                setRemainingCredits(val.toString());
+              }}
+              className="w-full bg-neutral-950/50 border border-neutral-700 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 rounded-lg px-4 py-3 text-sm text-white transition-colors outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
+          </div>
         </div>
-        <div>
-          <label className="text-xs text-neutral-400 block mb-1">
-            Tín chỉ còn lại
-          </label>
-          <input
-            type="number"
-            value={remainingCredits}
-            onChange={(e) => setRemainingCredits(e.target.value)}
-            onBlur={(e) => {
-              let val = Number(e.target.value);
-              if (isNaN(val)) val = defaultRemainingCredits;
-              if (val > 200) val = 200;
-              if (val < 1) val = 1;
-              setRemainingCredits(val.toString());
-            }}
-            className="w-28 rounded-lg border border-neutral-700 bg-neutral-800/60 px-3 py-2 text-sm text-white focus:border-violet-600 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-          />
-        </div>
+
+        {suggestionText && (
+          <div className="p-4 bg-neutral-800/30 rounded-lg border border-neutral-700/50 mb-6 flex items-start gap-3">
+            <Lightbulb className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" strokeWidth={2} />
+            <p className="text-sm text-neutral-400 italic leading-relaxed">
+              {suggestionText}
+            </p>
+          </div>
+        )}
       </div>
 
-      {suggestionText && (
-        <p className="text-xs text-neutral-400 mt-3 italic">
-          💡 {suggestionText}
-        </p>
-      )}
-
       {result && !loading && (
-        <div className="mt-4 rounded-lg border border-neutral-700/40 bg-neutral-800/40 p-4">
-          <p className="text-sm text-neutral-300">
-            Điểm TB cần đạt:{" "}
+        <div
+          className={`rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border ${result.achievable || (!result.achievable && result.required_avg_10 <= 0) ? "bg-emerald-950/20 border-emerald-900/30" : "bg-red-950/20 border-red-900/30"}`}
+        >
+          <div>
+            <p
+              className={`font-medium mb-1 ${result.achievable || (!result.achievable && result.required_avg_10 <= 0) ? "text-emerald-300" : "text-red-300"}`}
+            >
+              Điểm TB cần đạt cho {remainingCredits} tín chỉ còn lại
+            </p>
+            <p
+              className={`text-sm ${result.achievable || (!result.achievable && result.required_avg_10 <= 0) ? "text-emerald-400/80" : "text-red-400/80"}`}
+            >
+              {result.required_avg_10 <= 0
+                ? "✅ Điểm hiện tại của bạn đã đủ để đạt (hoặc vượt) mục tiêu này."
+                : result.achievable
+                  ? "Mục tiêu khả thi. Cần nỗ lực duy trì phong độ."
+                  : "⚠ Không khả thi – mục tiêu GPA quá cao."}
+            </p>
+          </div>
+          <div className="flex items-baseline gap-1 bg-neutral-950/50 px-6 py-3 rounded-lg shadow-sm border border-neutral-800/50">
             <span
-              className={`text-xl font-bold ${result.achievable ? "text-emerald-300" : "text-red-300"}`}
+              className={`text-3xl font-bold ${result.achievable || (!result.achievable && result.required_avg_10 <= 0) ? "text-emerald-400" : "text-red-400"}`}
             >
               {result.required_avg_10.toFixed(2)}
             </span>
-            <span className="text-neutral-500 ml-1">/10</span>
-          </p>
-          {!result.achievable && (
-            <p className="mt-2 text-xs text-red-400">
-              ⚠ Không khả thi – mục tiêu GPA quá cao với số tín chỉ còn lại.
-            </p>
-          )}
+            <span className="text-sm text-neutral-500">/ 10</span>
+          </div>
         </div>
       )}
-    </section>
+    </div>
   );
 }
 
@@ -350,133 +397,128 @@ function RetakeEstimatorSection({
     return () => clearTimeout(timer);
   }, [calculate]);
 
-  // Filter to show only courses that could benefit from retaking (< 8.5)
   const retakeable = enrollments.filter(
     (e) => e.grade_10 !== null && e.grade_10 < 8.5,
   );
 
   if (retakeable.length === 0) {
     return (
-      <section className="rounded-xl border border-amber-800/30 bg-gradient-to-br from-amber-950/20 to-neutral-900/50 p-5">
-        <h2 className="text-lg font-semibold text-amber-300 mb-2">
-          🔄 Retake Estimator
-        </h2>
+      <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-2">
+          <Repeat className="w-5 h-5 text-cyan-400" strokeWidth={2.5} />
+          <h2 className="text-lg font-semibold text-white">Retake Estimator</h2>
+        </div>
         <p className="text-sm text-neutral-400">
           Chưa có môn nào phù hợp để tính cải thiện.
         </p>
-      </section>
+      </div>
     );
   }
 
   return (
-    <section className="rounded-xl border border-amber-800/30 bg-gradient-to-br from-amber-950/20 to-neutral-900/50 p-5">
-      <h2 className="text-lg font-semibold text-amber-300 mb-4">
-        🔄 Retake Estimator
-      </h2>
-      <p className="text-xs text-neutral-400 mb-4">
-        Chọn môn điểm thấp → nhập điểm mới dự kiến → xem mức tăng GPA.
-      </p>
-
-      {retakes.map((retake, index) => (
-        <div key={index} className="flex flex-wrap gap-4 mb-3 items-end">
-          <div className="flex-1 min-w-[200px]">
-            {index === 0 && (
-              <label className="text-xs text-neutral-400 block mb-1">
-                Chọn môn
-              </label>
-            )}
-            <CourseAutocomplete
-              options={retakeable}
-              value={retake.id}
-              onChange={(newId) => {
-                const newRetakes = [...retakes];
-                newRetakes[index].id = newId;
-                setRetakes(newRetakes);
-              }}
-            />
+    <div className="bg-neutral-900 border border-neutral-800 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden flex flex-col h-full">
+      <div className="p-6 border-b border-neutral-800 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-neutral-900/50">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Repeat className="w-5 h-5 text-cyan-400" strokeWidth={2.5} />
+            <h2 className="text-lg font-semibold text-white">Retake Estimator</h2>
           </div>
-          <div>
-            {index === 0 && (
-              <label className="text-xs text-neutral-400 block mb-1">
-                Điểm mới
-              </label>
-            )}
-            <input
-              type="number"
-              value={retake.grade}
-              onChange={(e) => {
-                const newRetakes = [...retakes];
-                newRetakes[index].grade = e.target.value;
-                setRetakes(newRetakes);
-              }}
-              onBlur={(e) => {
-                let val = Number(e.target.value);
-                if (isNaN(val)) val = 10.0;
-                if (val > 10) val = 10;
-                if (val < 0) val = 0;
-                const newRetakes = [...retakes];
-                newRetakes[index].grade = val.toString();
-                setRetakes(newRetakes);
-              }}
-              className="w-24 rounded-lg border border-neutral-700 bg-neutral-800/60 px-3 py-2 text-sm text-white focus:border-amber-600 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
-          </div>
-          {retakes.length > 1 && (
-            <button
-              onClick={() => {
-                const newRetakes = retakes.filter((_, i) => i !== index);
-                setRetakes(newRetakes);
-              }}
-              className="px-3 py-2 text-red-400 hover:text-red-300 hover:bg-red-950/30 rounded-lg text-sm transition-colors"
-            >
-              Xoá
-            </button>
-          )}
+          <p className="text-sm text-neutral-400">Mô phỏng sự thay đổi của GPA khi học lại và cải thiện điểm các môn học cũ.</p>
         </div>
-      ))}
-      <button
-        onClick={() => setRetakes([...retakes, { id: null, grade: "10.0" }])}
-        className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 mt-1 font-semibold"
-      >
-        + Thêm môn học
-      </button>
+        <button
+          onClick={() => setRetakes([...retakes, { id: null, grade: "10.0" }])}
+          className="px-4 py-2 bg-neutral-800 border border-neutral-700 text-white text-sm font-medium rounded-lg hover:bg-neutral-700 transition-colors flex items-center justify-center gap-2"
+        >
+          <Plus className="w-4 h-4" /> Thêm môn học
+        </button>
+      </div>
 
-      {result && !loading && (
-        <div className="mt-4 rounded-lg border border-amber-900/30 bg-amber-950/30 p-4">
-          <p className="text-sm text-neutral-300">
-            Điểm GPA mới:{" "}
-            <span className="text-xl font-bold text-amber-300">
-              {(currentGpa.gpa_10 + result.delta_gpa_10).toFixed(2)}
-            </span>
-          </p>
-          <p className="mt-2 text-sm text-neutral-300">
-            {result.delta_gpa_10 === 0 ? (
-              <>
-                Giữ nguyên ở mức{" "}
-                <span className="font-semibold text-neutral-200">
-                  {currentGpa.gpa_10.toFixed(2)}
-                </span>{" "}
-              </>
-            ) : (
-              <>
-                Từ{" "}
-                <span className="font-semibold text-neutral-200">
-                  {currentGpa.gpa_10.toFixed(2)}
-                </span>{" "}
-                {result.delta_gpa_10 > 0 ? "lên" : "xuống"}{" "}
-                <span className="font-semibold text-amber-300">
-                  {(currentGpa.gpa_10 + result.delta_gpa_10).toFixed(2)}
-                </span>{" "}
-                <span className="text-xs text-neutral-500 ml-1">
-                  ({result.delta_gpa_10 > 0 ? "tăng " : "giảm "}
-                  {Math.abs(result.delta_gpa_10).toFixed(2)})
-                </span>
-              </>
-            )}
-          </p>
+      <div className="p-6">
+        <div className="hidden md:grid grid-cols-12 gap-4 pb-3 border-b border-neutral-800 text-xs text-neutral-500 uppercase tracking-wider font-semibold">
+          <div className="col-span-6">Môn học (Điểm cũ)</div>
+          <div className="col-span-4">Điểm mới dự kiến</div>
+          <div className="col-span-2 text-right">Thao tác</div>
         </div>
-      )}
-    </section>
+
+        <div className="space-y-4 pt-4">
+          {retakes.map((retake, index) => (
+            <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4 bg-neutral-950/30 rounded-lg border border-neutral-800/80 hover:border-neutral-700 transition-colors group">
+              <div className="col-span-1 md:col-span-6 flex flex-col">
+                <label className="md:hidden text-xs text-neutral-500 mb-1">Môn học</label>
+                <CourseAutocomplete
+                  options={retakeable}
+                  value={retake.id}
+                  onChange={(newId) => {
+                    const newRetakes = [...retakes];
+                    newRetakes[index].id = newId;
+                    setRetakes(newRetakes);
+                  }}
+                />
+              </div>
+              <div className="col-span-1 md:col-span-4 flex flex-col">
+                <label className="md:hidden text-xs text-neutral-500 mb-1">Điểm mới dự kiến</label>
+                <input
+                  type="number"
+                  value={retake.grade}
+                  onChange={(e) => {
+                    const newRetakes = [...retakes];
+                    newRetakes[index].grade = e.target.value;
+                    setRetakes(newRetakes);
+                  }}
+                  onBlur={(e) => {
+                    let val = Number(e.target.value);
+                    if (isNaN(val)) val = 10.0;
+                    if (val > 10) val = 10;
+                    if (val < 0) val = 0;
+                    const newRetakes = [...retakes];
+                    newRetakes[index].grade = val.toString();
+                    setRetakes(newRetakes);
+                  }}
+                  className="w-full bg-neutral-950/50 border border-neutral-700 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 rounded-lg px-4 py-2.5 text-sm text-white transition-colors outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
+              <div className="col-span-1 md:col-span-2 flex justify-end">
+                {retakes.length > 1 ? (
+                  <button
+                    onClick={() => {
+                      const newRetakes = retakes.filter((_, i) => i !== index);
+                      setRetakes(newRetakes);
+                    }}
+                    className="p-2 text-neutral-400 hover:text-red-400 transition-colors rounded-lg hover:bg-red-950/30 flex items-center justify-center"
+                    title="Xoá"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <div className="w-8 h-8"></div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {result && !loading && (
+          <div className="mt-8 bg-cyan-950/20 border border-cyan-900/30 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <p className="text-sm font-medium text-white mb-1">Dự báo thay đổi GPA</p>
+              <p className="text-sm text-neutral-400">
+                {result.delta_gpa_10 === 0 ? (
+                  <>Giữ nguyên ở mức <span className="text-white font-semibold">{currentGpa.gpa_10.toFixed(2)}</span> (không đổi)</>
+                ) : (
+                  <>Từ <span className="text-white font-semibold">{currentGpa.gpa_10.toFixed(2)}</span> {result.delta_gpa_10 > 0 ? "lên" : "xuống"} <span className="text-cyan-400 font-semibold">{(currentGpa.gpa_10 + result.delta_gpa_10).toFixed(2)}</span> (tăng/giảm <span className={`${result.delta_gpa_10 > 0 ? 'text-cyan-400' : 'text-red-400'}`}>{result.delta_gpa_10 > 0 ? "+" : ""}{result.delta_gpa_10.toFixed(2)}</span>)</>
+                )}
+              </p>
+            </div>
+            <div className="flex items-baseline gap-1 bg-neutral-950/50 px-6 py-3 rounded-lg shadow-sm border border-neutral-800/50">
+              <span className={`text-3xl font-bold ${result.delta_gpa_10 >= 0 ? 'text-cyan-400' : 'text-red-400'}`}>
+                {result.delta_gpa_10 > 0 ? "+" : ""}{result.delta_gpa_10.toFixed(2)}
+              </span>
+              <span className="text-sm text-neutral-500">tăng/giảm</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -560,17 +602,13 @@ export default function GpaToolsPage() {
 
   return (
     <main>
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-violet-400">
-              GPA Suite
-            </p>
-            <h1 className="text-2xl font-bold tracking-tight text-white">
-              Bộ công cụ GPA
-            </h1>
-          </div>
+        <div className="flex flex-col gap-2 mb-8">
+          <p className="text-base text-neutral-400 max-w-2xl mt-1">
+            Tính toán, mô phỏng và lập chiến lược cải thiện điểm số học tập của
+            bạn với độ chính xác cao.
+          </p>
         </div>
 
         {loading && (
@@ -586,23 +624,33 @@ export default function GpaToolsPage() {
         )}
 
         {!loading && !error && gpa && (
-          <div className="space-y-6">
-            <ReverseCalculatorSection
-              defaultRemainingCredits={Math.max(
-                0,
-                roadmapTotalCredits - gpa.earned_credits,
-              )}
-              suggestionText={
-                roadmapTotalCredits > 0
-                  ? `Chương trình đào tạo ${studentProfile?.major_name ? `ngành ${studentProfile.major_name}` : ""} ${studentProfile?.enrollment_year ? `khoá ${studentProfile.enrollment_year}` : ""} cần ít nhất ${roadmapTotalCredits} tín chỉ để tốt nghiệp mà số tín chỉ bạn đã tích luỹ là ${gpa.earned_credits || 0} nên bạn còn ${Math.max(0, roadmapTotalCredits - gpa.earned_credits)} tín chỉ`
-                  : undefined
-              }
-              currentGpa={gpa}
-            />
-            <RetakeEstimatorSection
-              enrollments={enrollments}
-              currentGpa={gpa}
-            />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-4">
+              <GpaOverviewCard
+                gpa={gpa}
+                roadmapTotalCredits={roadmapTotalCredits}
+              />
+            </div>
+            <div className="lg:col-span-8">
+              <ReverseCalculatorSection
+                defaultRemainingCredits={Math.max(
+                  0,
+                  roadmapTotalCredits - gpa.earned_credits,
+                )}
+                suggestionText={
+                  roadmapTotalCredits > 0
+                    ? `Chương trình đào tạo ${studentProfile?.major_name ? `ngành ${studentProfile.major_name}` : ""} ${studentProfile?.enrollment_year ? `khoá ${studentProfile.enrollment_year}` : ""} cần ít nhất ${roadmapTotalCredits} tín chỉ để tốt nghiệp mà số tín chỉ bạn đã tích luỹ là ${gpa.earned_credits || 0} nên bạn còn ${Math.max(0, roadmapTotalCredits - gpa.earned_credits)} tín chỉ`
+                    : undefined
+                }
+                currentGpa={gpa}
+              />
+            </div>
+            <div className="lg:col-span-12">
+              <RetakeEstimatorSection
+                enrollments={enrollments}
+                currentGpa={gpa}
+              />
+            </div>
           </div>
         )}
       </div>

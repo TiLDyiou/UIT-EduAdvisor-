@@ -7,10 +7,12 @@ import uuid
 from collections.abc import AsyncIterator
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import FileResponse, StreamingResponse
 from redis.asyncio import Redis
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette.responses import Response, StreamingResponse
+from starlette.responses import Response
 
 from app.core.config import Settings
 from app.core.rate_limit import RateLimiter
@@ -74,16 +76,32 @@ async def ai_mate_chat_stream(
 ) -> StreamingResponse:
     rid = str(uuid.uuid4())
     rl = RateLimiter(redis)
-    allowed, remaining, reset_in = await rl.check(
-        f"ai:chat:student:{student.id}",
+    
+    # Global per-minute limit (27 requests / 60 seconds for the whole system)
+    min_allowed, min_remaining, min_reset_in = await rl.check(
+        "ai:chat:global:min",
+        settings.ai_chat_rate_limit_per_minute,
+        60,
+    )
+    if not min_allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={"error": "ai_rate_limited", "reset_in_seconds": min_reset_in, "limit": "minute"},
+        )
+
+    # Global per-hour limit
+    hr_allowed, hr_remaining, hr_reset_in = await rl.check(
+        "ai:chat:global:hr",
         settings.ai_chat_rate_limit_per_hour,
         3600,
     )
-    if not allowed:
+    if not hr_allowed:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail={"error": "ai_rate_limited", "reset_in_seconds": reset_in},
+            detail={"error": "ai_rate_limited", "reset_in_seconds": hr_reset_in, "limit": "hour"},
         )
+        
+    remaining = min(min_remaining, hr_remaining)
 
     query_embedding: list[float] | None
     try:
@@ -107,6 +125,7 @@ async def ai_mate_chat_stream(
             document_title=doc.title,
             tag=doc.tag,
             chunk_index=chunk.chunk_index,
+            content=chunk.content,
         )
         for doc, chunk in rows
     ]
@@ -133,10 +152,10 @@ async def ai_mate_chat_stream(
 
     async def gen() -> AsyncIterator[str]:
         yield _sse("meta", meta.model_dump(mode="json"))
-        if not settings.ai_gemini_api_key.strip():
+        if not settings.groq_api_key.strip():
             err = AiMateErrorEvent(
                 code="ai_unconfigured",
-                message="AI chưa được cấu hình (thiếu khóa Gemini trên máy chủ).",
+                message="AI chưa được cấu hình (thiếu khóa Groq trên máy chủ).",
             )
             yield _sse("error", err.model_dump(mode="json"))
             yield _sse("done", AiMateDoneEvent(policy_disclaimer_required=policy_disclaimer_required).model_dump())
@@ -273,6 +292,44 @@ async def list_pins(
     return [
         PinnedMessageOut(id=r.id, content=r.content, created_at=r.created_at) for r in rows
     ]
+
+
+@router.get("/documents/{doc_id}/pdf")
+async def get_document_pdf(
+    doc_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    import os
+    from app.db.models.rag_chat import PolicyDocument
+    res = await db.execute(select(PolicyDocument).where(PolicyDocument.id == doc_id))
+    doc = res.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+        
+    # the file path might be "docs/xxx.pdf". We resolve it relative to the api root.
+    # __file__ is /app/app/api/v1/ai_mate.py in docker, project root is /app
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+    
+    file_path = doc.file_path
+    if not os.path.isabs(file_path):
+        file_path = os.path.join(project_root, "..", "..", file_path) # if running locally
+        if not os.path.exists(file_path):
+            file_path = os.path.join(project_root, file_path) # if running in docker
+            
+    if not os.path.exists(file_path):
+        # fallback for docker
+        if doc.file_path.startswith("docs/"):
+            file_path = os.path.join("/app", "..", doc.file_path)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found on disk")
+        
+    return FileResponse(
+        file_path, 
+        media_type="application/pdf", 
+        content_disposition_type="inline", 
+        filename=doc.source_filename or "document.pdf"
+    )
 
 
 @router.post("/pins", response_model=PinnedMessageOut, status_code=status.HTTP_201_CREATED)
