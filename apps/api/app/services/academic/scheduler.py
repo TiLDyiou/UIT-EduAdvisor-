@@ -247,24 +247,24 @@ def solve_schedule(
     be scheduled in any solution (e.g., no sections available, or always
     conflicting).
     """
-    # Group sections by course_code.
-    sections_by_course: dict[str, list[Section]] = {}
+    # Group sections by course_code BEFORE filtering
+    raw_sections_by_course: dict[str, list[Section]] = {}
     for s in all_sections:
         base_cc = s.course_code[:-2] if s.course_code.endswith((".1", ".2")) else s.course_code
         if base_cc in course_codes:
-            # Filter by available slots if provided.
+            raw_sections_by_course.setdefault(base_cc, []).append(s)
+
+    # Filter by available slots
+    sections_by_course: dict[str, list[Section]] = {}
+    for base_cc, sects in raw_sections_by_course.items():
+        for s in sects:
             if available_slots is not None:
                 if any((s.day_of_week, p) not in available_slots for p in s.periods):
                     continue
             sections_by_course.setdefault(base_cc, []).append(s)
 
-    # Some courses may also have lab sections (is_lab=True) that need
-    # to be scheduled alongside their theory section.  Group them:
+    # ... Group them:
     # For each course, we need to pick compatible section sets.
-    # Simplification: treat each section_code as an independent option.
-    # A section_code like "CE118.Q11" (LT) may have paired lab sections
-    # "CE118.Q11.1", "CE118.Q11.2".  We group by the base (before last dot
-    # if is_lab) and require both theory + lab to be picked together.
 
     @dataclass
     class CourseOption:
@@ -278,7 +278,7 @@ def solve_schedule(
     for cc in course_codes:
         sects = sections_by_course.get(cc, [])
         if not sects:
-            warnings.append(f"Không tìm thấy lớp mở cho {cc}")
+            warnings.append(f"Không thể xếp môn {cc} vì tất cả các lớp đều trùng với lịch bận của bạn.")
             continue
 
         # Separate theory and lab sections.
@@ -299,15 +299,32 @@ def solve_schedule(
             else:
                 theory[s.section_code] = s
 
+        # Pre-calculate which theory sections ACTUALLY have labs in the raw data.
+        theory_requires_lab = set()
+        for raw_s in all_sections:
+            if (
+                raw_s.is_lab
+                or raw_s.teaching_type in ("HT1", "HT2")
+                or raw_s.course_code.endswith((".1", ".2"))
+            ):
+                parts = raw_s.section_code.rsplit(".", 1)
+                base = parts[0] if len(parts) > 1 and parts[1].isdigit() else raw_s.section_code
+                theory_requires_lab.add(base)
+
         options: list[CourseOption] = []
         if theory:
             for sc, ts in theory.items():
                 # Find matching lab sections for this theory section.
                 matching_labs = labs.get(sc, [])
-                if matching_labs:
-                    # Each lab is an independent option paired with this theory.
-                    for lab in matching_labs:
-                        options.append(CourseOption(sections=[ts, lab]))
+                
+                if sc in theory_requires_lab:
+                    # Rule: Only schedule if BOTH theory and lab can be taken
+                    if matching_labs:
+                        for lab in matching_labs:
+                            options.append(CourseOption(sections=[ts, lab]))
+                    else:
+                        # Theory has lab in raw data, but none fit available slots. Skip.
+                        pass
                 else:
                     options.append(CourseOption(sections=[ts]))
         elif labs:
@@ -319,7 +336,7 @@ def solve_schedule(
         if options:
             course_options[cc] = options
         else:
-            warnings.append(f"Không tìm thấy lớp phù hợp cho {cc}")
+            warnings.append(f"Không thể xếp môn {cc} vì các lớp thực hành bắt buộc đều trùng với lịch bận của bạn.")
 
     # Backtracking solver.
     ordered_courses = list(course_options.keys())
@@ -406,7 +423,7 @@ def solve_schedule(
                 conflict_str = ", ".join(sorted(conflicting_codes))
                 reason = f"Không có môn {cc} vì trùng lịch với môn {conflict_str}"
             else:
-                reason = f"Không có môn {cc} vì không xếp được lịch"
+                reason = f"Không thể xếp môn {cc} do xung đột thời gian với các môn khác"
 
             backtrack(
                 idx + 1,

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { ScheduleSolution, Section, schedulerService } from "@/lib/scheduler";
 import {
   Calendar,
@@ -19,6 +19,7 @@ import {
 interface Props {
   solutions: ScheduleSolution[];
   sections: Section[];
+  warnings?: string[];
   onBack: () => void;
 }
 
@@ -146,12 +147,36 @@ const COLOR_PALETTES = [
   },
 ];
 
-export default function Step3Results({ solutions, sections, onBack }: Props) {
+export default function Step3Results({
+  solutions,
+  sections,
+  warnings = [],
+  onBack,
+}: Props) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [exportingImage, setExportingImage] = useState(false);
   const [exportTheme, setExportTheme] = useState<"dark" | "light">("dark");
   const gridRef = useRef<HTMLTableElement>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isDark = document.documentElement.classList.contains("dark");
+      setExportTheme(isDark ? "dark" : "light");
+
+      const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          if (mutation.attributeName === "class") {
+            const isDarkNow =
+              document.documentElement.classList.contains("dark");
+            setExportTheme(isDarkNow ? "dark" : "light");
+          }
+        }
+      });
+      observer.observe(document.documentElement, { attributes: true });
+      return () => observer.disconnect();
+    }
+  }, []);
 
   const selectedSolution = solutions[selectedIndex];
 
@@ -227,12 +252,12 @@ export default function Step3Results({ solutions, sections, onBack }: Props) {
 
   if (solutions.length === 0) {
     return (
-      <div className="py-24 border border-dashed border-red-500/30 bg-red-500/5 rounded-2xl flex flex-col items-center justify-center gap-6 text-center">
+      <div className="py-24 border border-dashed border-red-500/30 bg-red-500/5 rounded-2xl flex flex-col items-center justify-center gap-3 text-center">
         <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mb-2">
           <AlertCircle className="w-10 h-10" />
         </div>
         <div className="space-y-3">
-          <h3 className="text-xl font-bold text-white">
+          <h3 className="text-xl font-bold text-neutral-100">
             Không tìm thấy phương án phù hợp
           </h3>
           <p className="text-neutral-400 max-w-md mx-auto text-sm leading-relaxed">
@@ -250,7 +275,24 @@ export default function Step3Results({ solutions, sections, onBack }: Props) {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-2 animate-in fade-in duration-700">
+      {/* Global Warnings */}
+      {warnings.length > 0 && (
+        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4 flex items-start gap-3 mb-6">
+          <AlertCircle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
+          <div>
+            <h3 className="font-semibold text-yellow-500 mb-1">
+              Lưu ý về lịch bận cá nhân
+            </h3>
+            <ul className="list-disc list-inside text-sm text-yellow-500/90 space-y-1">
+              {warnings.map((w, i) => (
+                <li key={i}>{w}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
       {/* CSS Ghi đè xuất ảnh nền trắng */}
       <style
         dangerouslySetInnerHTML={{
@@ -316,109 +358,135 @@ export default function Step3Results({ solutions, sections, onBack }: Props) {
         .light-theme-export .bg-violet-500\\/20 { background-color: rgba(139, 92, 246, 0.25) !important; }
         .light-theme-export .bg-teal-500\\/20 { background-color: rgba(20, 184, 166, 0.25) !important; }
         .light-theme-export .bg-orange-500\\/20 { background-color: rgba(249, 115, 22, 0.25) !important; }
+
+        html body .dark-theme-export {
+          background-color: #262626 !important;
+          color: #f3f4f6 !important;
+        }
+        html body .dark-theme-export th {
+          background-color: #171717 !important;
+          color: #9ca3af !important;
+          border-color: #404040 !important;
+        }
+        html body .dark-theme-export td {
+          background-color: #262626 !important;
+          border-color: #404040 !important;
+        }
+        html body .dark-theme-export td.bg-neutral-950,
+        html body .dark-theme-export .bg-neutral-950 {
+          background-color: #0a0a0a !important;
+        }
+        html body .dark-theme-export td.bg-neutral-900,
+        html body .dark-theme-export .bg-neutral-900 {
+          background-color: #171717 !important;
+        }
+        html body .dark-theme-export .text-white { color: #ffffff !important; }
+        html body .dark-theme-export .text-neutral-300 { color: #d1d5db !important; }
+        html body .dark-theme-export .text-neutral-400 { color: #9ca3af !important; }
+        html body .dark-theme-export .text-neutral-500 { color: #6b7280 !important; }
+
+        html body .dark-theme-export .text-indigo-400 { color: #818cf8 !important; }
+        html body .dark-theme-export .text-emerald-400 { color: #34d399 !important; }
+        html body .dark-theme-export .text-rose-400 { color: #fb7185 !important; }
+        html body .dark-theme-export .text-amber-400 { color: #fbbf24 !important; }
+        html body .dark-theme-export .text-sky-400 { color: #38bdf8 !important; }
+        html body .dark-theme-export .text-violet-400 { color: #a78bfa !important; }
+        html body .dark-theme-export .text-teal-400 { color: #2dd4bf !important; }
+        html body .dark-theme-export .text-orange-400 { color: #fb923c !important; }
+
+        html body .dark-theme-export .text-indigo-300 { color: #a5b4fc !important; }
+        html body .dark-theme-export .text-emerald-300 { color: #6ee7b7 !important; }
+        html body .dark-theme-export .text-rose-300 { color: #fda4af !important; }
+        html body .dark-theme-export .text-amber-300 { color: #fcd34d !important; }
+        html body .dark-theme-export .text-sky-300 { color: #7dd3fc !important; }
+        html body .dark-theme-export .text-violet-300 { color: #c4b5fd !important; }
+        html body .dark-theme-export .text-teal-300 { color: #5eead4 !important; }
+        html body .dark-theme-export .text-orange-300 { color: #fdba74 !important; }
       `,
         }}
       />
 
-      {/* Thanh điều khiển chọn phương án và xuất dữ liệu */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-neutral-900 border border-neutral-800 p-6 rounded-2xl">
-        <div className="space-y-4">
+      {/* Cảnh báo môn học */}
+      {selectedSolution?.missing_courses &&
+        selectedSolution.missing_courses.length > 0 && (
+          <div className="flex flex-col gap-2 animate-in fade-in duration-300">
+            {selectedSolution.missing_courses.map((msg, idx) => (
+              <div
+                key={idx}
+                className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs rounded-lg font-medium leading-relaxed max-w-xl"
+              >
+                <AlertCircle className="w-4 h-4 shrink-0 text-amber-500" />
+                <span>{msg}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+      {/* Thanh điều khiển chọn phương án và xuất dữ liệu (Luôn thu gọn) */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between bg-neutral-900 border border-neutral-800 rounded-2xl p-3 gap-4">
+        <div className="flex flex-row items-center gap-4">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-            <h3 className="text-lg font-semibold text-white">
-              Kết quả xếp lịch tối ưu
-            </h3>
           </div>
           <div className="flex flex-wrap gap-2">
             {solutions.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setSelectedIndex(idx)}
-                className={`px-5 py-2 text-sm font-medium rounded-lg transition-all ${
+                className={`relative overflow-hidden text-sm font-semibold rounded-xl border px-4 py-1.5 transition-all duration-300 ${
                   selectedIndex === idx
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-900/20"
-                    : "bg-neutral-800 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700"
+                    ? "bg-tokyo-cyan text-white dark:text-tokyo-comment border-transparent shadow-[0_4px_20px_-4px_rgba(14,165,233,0.4)] hover:shadow-[0_4px_20px_-2px_rgba(14,165,233,0.5)] scale-[1.02]"
+                    : "bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:border-blue-400 hover:text-blue-500 dark:hover:border-blue-500 dark:hover:text-blue-400 hover:shadow-sm"
                 }`}
               >
-                Phương án {idx + 1}
+                {selectedIndex === idx && (
+                  <span className="absolute inset-0 w-full h-full bg-white/20 blur-[8px] animate-pulse rounded-xl pointer-events-none" />
+                )}
+                <span className="relative z-10">#{idx + 1}</span>
               </button>
             ))}
           </div>
-          {selectedSolution?.missing_courses &&
-            selectedSolution.missing_courses.length > 0 && (
-              <div className="flex flex-col gap-2 pt-2 animate-in fade-in duration-300">
-                {selectedSolution.missing_courses.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs rounded-lg font-medium leading-relaxed max-w-xl"
-                  >
-                    <AlertCircle className="w-4 h-4 shrink-0 text-amber-500" />
-                    <span>{msg}</span>
-                  </div>
-                ))}
-              </div>
-            )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 mt-0">
           <button
-            onClick={onBack}
-            className="px-4 py-2 border border-neutral-700 text-neutral-300 hover:bg-neutral-800 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5"
+            onClick={() =>
+              setExportTheme((prev) => (prev === "dark" ? "light" : "dark"))
+            }
+            className="border border-neutral-700 text-neutral-300 hover:bg-neutral-800 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 w-9 h-9"
+            title="Đổi giao diện TKB (ảnh hưởng đến lúc xuất ảnh)"
           >
-            <Edit2 className="w-3.5 h-3.5" /> Đổi lịch rảnh/bận
+            {exportTheme === "dark" ? (
+              <Sun className="w-3.5 h-3.5" />
+            ) : (
+              <Moon className="w-3.5 h-3.5" />
+            )}
           </button>
-
-          {/* Chọn nền hiển thị và xuất ảnh */}
-          <div className="flex items-center gap-1 bg-neutral-800 border border-neutral-700 rounded-lg p-1">
-            <button
-              onClick={() => setExportTheme("dark")}
-              type="button"
-              title="Giao diện nền tối"
-              className={`w-8 h-8 flex items-center justify-center rounded-md transition-all ${
-                exportTheme === "dark"
-                  ? "bg-neutral-700 text-amber-400 shadow-sm border border-neutral-600"
-                  : "text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700/50"
-              }`}
-            >
-              <Moon className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setExportTheme("light")}
-              type="button"
-              title="Giao diện nền sáng"
-              className={`w-8 h-8 flex items-center justify-center rounded-md transition-all ${
-                exportTheme === "light"
-                  ? "bg-white text-indigo-600 shadow-sm"
-                  : "text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700/50"
-              }`}
-            >
-              <Sun className="w-4 h-4" />
-            </button>
-          </div>
 
           <button
             onClick={handleExportImage}
             disabled={exportingImage}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50"
+            className="bg-indigo-600 hover:bg-indigo-500 text-tokyo-storm rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 w-9 h-9"
+            title="Xuất Ảnh (.png)"
           >
             {exportingImage ? (
               <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
               <ImageIcon className="w-3.5 h-3.5" />
             )}
-            Xuất Ảnh (.png)
           </button>
+
           <button
             onClick={handleExport}
             disabled={exporting}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50"
+            className="bg-emerald-600 hover:bg-emerald-500 text-tokyo-storm rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 w-9 h-9"
+            title="Xuất Lịch (.ics)"
           >
             {exporting ? (
               <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
               <Download className="w-3.5 h-3.5" />
             )}
-            Xuất Lịch (.ics)
           </button>
         </div>
       </div>
@@ -445,7 +513,9 @@ export default function Step3Results({ solutions, sections, onBack }: Props) {
               <table
                 ref={gridRef}
                 className={`w-full min-w-[800px] border-collapse bg-neutral-800 border-hidden rounded-xl overflow-hidden shadow-[0_0_0_1px_rgba(38,38,38,1)] table-fixed transition-colors duration-200 ${
-                  exportTheme === "light" ? "light-theme-export" : ""
+                  exportTheme === "light"
+                    ? "light-theme-export"
+                    : "dark-theme-export"
                 }`}
               >
                 <thead>
@@ -571,85 +641,6 @@ export default function Step3Results({ solutions, sections, onBack }: Props) {
             );
           })()}
         </div>
-      </div>
-
-      {/* Danh sách thẻ chi tiết môn học phía dưới */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {selectedSolution.sections.map((s) => {
-          const baseCode = getBaseCourseCode(s.course_code);
-          const colorIdx = courseColorMap[baseCode] ?? 0;
-          const palette = COLOR_PALETTES[colorIdx];
-
-          return (
-            <div
-              key={`${s.course_code}-${s.section_code}`}
-              className="p-5 bg-neutral-900 border border-neutral-800 rounded-xl hover:border-neutral-700 transition-colors shadow-sm relative overflow-hidden pl-6"
-            >
-              {/* Thanh màu tương đồng bên trái thẻ */}
-              <div
-                className={`absolute left-0 top-0 bottom-0 w-1 ${palette.bar}`}
-              />
-
-              <div className="flex items-start justify-between mb-4">
-                <h4 className="text-base font-semibold text-white leading-tight pr-4">
-                  {s.course_name}
-                  {/\.[12]$/.test(s.section_code) && (
-                    <span
-                      className={`font-medium ml-1.5 whitespace-nowrap ${palette.text}`}
-                    >
-                      (TH)
-                    </span>
-                  )}
-                </h4>
-                <span
-                  className={`text-xs font-medium px-2.5 py-1 ${palette.pillBg} ${palette.text} rounded-md shrink-0 border ${palette.borderLight}`}
-                >
-                  {s.section_code}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-neutral-800">
-                <div className="space-y-1.5">
-                  <p className="text-xs text-neutral-500 flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5" /> Phòng học
-                  </p>
-                  <p className="text-sm font-medium text-neutral-200">
-                    {cleanValue(s.room)}
-                  </p>
-                </div>
-                <div className="space-y-1.5">
-                  <p className="text-xs text-neutral-500 flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5" /> Giảng viên
-                  </p>
-                  <div className="text-sm font-medium text-neutral-200 break-words space-y-1">
-                    {(() => {
-                      const cleaned = cleanValue(s.instructor_name);
-                      if (!cleaned) return "";
-                      return cleaned
-                        .split(/[\n\r,;/]/)
-                        .map((n) => n.trim())
-                        .filter(Boolean)
-                        .map((n, idx) => (
-                          <span key={idx} className="block">
-                            {n}
-                          </span>
-                        ));
-                    })()}
-                  </div>
-                </div>
-                <div className="space-y-1.5 col-span-2">
-                  <p className="text-xs text-neutral-500 flex items-center gap-1.5">
-                    <CalendarDays className="w-3.5 h-3.5" /> Lịch học
-                  </p>
-                  <p className={`text-sm font-medium ${palette.textLight}`}>
-                    Thứ {s.day_of_week}, Tiết {s.periods[0]} -{" "}
-                    {s.periods[s.periods.length - 1]}
-                  </p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
       </div>
     </div>
   );

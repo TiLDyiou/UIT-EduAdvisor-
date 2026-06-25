@@ -17,6 +17,7 @@ interface Props {
   sections: Section[];
   setSections: (s: Section[]) => void;
   onNext: (selected: string[]) => void;
+  onSelectionChange?: (selected: string[]) => void;
   initialSelectedCodes?: string[];
 }
 
@@ -24,11 +25,12 @@ export default function Step1CourseSelection({
   sections,
   setSections,
   onNext,
+  onSelectionChange,
   initialSelectedCodes = [],
 }: Props) {
   const [selectedCodes, setSelectedCodes] = useState<Set<string>>(() => {
     const mapped = (initialSelectedCodes || []).map((code) =>
-      code.endsWith(".1") || code.endsWith(".2") ? code.slice(0, -2) : code
+      code.endsWith(".1") || code.endsWith(".2") ? code.slice(0, -2) : code,
     );
     return new Set(mapped);
   });
@@ -58,14 +60,22 @@ export default function Step1CourseSelection({
     if (next.has(code)) next.delete(code);
     else next.add(code);
     setSelectedCodes(next);
+    onSelectionChange?.(Array.from(next));
   };
 
   // Group sections by base course code for selection list (merging .1/.2 labs)
   const uniqueCourses = sections.reduce(
     (acc, s) => {
-      const endsWithLabSuffix = s.course_code.endsWith(".1") || s.course_code.endsWith(".2");
-      const isLab = s.is_lab || s.teaching_type === "HT1" || s.teaching_type === "HT2" || endsWithLabSuffix;
-      const baseCode = endsWithLabSuffix ? s.course_code.slice(0, -2) : s.course_code;
+      const endsWithLabSuffix =
+        s.course_code.endsWith(".1") || s.course_code.endsWith(".2");
+      const isLab =
+        s.is_lab ||
+        s.teaching_type === "HT1" ||
+        s.teaching_type === "HT2" ||
+        endsWithLabSuffix;
+      const baseCode = endsWithLabSuffix
+        ? s.course_code.slice(0, -2)
+        : s.course_code;
 
       if (!acc[baseCode]) {
         acc[baseCode] = {
@@ -175,9 +185,13 @@ export default function Step1CourseSelection({
             <div className="p-5 border-b border-neutral-800 bg-neutral-900/80 backdrop-blur-sm flex justify-between items-center bg-neutral-900">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 text-indigo-400" />
-                <h3 className="text-base font-semibold text-white">Môn học đã chọn</h3>
+                <h3 className="text-base font-semibold text-white">
+                  Môn học đã chọn
+                </h3>
               </div>
-              <span className="text-xs font-medium text-neutral-400 bg-neutral-800 px-2 py-1 rounded-full">{selectedCodes.size} môn</span>
+              <span className="text-xs font-medium text-neutral-400 bg-neutral-800 px-2 py-1 rounded-full">
+                {selectedCodes.size} môn
+              </span>
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar p-5 bg-neutral-900">
@@ -185,7 +199,9 @@ export default function Step1CourseSelection({
                 <div className="h-full flex flex-col items-center justify-center gap-3 text-neutral-500 text-sm p-6 text-center">
                   <CheckCircle2 className="w-8 h-8 text-neutral-700 mb-2" />
                   <p>Chưa chọn môn học nào.</p>
-                  <p className="text-xs text-neutral-600">Hãy chọn các môn từ danh sách bên phải.</p>
+                  <p className="text-xs text-neutral-600">
+                    Hãy chọn các môn từ danh sách bên phải.
+                  </p>
                 </div>
               ) : (
                 <div className="grid gap-3">
@@ -198,12 +214,16 @@ export default function Step1CourseSelection({
                         className="p-3 bg-indigo-500/5 border border-indigo-500/20 rounded-xl flex items-center justify-between group transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 hover:scale-[1.01]"
                       >
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-lg bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 font-bold text-xs">
+                          <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-lg bg-tokyo-blue border border-indigo-500/30 text-tokyo-night font-bold text-xs">
                             {course.credits} TC
                           </div>
                           <div>
-                            <h4 className="text-sm font-medium text-white mb-0.5">{course.name}</h4>
-                            <span className="text-xs text-neutral-500 font-medium px-2 py-0.5 rounded bg-neutral-800">{course.code}</span>
+                            <h4 className="text-sm font-medium text-white mb-0.5">
+                              {course.name}
+                            </h4>
+                            <span className="text-xs text-tokyo-night font-medium px-2 py-0.5 rounded bg-tokyo-blue">
+                              {course.code}
+                            </span>
                           </div>
                         </div>
                         <button
@@ -273,7 +293,7 @@ export default function Step1CourseSelection({
                       >
                         <div className="flex items-center gap-4">
                           <div
-                            className={`w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full text-xs font-bold transition-all duration-300 ${isSelected ? "bg-indigo-500 text-white" : "bg-neutral-800 text-neutral-400 border border-neutral-700"}`}
+                            className={`w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full text-xs font-bold transition-all duration-300 ${isSelected ? "bg-tokyo-blue text-tokyo-night" : "bg-tokyo-muted text-neutral-400 border border-neutral-700"}`}
                           >
                             {course.credits} TC
                           </div>
@@ -333,7 +353,7 @@ export default function Step1CourseSelection({
               <button
                 disabled={selectedCodes.size === 0}
                 onClick={() => onNext(Array.from(selectedCodes))}
-                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-indigo-900/20 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-blue-600 dark:bg-indigo-600 hover:bg-blue-500 dark:hover:bg-indigo-500 text-tokyo-night rounded-xl text-sm font-semibold transition-all shadow-md shadow-blue-500/20 dark:shadow-indigo-900/20 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
               >
                 Tiếp tục thiết lập <ChevronRight className="w-4 h-4" />
               </button>

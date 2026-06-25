@@ -39,7 +39,7 @@ const config: Config = {
           variable: "var(--fg-variable)",
           comment: "var(--fg-comments)",
           border: "var(--border-terminal)",
-        }
+        },
       },
       boxShadow: {
         "theme-xs": "0px 1px 2px 0px rgba(16, 24, 40, 0.05)",

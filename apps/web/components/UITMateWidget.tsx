@@ -10,13 +10,7 @@ import {
 } from "@/lib/ai-mate-db";
 import { apiBaseUrl, apiFetch, parseApiError } from "@/lib/api";
 import { parseSseJsonStream } from "@/lib/sse";
-import {
-  Send,
-  X,
-  Loader2,
-  AlertTriangle,
-  Trash2,
-} from "lucide-react";
+import { Send, X, Loader2, AlertTriangle, Trash2 } from "lucide-react";
 
 type Me = { student_id: string; csrf_token: string };
 type Source = {
@@ -521,8 +515,6 @@ export function UITMateWidget() {
     }
   }
 
-
-
   async function handleClearChat() {
     if (!threadId) return;
     if (
@@ -604,7 +596,7 @@ export function UITMateWidget() {
         <div
           ref={windowRef}
           style={{ position: "fixed", zIndex: 9998 }}
-          className="bg-neutral-900/95 border border-neutral-800 rounded-2xl shadow-2xl shadow-black/80 flex flex-col backdrop-blur-md overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+          className="bg-white/95 dark:bg-neutral-900/95 border border-slate-200 dark:border-neutral-800 rounded-2xl shadow-2xl shadow-black/80 flex flex-col backdrop-blur-md overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         >
           {/* Header */}
           <div
@@ -613,20 +605,22 @@ export function UITMateWidget() {
               const touch = e.touches[0];
               if (touch) handleStart(touch.clientX, touch.clientY, "window");
             }}
-            className="p-4 bg-neutral-950/80 border-b border-neutral-850 flex items-center justify-between select-none cursor-grab active:cursor-grabbing"
+            className="p-4 bg-slate-50/90 dark:bg-neutral-950/80 border-b border-slate-200 dark:border-neutral-850 flex items-center justify-between select-none cursor-grab active:cursor-grabbing"
           >
             <div className="flex items-center gap-2.5">
               <img
                 src="/ai.png"
                 alt="UIT Mate"
-                className="w-9 h-9 rounded-full object-cover border border-neutral-800"
+                className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-neutral-800"
                 draggable={false}
               />
               <div>
-                <h3 className="text-sm font-semibold text-white">UIT Mate</h3>
+                <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
+                  UIT Mate
+                </h3>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                  <span className="text-[10px] text-neutral-400 font-medium">
+                  <span className="text-[10px] text-slate-500 dark:text-neutral-400 font-medium">
                     Trực tuyến
                   </span>
                 </div>
@@ -657,19 +651,19 @@ export function UITMateWidget() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-neutral-900/40">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-slate-50/50 dark:bg-neutral-900/40">
             {messages.length === 0 && !streaming && (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-3">
                 <img
                   src="/ai.png"
                   alt="UIT Mate"
-                  className="w-12 h-12 rounded-full object-cover border border-neutral-800 mb-1 animate-pulse"
+                  className="w-12 h-12 rounded-full object-cover border border-slate-200 dark:border-neutral-800 mb-1 animate-pulse"
                   draggable={false}
                 />
-                <h4 className="text-xs font-semibold text-white">
+                <h4 className="text-xs font-semibold text-slate-700 dark:text-white">
                   Chào mừng bạn đến với UIT Mate!
                 </h4>
-                <p className="text-[11px] text-neutral-400 max-w-[200px] leading-relaxed">
+                <p className="text-[11px] text-slate-500 dark:text-neutral-400 max-w-[200px] leading-relaxed">
                   Tôi có thể giải đáp các câu hỏi về chương trình học tập, quy
                   chế đào tạo tại UIT. Hãy thử hỏi tôi nhé!
                 </p>
@@ -687,40 +681,42 @@ export function UITMateWidget() {
                   id={`msg-${m.id}`}
                   className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed transition-all duration-500 ${
                     m.role === "user"
-                      ? "bg-neutral-800 text-white rounded-tr-sm border border-neutral-700/50"
-                      : "bg-neutral-850 text-neutral-200 border border-neutral-800 rounded-tl-sm"
+                      ? "bg-blue-600 dark:bg-neutral-800 text-slate-50 rounded-tr-sm border border-blue-500/50 dark:border-neutral-700/50 shadow-sm"
+                      : "bg-white dark:bg-neutral-700 text-slate-700 dark:text-neutral-200 border border-slate-200 dark:border-neutral-800 rounded-tl-sm shadow-sm"
                   }`}
                 >
                   <FormattedText text={m.content} role={m.role} />
                 </div>
 
-                {m.role === "assistant" && m.sources && m.sources.length > 0 && (
-                  <div className="flex items-center gap-2 mt-1.5 ml-1">
-                    {m.sources?.map((s, idx) => {
-                      const shortTitle = s.document_title?.includes("1393")
-                        ? "QĐ 1393"
-                        : s.document_title?.includes("790")
-                          ? "QĐ 790"
-                          : "Quy chế";
-                      return (
-                        <button
-                          key={idx}
-                          title={s.document_title}
-                          onClick={() => setViewerSource(s)}
-                          className="text-[10px] text-neutral-400 font-medium bg-neutral-800/50 hover:bg-neutral-700/50 px-1.5 py-0.5 rounded border border-neutral-700/50 transition-colors"
-                        >
-                          [{idx + 1}] {shortTitle}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                {m.role === "assistant" &&
+                  m.sources &&
+                  m.sources.length > 0 && (
+                    <div className="flex items-center gap-2 mt-1.5 ml-1">
+                      {m.sources?.map((s, idx) => {
+                        const shortTitle = s.document_title?.includes("1393")
+                          ? "QĐ 1393"
+                          : s.document_title?.includes("790")
+                            ? "QĐ 790"
+                            : "Quy chế";
+                        return (
+                          <button
+                            key={idx}
+                            title={s.document_title}
+                            onClick={() => setViewerSource(s)}
+                            className="text-[10px] text-neutral-600 dark:text-neutral-400 font-medium bg-white dark:bg-neutral-800/50 hover:bg-neutral-100 dark:hover:bg-neutral-700/50 px-1.5 py-0.5 rounded border border-neutral-200 dark:border-neutral-700/50 transition-colors shadow-sm"
+                          >
+                            [{idx + 1}] {shortTitle}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
               </div>
             ))}
 
             {streaming && (
               <div className="flex flex-col items-start animate-in fade-in slide-in-from-bottom-2 duration-200">
-                <div className="max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed bg-neutral-850 text-neutral-200 border border-neutral-800 rounded-tl-sm">
+                <div className="max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed bg-white dark:bg-neutral-850 text-slate-700 dark:text-neutral-200 border border-slate-200 dark:border-neutral-800 rounded-tl-sm shadow-sm">
                   <div className="flex items-end">
                     <FormattedText text={streaming} role="assistant" />
                     <span className="inline-block w-1 h-3 ml-1 mb-0.5 bg-emerald-500/80 animate-pulse rounded-full" />
@@ -769,7 +765,7 @@ export function UITMateWidget() {
             )}
 
             {showDisclaimer && (
-              <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl text-[10px] text-amber-500/80 leading-relaxed">
+              <div className="p-3 bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/10 rounded-xl text-[10px] text-amber-700 dark:text-amber-500/80 leading-relaxed">
                 {DISCLAIMER}
               </div>
             )}
@@ -778,7 +774,7 @@ export function UITMateWidget() {
           </div>
 
           {/* Footer input */}
-          <div className="p-3 bg-neutral-950/80 border-t border-neutral-850 flex gap-2">
+          <div className="p-3 bg-white dark:bg-neutral-950/80 border-t border-slate-200 dark:border-neutral-850 flex gap-2">
             <input
               type="text"
               placeholder="Hỏi UIT Mate..."
@@ -788,12 +784,12 @@ export function UITMateWidget() {
                 if (e.key === "Enter") sendMessage();
               }}
               disabled={busy}
-              className="flex-1 bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-700 focus:ring-1 focus:ring-neutral-700 transition-all disabled:opacity-50"
+              className="flex-1 bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-blue-400 dark:focus:border-neutral-700 focus:ring-1 focus:ring-blue-400 dark:focus:ring-neutral-700 transition-all disabled:opacity-50"
             />
             <button
               onClick={sendMessage}
               disabled={busy || !input.trim()}
-              className="w-9 h-9 shrink-0 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 disabled:bg-neutral-800 text-white rounded-xl flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-9 h-9 shrink-0 bg-blue-500 dark:bg-neutral-800 border border-blue-400 dark:border-neutral-700 hover:bg-blue-600 dark:hover:bg-neutral-700 disabled:bg-slate-200 dark:disabled:bg-neutral-800 text-white rounded-xl flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {busy ? (
                 <Loader2 className="w-4 h-4 animate-spin text-neutral-400" />
@@ -831,21 +827,23 @@ export function UITMateWidget() {
             </div>
             <div className="flex-1 flex overflow-hidden rounded-b-2xl">
               {(() => {
-                const normalized = (viewerSource.content || "").replace(/\s+/g, " ").trim();
-                
+                const normalized = (viewerSource.content || "")
+                  .replace(/\s+/g, " ")
+                  .trim();
+
                 // Trích xuất Điều XX (ví dụ Điều 16) để tìm kiếm chính xác và cuộn trang
                 const dieuMatch = normalized.match(/điều\s+\d+/i);
-                const searchPhrase = dieuMatch 
-                  ? dieuMatch[0] 
+                const searchPhrase = dieuMatch
+                  ? dieuMatch[0]
                   : normalized.slice(0, 20);
-                
+
                 // Wrap in double quotes for exact phrase matching
                 const searchQuery = `"${searchPhrase}"`;
-                
+
                 const hashParams = viewerSource.page_number
                   ? `page=${viewerSource.page_number}&search=${encodeURIComponent(searchQuery)}`
                   : `search=${encodeURIComponent(searchQuery)}`;
-                
+
                 return (
                   <iframe
                     key={`${viewerSource.document_id}-${viewerSource.page_number || 0}-${searchQuery}`}

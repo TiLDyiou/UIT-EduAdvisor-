@@ -6,6 +6,8 @@ import { CalendarDays, Loader2, Sparkles, XCircle, CheckCircle2, CalendarClock, 
 
 interface Props {
   onSolve: (slots: TimeSlot[] | null) => void;
+  onSelectionChange?: (slots: TimeSlot[]) => void;
+  initialSlots?: TimeSlot[] | null;
   loading: boolean;
   error?: string | null;
 }
@@ -38,16 +40,35 @@ const getPeriodTime = (p: number) => {
   }
 };
 
-export default function Step2TimePreference({ onSolve, loading, error }: Props) {
+export default function Step2TimePreference({
+  onSolve,
+  onSelectionChange,
+  initialSlots,
+  loading,
+  error,
+}: Props) {
   const [availableSlots, setAvailableSlots] = useState<Set<string>>(() => {
+    if (initialSlots && initialSlots.length > 0) {
+      return new Set(initialSlots.map((s) => `${s.day}-${s.period}`));
+    }
     const initial = new Set<string>();
-    DAYS.forEach(d => {
-      PERIODS.forEach(p => {
+    DAYS.forEach((d) => {
+      PERIODS.forEach((p) => {
         initial.add(`${d.value}-${p}`);
       });
     });
     return initial;
   });
+
+  React.useEffect(() => {
+    if (onSelectionChange) {
+      const slots: TimeSlot[] = Array.from(availableSlots).map((key) => {
+        const [day, period] = key.split("-").map(Number);
+        return { day, period } as TimeSlot;
+      });
+      onSelectionChange(slots);
+    }
+  }, [availableSlots]);
 
   const toggleSlot = (day: number, period: number) => {
     const key = `${day}-${period}`;

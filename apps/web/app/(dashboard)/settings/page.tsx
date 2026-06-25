@@ -372,9 +372,6 @@ export default function SettingsPage() {
           <p className="text-xs font-mono uppercase tracking-[0.25em] text-[#73daca]">
             UIT EduAdvisor // System Settings
           </p>
-          <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-[#7dcfff]">
-            Cấu hình Hệ thống
-          </h1>
         </div>
       </header>
 
@@ -427,13 +424,13 @@ export default function SettingsPage() {
                 </div>
                 <div className="pl-4 space-y-1 border-l border-[#414868]/30 ml-2 py-1">
                   <p>
-                    ● User MSSV:{" "}
+                    {">"} MSSV:{" "}
                     <span className="text-[#7dcfff] font-bold">
                       {me.student_code_masked}
                     </span>
                   </p>
                   <p>
-                    ● Moodle Credentials:{" "}
+                    {">"} Moodle Credentials:{" "}
                     <span
                       className={
                         me.has_credential
@@ -445,7 +442,7 @@ export default function SettingsPage() {
                     </span>
                   </p>
                   <p>
-                    ● Discord Integration:{" "}
+                    {">"} Discord Integration:{" "}
                     <span
                       className={
                         botAccounts.some((a) => a.platform === "discord")
@@ -459,7 +456,7 @@ export default function SettingsPage() {
                     </span>
                   </p>
                   <p>
-                    ● Email Alerts Status:{" "}
+                    {">"} Email Alerts Status:{" "}
                     <span
                       className={
                         botAccounts.some((a) => a.platform === "mail")
@@ -473,10 +470,13 @@ export default function SettingsPage() {
                     </span>
                   </p>
                 </div>
-                <p className="text-[#565f89]">
-                  $ system_status: ok{" "}
-                  <span className="inline-block w-1.5 h-3.5 bg-[#73daca] align-middle animate-cursor-blink"></span>
+                <p className="text-[#9ece6a] ml-4 pb-1">
+                  [OK] system_status: normal
                 </p>
+                <div className="flex gap-2 items-center">
+                  <span className="text-[#bb9af7]">edu-advisor@uit:~$</span>
+                  <span className="inline-block w-2 h-4 bg-[#73daca] align-middle animate-cursor-blink"></span>
+                </div>
               </div>
             </div>
 

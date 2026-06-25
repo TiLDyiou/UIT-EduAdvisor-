@@ -113,38 +113,38 @@ const STATUS_CONFIG: Record<
 > = {
   passed: {
     label: "Đã qua",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
-    iconColor: "text-emerald-400",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-100 dark:bg-emerald-500/10",
+    border: "border-emerald-200 dark:border-emerald-500/20",
+    iconColor: "text-emerald-500 dark:text-emerald-400",
   },
   in_progress: {
     label: "Đang học",
-    color: "text-amber-400",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/20",
-    iconColor: "text-amber-400",
+    color: "text-amber-600 dark:text-amber-400",
+    bg: "bg-amber-100 dark:bg-amber-500/10",
+    border: "border-amber-200 dark:border-amber-500/20",
+    iconColor: "text-amber-500 dark:text-amber-400",
   },
   failed: {
     label: "Chưa đạt",
-    color: "text-red-400",
-    bg: "bg-red-500/10",
-    border: "border-red-500/20",
-    iconColor: "text-red-400",
+    color: "text-red-600 dark:text-red-400",
+    bg: "bg-red-100 dark:bg-red-500/10",
+    border: "border-red-200 dark:border-red-500/20",
+    iconColor: "text-red-500 dark:text-red-400",
   },
   locked: {
     label: "Bị khóa",
-    color: "text-neutral-500",
-    bg: "bg-neutral-800/40",
-    border: "border-neutral-700/20",
-    iconColor: "text-neutral-600",
+    color: "text-neutral-500 dark:text-neutral-500",
+    bg: "bg-neutral-200 dark:bg-neutral-800/40",
+    border: "border-neutral-300 dark:border-neutral-700/20",
+    iconColor: "text-neutral-400 dark:text-neutral-600",
   },
   not_started: {
     label: "Chưa học",
-    color: "text-neutral-400",
-    bg: "bg-neutral-800/20",
-    border: "border-neutral-800/40",
-    iconColor: "text-neutral-500",
+    color: "text-slate-500 dark:text-neutral-400",
+    bg: "bg-slate-100 dark:bg-neutral-800/20",
+    border: "border-slate-200 dark:border-neutral-800/40",
+    iconColor: "text-slate-400 dark:text-neutral-500",
   },
 };
 
@@ -345,7 +345,7 @@ function TreeViewNode({ node }: { node: RoadmapNode }) {
 
           <div className="min-w-0">
             <div className="flex flex-wrap items-baseline gap-x-2">
-              <span className="text-[10px] font-mono font-bold text-[#849495] tracking-wider">
+              <span className="text-[10px] font-bold text-[#849495] tracking-wider">
                 {node.course_code}
               </span>
               <span className="text-xs font-bold text-neutral-200">
@@ -354,15 +354,13 @@ function TreeViewNode({ node }: { node: RoadmapNode }) {
             </div>
 
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-[10px] text-neutral-500 font-mono">
+              <span className="text-[10px] text-neutral-500 ">
                 {node.credits} TC
               </span>
               {node.grade_10 !== null && (
                 <>
                   <span className="text-[9px] text-neutral-500">•</span>
-                  <span
-                    className={`text-[10px] font-mono font-bold ${cfg.color}`}
-                  >
+                  <span className={`text-[10px]  font-bold ${cfg.color}`}>
                     Điểm: {node.grade_10.toFixed(1)}
                   </span>
                 </>
@@ -385,13 +383,13 @@ function TreeViewNode({ node }: { node: RoadmapNode }) {
 
         <div className="flex items-center gap-2 shrink-0">
           <span
-            className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${cfg.color} ${cfg.bg} border ${cfg.border} uppercase font-mono`}
+            className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${cfg.color} ${cfg.bg} border ${cfg.border} uppercase `}
           >
             {cfg.label}
           </span>
           {!node.is_required &&
             !/(anh văn|tiếng anh)/i.test(node.course_name) && (
-              <span className="text-[9px] font-bold text-violet-400 bg-violet-950/40 border border-violet-900/30 px-2 py-0.5 rounded-full uppercase font-mono">
+              <span className="text-[9px] font-bold text-violet-400 bg-violet-950/40 border border-violet-900/30 px-2 py-0.5 rounded-full uppercase ">
                 Tự chọn
               </span>
             )}
@@ -407,10 +405,10 @@ function TreeViewNode({ node }: { node: RoadmapNode }) {
 
       {isExpanded && hasDetails && (
         <div
-          className="border-t border-neutral-800/80 bg-neutral-950/40 p-4 space-y-3"
+          className="border-t border-neutral-200 dark:border-neutral-800/80 bg-slate-50 dark:bg-neutral-950/40 p-4 space-y-3"
           onClick={(e) => e.stopPropagation()}
         >
-          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-500">
+          <p className="text-[10px]  font-bold uppercase tracking-wider text-neutral-500">
             Chi tiết điểm thành phần
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -419,7 +417,7 @@ function TreeViewNode({ node }: { node: RoadmapNode }) {
               return (
                 <div
                   key={comp}
-                  className="bg-black/30 rounded-xl p-3 border border-neutral-850"
+                  className="bg-white dark:bg-neutral-950/30 rounded-xl p-3 border border-neutral-200 dark:border-neutral-850"
                 >
                   <span
                     className="text-neutral-500 text-[9px] uppercase tracking-wider block font-semibold truncate"
@@ -434,7 +432,7 @@ function TreeViewNode({ node }: { node: RoadmapNode }) {
                     <span className="text-[9px] text-neutral-500">/10</span>
                   </div>
 
-                  <div className="h-1 rounded-full bg-neutral-800 overflow-hidden mt-2">
+                  <div className="h-1 rounded-full bg-tokyo-night overflow-hidden mt-2">
                     <div
                       className={`h-full rounded-full ${score >= 5 ? "bg-cyan-500" : "bg-rose-500"}`}
                       style={{ width: `${scorePct}%` }}
@@ -548,7 +546,7 @@ function ElectiveGroupBadges({ groups }: { groups: ElectiveGroupStatus[] }) {
         {groups.map((g) => (
           <div
             key={g.group_id}
-            className={`p-3.5 rounded-xl border flex flex-col justify-between bg-black/20 ${
+            className={`p-3.5 rounded-xl border flex flex-col justify-between bg-neutral-950/20 ${
               g.fulfilled
                 ? "border-emerald-500/20 bg-emerald-500/[0.02] text-emerald-400"
                 : "border-amber-500/20 bg-amber-500/[0.02] text-amber-400"
@@ -559,7 +557,7 @@ function ElectiveGroupBadges({ groups }: { groups: ElectiveGroupStatus[] }) {
                 {g.group_name}
               </span>
               <span
-                className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase border font-mono ${g.fulfilled ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-amber-500/10 border-amber-500/20 text-amber-400"}`}
+                className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase border  ${g.fulfilled ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-amber-500/10 border-amber-500/20 text-amber-400"}`}
               >
                 {g.fulfilled ? "Đạt" : "Chưa đạt"}
               </span>
@@ -567,7 +565,7 @@ function ElectiveGroupBadges({ groups }: { groups: ElectiveGroupStatus[] }) {
 
             <div className="mt-3">
               <div className="flex items-baseline gap-1">
-                <span className="text-lg font-black text-white">
+                <span className="text-lg font-black text-neutral-100">
                   {g.current_value}
                 </span>
                 <span className="text-xs text-neutral-500">
@@ -599,7 +597,7 @@ function PreviewBanner() {
         <AlertTriangle className="size-4.5" />
       </div>
       <div>
-        <p className="font-bold text-amber-400 text-xs uppercase tracking-wider font-mono">
+        <p className="font-bold text-amber-400 text-xs uppercase tracking-wider ">
           Chế độ Demo / Preview
         </p>
         <p className="mt-1 text-xs text-neutral-400 leading-relaxed">
@@ -638,14 +636,14 @@ function EmptyState() {
 
 function StatusLegend() {
   return (
-    <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs bg-neutral-900/20 p-3.5 rounded-xl border border-neutral-800/40 inline-flex">
+    <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs bg-white dark:bg-neutral-900 p-3.5 rounded-xl border border-neutral-800/40 inline-flex">
       {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
         <div key={key} className="flex items-center gap-2">
           <span
             className={`inline-block h-2.5 w-2.5 rounded-full ${cfg.bg} border ${cfg.border}`}
           />
           <span
-            className={`text-[10px] font-bold uppercase font-mono tracking-wider ${cfg.color}`}
+            className={`text-[10px] font-bold uppercase  tracking-wider ${cfg.color}`}
           >
             {cfg.label}
           </span>
@@ -852,7 +850,7 @@ export default function TrackerPage() {
       {loading && (
         <div className="flex flex-col items-center justify-center py-32 space-y-4">
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
-          <p className="text-xs text-neutral-500 font-mono tracking-widest uppercase">
+          <p className="text-xs text-neutral-500  tracking-widest uppercase">
             Đang tải dữ liệu...
           </p>
         </div>
@@ -865,7 +863,7 @@ export default function TrackerPage() {
             <AlertTriangle className="size-4.5" />
           </div>
           <div>
-            <p className="font-bold text-red-400 text-xs uppercase tracking-wider font-mono">
+            <p className="font-bold text-red-400 text-xs uppercase tracking-wider ">
               Đã xảy ra lỗi
             </p>
             <p className="mt-1 text-xs text-neutral-405 leading-relaxed">
@@ -873,7 +871,7 @@ export default function TrackerPage() {
             </p>
             <button
               onClick={() => load()}
-              className="mt-3 text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors uppercase font-mono tracking-wider flex items-center gap-1.5"
+              className="mt-3 text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors uppercase  tracking-wider flex items-center gap-1.5"
             >
               <RefreshCw className="size-3.5" /> Thử lại
             </button>
@@ -887,48 +885,48 @@ export default function TrackerPage() {
           {/* Left Column: Metrics & Roadmap */}
           <div className="lg:col-span-8 space-y-6">
             {/* GPA Summary Card */}
-            <div className="bg-neutral-900/40 rounded-2xl border border-neutral-800/80 p-6 dashboard-glow-card anim-fade-in delay-75">
+            <div className="bg-white dark:bg-neutral-900/40 rounded-2xl border border-neutral-200 dark:border-neutral-800/80 p-6 dashboard-glow-card anim-fade-in delay-75 shadow-sm">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                 <div className="space-y-4 flex-grow">
                   <div>
-                    <h2 className="text-base font-bold uppercase tracking-wider text-neutral-100 flex items-center gap-2">
-                      <TrendingUp className="size-4.5 text-cyan-400" />
+                    <h2 className="text-base font-bold uppercase tracking-wider text-slate-800 dark:text-neutral-100 flex items-center gap-2">
+                      <TrendingUp className="size-4.5 text-cyan-500 dark:text-cyan-400" />
                       Tổng quan kết quả học tập
                     </h2>
-                    <p className="text-xs text-neutral-400 mt-1">
+                    <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
                       Thống kê điểm số trung bình tích lũy và tiến độ hoàn thành
                       chương trình đào tạo.
                     </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-black/30 rounded-xl p-4 border border-neutral-850 transition-all hover:bg-black/40">
-                      <span className="text-[10px] text-neutral-450 uppercase tracking-wider block font-semibold font-mono">
+                    <div className="bg-slate-50 dark:bg-neutral-950/30 rounded-xl p-4 border border-slate-200 dark:border-neutral-850 transition-all hover:bg-slate-100 dark:hover:bg-neutral-850/40">
+                      <span className="text-[10px] text-slate-500 dark:text-neutral-400 uppercase tracking-wider block font-semibold ">
                         Điểm trung bình (Hệ 10)
                       </span>
-                      <span className="text-2xl font-black text-cyan-400 mt-1 block">
+                      <span className="text-2xl font-black text-cyan-500 dark:text-cyan-400 mt-1 block">
                         {gpa.daa_dtbctl_10?.toFixed(2) ||
                           gpa.gpa_10?.toFixed(2) ||
                           "N/A"}
                       </span>
                       <span
-                        className={`inline-flex items-center gap-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full mt-2.5 uppercase font-mono ${getClassificationColor(gpa.daa_dtbctl_10 || gpa.gpa_10)}`}
+                        className={`inline-flex items-center gap-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full mt-2.5 uppercase  ${getClassificationColor(gpa.daa_dtbctl_10 || gpa.gpa_10)}`}
                       >
                         <Award className="size-3" />
                         {getClassification(gpa.daa_dtbctl_10 || gpa.gpa_10)}
                       </span>
                     </div>
-                    <div className="bg-black/30 rounded-xl p-4 border border-neutral-850 transition-all hover:bg-black/40">
-                      <span className="text-[10px] text-neutral-450 uppercase tracking-wider block font-semibold font-mono">
+                    <div className="bg-slate-50 dark:bg-neutral-950/30 rounded-xl p-4 border border-slate-200 dark:border-neutral-850 transition-all hover:bg-slate-100 dark:hover:bg-neutral-850/40">
+                      <span className="text-[10px] text-slate-500 dark:text-neutral-400 uppercase tracking-wider block font-semibold ">
                         Tín chỉ tích lũy
                       </span>
-                      <span className="text-2xl font-black text-white mt-1 block">
+                      <span className="text-2xl font-black text-slate-800 dark:text-neutral-100 mt-1 block">
                         {currentEarnedCredits}{" "}
-                        <span className="text-xs text-neutral-500 font-medium">
+                        <span className="text-xs text-slate-500 dark:text-neutral-500 font-medium">
                           / {totalCurriculumCredits} TC
                         </span>
                       </span>
-                      <span className="text-[10px] text-neutral-500 block mt-3 font-medium">
+                      <span className="text-[10px] text-slate-500 dark:text-neutral-500 block mt-3 font-medium">
                         Đạt {progressPct}% tổng tín chỉ yêu cầu
                       </span>
                     </div>
@@ -976,7 +974,7 @@ export default function TrackerPage() {
                       <span className="text-xl font-black text-white tracking-tight">
                         {progressPct}%
                       </span>
-                      <span className="text-[8px] text-neutral-500 uppercase tracking-widest mt-0.5 font-bold font-mono">
+                      <span className="text-[8px] text-neutral-500 uppercase tracking-widest mt-0.5 font-bold ">
                         Đã xong
                       </span>
                     </div>
@@ -1014,13 +1012,13 @@ export default function TrackerPage() {
           {/* Right Column: Sync, Exams, Deadlines */}
           <div className="lg:col-span-4 space-y-6">
             {/* Exams Card */}
-            <div className="bg-neutral-900/40 rounded-2xl border border-neutral-800/80 p-5 dashboard-glow-card anim-fade-in delay-150">
-              <div className="flex items-center justify-between mb-4 border-b border-neutral-800/60 pb-3">
-                <h3 className="font-bold text-neutral-200 flex items-center gap-2 text-xs uppercase tracking-wider">
-                  <Calendar className="size-4.5 text-cyan-400" />
+            <div className="bg-white dark:bg-neutral-900/40 rounded-2xl border border-neutral-200 dark:border-neutral-800/80 p-5 dashboard-glow-card anim-fade-in delay-150 shadow-sm">
+              <div className="flex items-center justify-between mb-4 border-b border-neutral-200 dark:border-neutral-800/60 pb-3">
+                <h3 className="font-bold text-slate-800 dark:text-neutral-200 flex items-center gap-2 text-xs uppercase tracking-wider">
+                  <Calendar className="size-4.5 text-cyan-500 dark:text-cyan-400" />
                   Lịch thi
                 </h3>
-                <span className="text-[10px] font-bold bg-neutral-800 text-neutral-400 px-2.5 py-0.5 rounded-full font-mono">
+                <span className="text-[10px] font-bold bg-indigo-100 dark:bg-neutral-800 text-indigo-700 dark:text-neutral-400 px-2.5 py-0.5 rounded-full ">
                   {displayExams.length} môn thi
                 </span>
               </div>
@@ -1044,10 +1042,10 @@ export default function TrackerPage() {
                     return (
                       <div
                         key={e.id}
-                        className="flex items-center gap-3 p-3 rounded-xl border border-neutral-800/50 bg-black/20 hover:bg-neutral-800/20 transition-all duration-200"
+                        className="flex items-center gap-3 p-3 rounded-xl border border-neutral-800/50 bg-neutral-950/20 hover:bg-neutral-850/20 transition-all duration-200"
                       >
                         <div
-                          className={`w-11 h-11 rounded-lg flex flex-col items-center justify-center shrink-0 border font-mono ${isSoon ? "bg-cyan-950/40 border-cyan-500/50 text-cyan-405 pulse-glow-border" : "bg-neutral-950 border-neutral-800 text-neutral-400"}`}
+                          className={`w-11 h-11 rounded-lg flex flex-col items-center justify-center shrink-0 border  ${isSoon ? "bg-cyan-950/40 border-cyan-500/50 text-cyan-405 pulse-glow-border" : "bg-neutral-950 border-neutral-800 text-neutral-400"}`}
                         >
                           <span className="text-[8px] uppercase font-bold tracking-wider leading-none">
                             {month}
@@ -1062,7 +1060,7 @@ export default function TrackerPage() {
                             {e.course_name}
                           </p>
                           <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                            <span className="text-[9px] font-mono text-neutral-400">
+                            <span className="text-[9px]  text-neutral-400">
                               {e.course_code}
                             </span>
                             <span className="text-[9px] text-neutral-700">
@@ -1087,7 +1085,7 @@ export default function TrackerPage() {
                           </div>
                         </div>
 
-                        <div className="shrink-0 text-right font-mono">
+                        <div className="shrink-0 text-right ">
                           <span className="text-xs font-bold text-cyan-450 block">
                             {e.start_time.substring(0, 5)}
                           </span>
@@ -1100,7 +1098,7 @@ export default function TrackerPage() {
 
               {roadmap.is_preview && (
                 <div className="mt-3 text-center border-t border-neutral-800/40 pt-3">
-                  <span className="text-[9px] font-mono text-amber-500 bg-amber-950/20 border border-amber-900/30 px-2 py-0.5 rounded">
+                  <span className="text-[9px]  text-amber-500 bg-amber-950/20 border border-amber-900/30 px-2 py-0.5 rounded">
                     Dữ liệu mẫu
                   </span>
                 </div>
@@ -1108,13 +1106,13 @@ export default function TrackerPage() {
             </div>
 
             {/* Deadlines Card */}
-            <div className="bg-neutral-900/40 rounded-2xl border border-neutral-800/80 p-5 dashboard-glow-card anim-fade-in delay-225">
+            <div className="bg-white dark:bg-neutral-900/40 rounded-2xl border border-neutral-800/80 p-5 dashboard-glow-card anim-fade-in delay-225">
               <div className="flex items-center justify-between mb-4 border-b border-neutral-800/60 pb-3">
                 <h3 className="font-bold text-neutral-200 flex items-center gap-2 text-xs uppercase tracking-wider">
                   <Clock className="size-4.5 text-cyan-400" />
-                  Deadlines quan trọng
+                  Deadlines
                 </h3>
-                <span className="text-[10px] font-bold bg-neutral-800 text-neutral-450 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold bg-indigo-100 dark:bg-neutral-800 text-indigo-700  dark:text-neutral-400 px-2 py-0.5 rounded-full">
                   {
                     displayDeadlines.filter(
                       (d) =>
@@ -1151,7 +1149,7 @@ export default function TrackerPage() {
                     return (
                       <div
                         key={d.id}
-                        className={`p-3 rounded-xl border transition-all duration-300 flex items-start gap-3 bg-black/20 ${isCompleted ? "border-neutral-900 opacity-55" : "border-neutral-800/60 hover:bg-neutral-800/20"}`}
+                        className={`p-3 rounded-xl border transition-all duration-300 flex items-start gap-3 bg-neutral-950/20 ${isCompleted ? "border-neutral-900 opacity-55" : "border-neutral-800/60 hover:bg-neutral-850/20"}`}
                       >
                         <button
                           onClick={() => toggleDeadline(d.id)}
@@ -1173,7 +1171,7 @@ export default function TrackerPage() {
 
                           <div className="flex flex-wrap items-center gap-2 mt-2">
                             {d.course_code && (
-                              <span className="text-[9px] font-mono text-cyan-400 bg-cyan-950/30 border border-cyan-900/30 px-1.5 rounded">
+                              <span className="text-[9px]  text-cyan-400 bg-cyan-950/30 border border-cyan-900/30 px-1.5 rounded">
                                 {d.course_code}
                               </span>
                             )}
@@ -1182,7 +1180,7 @@ export default function TrackerPage() {
                             >
                               {status.label}
                             </span>
-                            <span className="text-[9px] text-neutral-500 font-mono">
+                            <span className="text-[9px] text-neutral-500 ">
                               {formattedDue}
                             </span>
                           </div>
@@ -1206,7 +1204,7 @@ export default function TrackerPage() {
               )}
               {roadmap.is_preview && (
                 <div className="mt-3 text-center border-t border-neutral-800/40 pt-3">
-                  <span className="text-[9px] font-mono text-amber-500 bg-amber-950/20 border border-amber-900/30 px-2 py-0.5 rounded">
+                  <span className="text-[9px]  text-amber-500 bg-amber-950/20 border border-amber-900/30 px-2 py-0.5 rounded">
                     Dữ liệu mẫu
                   </span>
                 </div>

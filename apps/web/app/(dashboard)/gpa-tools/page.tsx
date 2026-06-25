@@ -3,7 +3,14 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
-import { BarChart2, Target, Repeat, Lightbulb, Plus, Trash2 } from "lucide-react";
+import {
+  BarChart2,
+  Target,
+  Repeat,
+  Lightbulb,
+  Plus,
+  Trash2,
+} from "lucide-react";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
@@ -89,7 +96,7 @@ function CourseAutocomplete({
     <div ref={wrapperRef} className="relative w-full">
       <input
         type="text"
-        className="w-full bg-neutral-950/50 border border-neutral-700 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 rounded-lg px-4 py-2.5 text-sm text-white transition-colors outline-none"
+        className="w-full bg-white dark:bg-neutral-950/50 border border-neutral-200 dark:border-neutral-700 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 rounded-lg px-4 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 transition-colors outline-none"
         placeholder="Chọn môn"
         value={isOpen ? query : displayValue}
         onChange={(e) => {
@@ -103,16 +110,16 @@ function CourseAutocomplete({
         }}
       />
       {isOpen && (
-        <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-neutral-700 bg-neutral-800 py-1 text-sm shadow-lg">
+        <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 py-1 text-sm shadow-lg">
           {filteredOptions.length === 0 ? (
-            <li className="px-3 py-2 text-neutral-400">
+            <li className="px-3 py-2 text-neutral-500 dark:text-neutral-400">
               Không tìm thấy môn học
             </li>
           ) : (
             filteredOptions.map((option) => (
               <li
                 key={option.id}
-                className="cursor-pointer px-3 py-2 text-neutral-200 hover:bg-neutral-700 hover:text-white"
+                className="cursor-pointer px-3 py-2 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-neutral-100"
                 onClick={() => {
                   onChange(option.id);
                   setIsOpen(false);
@@ -120,7 +127,7 @@ function CourseAutocomplete({
                 }}
               >
                 {option.course_code} - {option.course_name}{" "}
-                <span className="text-neutral-500 ml-1">
+                <span className="text-neutral-400 dark:text-neutral-500 ml-1">
                   ({option.grade_10?.toFixed(1) || "-"})
                 </span>
               </li>
@@ -161,12 +168,14 @@ function GpaOverviewCard({
   const gpaPercent = Math.min(100, Math.round((gpa.gpa_10 / 10) * 100));
 
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300 relative overflow-hidden flex flex-col justify-between h-full">
+    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300 relative overflow-visible flex flex-col justify-between h-full">
       <div className="absolute -top-10 -right-10 w-32 h-32 bg-violet-600/10 rounded-full blur-2xl pointer-events-none"></div>
       <div>
         <div className="flex items-center gap-2 mb-6">
           <BarChart2 className="w-5 h-5 text-violet-400" strokeWidth={2.5} />
-          <h2 className="text-lg font-semibold text-white">Tổng quan GPA</h2>
+          <h2 className="text-lg font-semibold text-neutral-100">
+            Tổng quan GPA
+          </h2>
         </div>
         <div className="space-y-6">
           <div>
@@ -180,7 +189,7 @@ function GpaOverviewCard({
               <span className="text-sm text-neutral-500">/ 10</span>
             </div>
           </div>
-          <div className="w-full bg-neutral-800 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-tokyo-sidebar rounded-full h-2 overflow-visible">
             <div
               className="bg-violet-500 h-full rounded-full transition-all duration-500"
               style={{ width: `${gpaPercent}%` }}
@@ -191,7 +200,7 @@ function GpaOverviewCard({
       <div className="mt-8 pt-6 border-t border-neutral-800 flex justify-between items-center">
         <div>
           <p className="text-xs text-neutral-400 mb-1">Tín chỉ tích luỹ</p>
-          <p className="text-lg font-semibold text-white">
+          <p className="text-lg font-semibold text-neutral-100">
             {gpa.earned_credits}{" "}
             <span className="text-sm text-neutral-500 font-normal">
               / {roadmapTotalCredits || "?"} TC
@@ -253,11 +262,11 @@ function ReverseCalculatorSection({
   }, [calculate]);
 
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300 h-full flex flex-col justify-between">
+    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col justify-between">
       <div>
         <div className="flex items-center gap-2 mb-2">
           <Target className="w-5 h-5 text-amber-400" strokeWidth={2.5} />
-          <h2 className="text-lg font-semibold text-white">
+          <h2 className="text-lg font-semibold text-neutral-100">
             Reverse Calculator
           </h2>
         </div>
@@ -282,7 +291,7 @@ function ReverseCalculatorSection({
                 if (val < 0) val = 0;
                 setTargetGpa(val.toString());
               }}
-              className="w-full bg-neutral-950/50 border border-neutral-700 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 rounded-lg px-4 py-3 text-sm text-white transition-colors outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-full bg-neutral-950/50 border border-neutral-700 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 rounded-lg px-4 py-3 text-sm text-neutral-100 transition-colors outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
           </div>
           <div className="space-y-2">
@@ -300,15 +309,18 @@ function ReverseCalculatorSection({
                 if (val < 1) val = 1;
                 setRemainingCredits(val.toString());
               }}
-              className="w-full bg-neutral-950/50 border border-neutral-700 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 rounded-lg px-4 py-3 text-sm text-white transition-colors outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-full bg-neutral-950/50 border border-neutral-700 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 rounded-lg px-4 py-3 text-sm text-neutral-100 transition-colors outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
           </div>
         </div>
 
         {suggestionText && (
-          <div className="p-4 bg-neutral-800/30 rounded-lg border border-neutral-700/50 mb-6 flex items-start gap-3">
-            <Lightbulb className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" strokeWidth={2} />
-            <p className="text-sm text-neutral-400 italic leading-relaxed">
+          <div className="p-4 bg-amber-50 dark:bg-amber-900/10 rounded-lg border border-amber-200 dark:border-amber-900/30 mb-6 flex items-start gap-3 shadow-sm">
+            <Lightbulb
+              className="w-5 h-5 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5"
+              strokeWidth={2}
+            />
+            <p className="text-sm text-amber-900 dark:text-amber-200/80 italic leading-relaxed">
               {suggestionText}
             </p>
           </div>
@@ -317,16 +329,16 @@ function ReverseCalculatorSection({
 
       {result && !loading && (
         <div
-          className={`rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border ${result.achievable || (!result.achievable && result.required_avg_10 <= 0) ? "bg-emerald-950/20 border-emerald-900/30" : "bg-red-950/20 border-red-900/30"}`}
+          className={`rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border shadow-sm ${result.achievable || (!result.achievable && result.required_avg_10 <= 0) ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/30" : "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/30"}`}
         >
           <div>
             <p
-              className={`font-medium mb-1 ${result.achievable || (!result.achievable && result.required_avg_10 <= 0) ? "text-emerald-300" : "text-red-300"}`}
+              className={`font-medium mb-1 ${result.achievable || (!result.achievable && result.required_avg_10 <= 0) ? "text-emerald-700 dark:text-emerald-300" : "text-red-700 dark:text-red-300"}`}
             >
               Điểm TB cần đạt cho {remainingCredits} tín chỉ còn lại
             </p>
             <p
-              className={`text-sm ${result.achievable || (!result.achievable && result.required_avg_10 <= 0) ? "text-emerald-400/80" : "text-red-400/80"}`}
+              className={`text-sm ${result.achievable || (!result.achievable && result.required_avg_10 <= 0) ? "text-emerald-600 dark:text-emerald-400/80" : "text-red-600 dark:text-red-400/80"}`}
             >
               {result.required_avg_10 <= 0
                 ? "✅ Điểm hiện tại của bạn đã đủ để đạt (hoặc vượt) mục tiêu này."
@@ -335,9 +347,9 @@ function ReverseCalculatorSection({
                   : "⚠ Không khả thi – mục tiêu GPA quá cao."}
             </p>
           </div>
-          <div className="flex items-baseline gap-1 bg-neutral-950/50 px-6 py-3 rounded-lg shadow-sm border border-neutral-800/50">
+          <div className="flex items-baseline gap-1 bg-white dark:bg-neutral-950/50 px-6 py-3 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-800/50">
             <span
-              className={`text-3xl font-bold ${result.achievable || (!result.achievable && result.required_avg_10 <= 0) ? "text-emerald-400" : "text-red-400"}`}
+              className={`text-3xl font-bold ${result.achievable || (!result.achievable && result.required_avg_10 <= 0) ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}
             >
               {result.required_avg_10.toFixed(2)}
             </span>
@@ -406,7 +418,9 @@ function RetakeEstimatorSection({
       <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-2">
           <Repeat className="w-5 h-5 text-cyan-400" strokeWidth={2.5} />
-          <h2 className="text-lg font-semibold text-white">Retake Estimator</h2>
+          <h2 className="text-lg font-semibold text-neutral-100">
+            Retake Estimator
+          </h2>
         </div>
         <p className="text-sm text-neutral-400">
           Chưa có môn nào phù hợp để tính cải thiện.
@@ -416,18 +430,23 @@ function RetakeEstimatorSection({
   }
 
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden flex flex-col h-full">
+    <div className="bg-neutral-900 border border-neutral-800 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-visible flex flex-col">
       <div className="p-6 border-b border-neutral-800 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-neutral-900/50">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Repeat className="w-5 h-5 text-cyan-400" strokeWidth={2.5} />
-            <h2 className="text-lg font-semibold text-white">Retake Estimator</h2>
+            <h2 className="text-lg font-semibold text-neutral-100">
+              Retake Estimator
+            </h2>
           </div>
-          <p className="text-sm text-neutral-400">Mô phỏng sự thay đổi của GPA khi học lại và cải thiện điểm các môn học cũ.</p>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+            Mô phỏng sự thay đổi của GPA khi học lại và cải thiện điểm các môn
+            học cũ.
+          </p>
         </div>
         <button
           onClick={() => setRetakes([...retakes, { id: null, grade: "10.0" }])}
-          className="px-4 py-2 bg-neutral-800 border border-neutral-700 text-white text-sm font-medium rounded-lg hover:bg-neutral-700 transition-colors flex items-center justify-center gap-2"
+          className="px-4 py-2 bg-neutral-800 border border-neutral-700 text-neutral-100 text-sm font-medium rounded-lg hover:bg-neutral-700 transition-colors flex items-center justify-center gap-2"
         >
           <Plus className="w-4 h-4" /> Thêm môn học
         </button>
@@ -442,9 +461,14 @@ function RetakeEstimatorSection({
 
         <div className="space-y-4 pt-4">
           {retakes.map((retake, index) => (
-            <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4 bg-neutral-950/30 rounded-lg border border-neutral-800/80 hover:border-neutral-700 transition-colors group">
+            <div
+              key={index}
+              className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4 bg-white dark:bg-neutral-950/30 rounded-lg border border-neutral-200 dark:border-neutral-800/80 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors group"
+            >
               <div className="col-span-1 md:col-span-6 flex flex-col">
-                <label className="md:hidden text-xs text-neutral-500 mb-1">Môn học</label>
+                <label className="md:hidden text-xs text-neutral-500 mb-1">
+                  Môn học
+                </label>
                 <CourseAutocomplete
                   options={retakeable}
                   value={retake.id}
@@ -456,7 +480,9 @@ function RetakeEstimatorSection({
                 />
               </div>
               <div className="col-span-1 md:col-span-4 flex flex-col">
-                <label className="md:hidden text-xs text-neutral-500 mb-1">Điểm mới dự kiến</label>
+                <label className="md:hidden text-xs text-neutral-500 mb-1">
+                  Điểm mới dự kiến
+                </label>
                 <input
                   type="number"
                   value={retake.grade}
@@ -474,7 +500,7 @@ function RetakeEstimatorSection({
                     newRetakes[index].grade = val.toString();
                     setRetakes(newRetakes);
                   }}
-                  className="w-full bg-neutral-950/50 border border-neutral-700 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 rounded-lg px-4 py-2.5 text-sm text-white transition-colors outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="w-full bg-white dark:bg-neutral-950/50 border border-neutral-200 dark:border-neutral-700 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 rounded-lg px-4 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 transition-colors outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
               <div className="col-span-1 md:col-span-2 flex justify-end">
@@ -500,18 +526,46 @@ function RetakeEstimatorSection({
         {result && !loading && (
           <div className="mt-8 bg-cyan-950/20 border border-cyan-900/30 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
-              <p className="text-sm font-medium text-white mb-1">Dự báo thay đổi GPA</p>
+              <p className="text-sm font-medium text-neutral-100 mb-1">
+                Dự báo thay đổi GPA
+              </p>
               <p className="text-sm text-neutral-400">
                 {result.delta_gpa_10 === 0 ? (
-                  <>Giữ nguyên ở mức <span className="text-white font-semibold">{currentGpa.gpa_10.toFixed(2)}</span> (không đổi)</>
+                  <>
+                    Giữ nguyên ở mức{" "}
+                    <span className="text-neutral-100 font-semibold">
+                      {currentGpa.gpa_10.toFixed(2)}
+                    </span>{" "}
+                    (không đổi)
+                  </>
                 ) : (
-                  <>Từ <span className="text-white font-semibold">{currentGpa.gpa_10.toFixed(2)}</span> {result.delta_gpa_10 > 0 ? "lên" : "xuống"} <span className="text-cyan-400 font-semibold">{(currentGpa.gpa_10 + result.delta_gpa_10).toFixed(2)}</span> (tăng/giảm <span className={`${result.delta_gpa_10 > 0 ? 'text-cyan-400' : 'text-red-400'}`}>{result.delta_gpa_10 > 0 ? "+" : ""}{result.delta_gpa_10.toFixed(2)}</span>)</>
+                  <>
+                    Từ{" "}
+                    <span className="text-neutral-100 font-semibold">
+                      {currentGpa.gpa_10.toFixed(2)}
+                    </span>{" "}
+                    {result.delta_gpa_10 > 0 ? "lên" : "xuống"}{" "}
+                    <span className="text-cyan-400 font-semibold">
+                      {(currentGpa.gpa_10 + result.delta_gpa_10).toFixed(2)}
+                    </span>{" "}
+                    (tăng/giảm{" "}
+                    <span
+                      className={`${result.delta_gpa_10 > 0 ? "text-cyan-400" : "text-red-400"}`}
+                    >
+                      {result.delta_gpa_10 > 0 ? "+" : ""}
+                      {result.delta_gpa_10.toFixed(2)}
+                    </span>
+                    )
+                  </>
                 )}
               </p>
             </div>
             <div className="flex items-baseline gap-1 bg-neutral-950/50 px-6 py-3 rounded-lg shadow-sm border border-neutral-800/50">
-              <span className={`text-3xl font-bold ${result.delta_gpa_10 >= 0 ? 'text-cyan-400' : 'text-red-400'}`}>
-                {result.delta_gpa_10 > 0 ? "+" : ""}{result.delta_gpa_10.toFixed(2)}
+              <span
+                className={`text-3xl font-bold ${result.delta_gpa_10 >= 0 ? "text-cyan-400" : "text-red-400"}`}
+              >
+                {result.delta_gpa_10 > 0 ? "+" : ""}
+                {result.delta_gpa_10.toFixed(2)}
               </span>
               <span className="text-sm text-neutral-500">tăng/giảm</span>
             </div>
@@ -624,14 +678,12 @@ export default function GpaToolsPage() {
         )}
 
         {!loading && !error && gpa && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-4">
+          <div className="flex flex-col lg:flex-row gap-6 items-start">
+            <div className="flex-1 w-full lg:w-[40%] xl:w-[35%] space-y-6">
               <GpaOverviewCard
                 gpa={gpa}
                 roadmapTotalCredits={roadmapTotalCredits}
               />
-            </div>
-            <div className="lg:col-span-8">
               <ReverseCalculatorSection
                 defaultRemainingCredits={Math.max(
                   0,
@@ -645,7 +697,7 @@ export default function GpaToolsPage() {
                 currentGpa={gpa}
               />
             </div>
-            <div className="lg:col-span-12">
+            <div className="flex-1 w-full lg:w-[60%] xl:w-[65%]">
               <RetakeEstimatorSection
                 enrollments={enrollments}
                 currentGpa={gpa}

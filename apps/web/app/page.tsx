@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, useRef, useCallback, ReactNode } from "react";
 import { apiFetch } from "@/lib/api";
@@ -292,7 +293,9 @@ function SchedulerMockup() {
           <Upload className="w-4 h-4 text-tokyo-blue" />
         </div>
         <div>
-          <p className="text-xs font-bold text-tokyo-variable">Upload TKB Excel</p>
+          <p className="text-xs font-bold text-tokyo-variable">
+            Upload TKB Excel
+          </p>
           <p className="text-[9px] text-tokyo-comment">
             Tải lên file .xlsx để bắt đầu
           </p>
@@ -378,10 +381,16 @@ function AiMateMockup() {
       {/* Chat header */}
       <div className="bg-tokyo-night rounded-xl p-3 border border-tokyo-teal/20 flex items-center gap-3">
         <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-tokyo-teal to-tokyo-cyan flex items-center justify-center">
-          <Sparkles className="w-4 h-4 text-white" />
+          <Image
+            src="/ai.png"
+            alt="AI Icon"
+            width={20}
+            height={20}
+            className="object-contain"
+          />
         </div>
         <div>
-          <p className="text-xs font-bold text-tokyo-fg">UIT AI Mate</p>
+          <p className="text-xs font-bold text-tokyo-fg">UIT Mate</p>
           <p className="text-[9px] text-tokyo-teal flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-tokyo-teal inline-block" />
             Online
@@ -398,7 +407,7 @@ function AiMateMockup() {
           </div>
         </div>
         <div className="flex justify-end">
-          <div className="max-w-[85%] bg-tokyo-teal text-white font-semibold rounded-2xl rounded-br-sm p-3 text-[11px] dark:text-tokyo-night">
+          <div className="max-w-[85%] bg-tokyo-teal text-tokyo-night font-semibold rounded-2xl rounded-br-sm p-3 text-[11px] dark:text-tokyo-night">
             Học cải thiện có giới hạn không?
           </div>
         </div>
@@ -588,10 +597,10 @@ export default function HomePage() {
       <div className="absolute bottom-[10%] left-[20%] w-[300px] h-[300px] bg-[#f7768e]/5 rounded-full blur-[90px] pointer-events-none anim-float" />
 
       {/* Grid Overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#24283b_1px,transparent_1px),linear-gradient(to_bottom,#24283b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-35 pointer-events-none" />
+      <div className="dark:absolute inset-0 bg-[linear-gradient(to_right,#24283b_1px,transparent_1px),linear-gradient(to_bottom,#24283b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_88%)] opacity-35 pointer-events-none" />
 
       {/* Navigation Header */}
-      <nav className="relative mx-auto max-w-6xl px-6 py-5 flex justify-between items-center border-b border-[#414868]/30 backdrop-blur-md bg-[#1a1b26]/70 z-50 entrance-stagger">
+      <nav className="relative mx-auto max-w-6xl px-6 py-5 flex justify-between items-center   bg-transparent z-50 entrance-stagger">
         <div className="flex items-center gap-3 sm:gap-4 select-none group cursor-default">
           <div className="flex flex-col justify-center">
             <span className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.1)] transition-all duration-500">
@@ -781,7 +790,7 @@ export default function HomePage() {
                   href={me ? currentSlide.href : "/onboarding"}
                   className="inline-flex items-center gap-2 text-sm font-bold rounded-xl px-6 py-2.5 transition-all duration-300 hover:-translate-y-0.5 group w-fit"
                   style={{
-                    color: "#1a1b26",
+                    color: "#4c4f69",
                     backgroundColor: currentSlide.accent,
                     boxShadow: `0 4px 20px ${currentSlide.accentBorder}`,
                   }}
@@ -891,11 +900,6 @@ export default function HomePage() {
       {/* Minimal Footer */}
       <footer className="relative max-w-6xl mx-auto px-6 pt-8 border-t border-[#414868]/30 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] font-mono text-[#565f89] uppercase tracking-widest">
         <span>&copy; 2026 UIT EduAdvisor Platform</span>
-        <div className="flex items-center gap-3">
-          <span>TOKYO NIGHT EDITION</span>
-          <span>&bull;</span>
-          <span>v1.0.0 // Stable Release</span>
-        </div>
       </footer>
     </main>
   );
