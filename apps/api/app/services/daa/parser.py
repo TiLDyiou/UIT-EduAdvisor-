@@ -113,21 +113,33 @@ def parse_grades_tables(html: str) -> list[dict[str, str | Decimal | int | None]
             first_row = table.find("tr")
             if not first_row:
                 continue
-            headers = [_norm_header(td.get_text(" ", strip=True)) for td in first_row.find_all("td")]
+            headers = [
+                _norm_header(td.get_text(" ", strip=True)) for td in first_row.find_all("td")
+            ]
         col_idx = {h: i for i, h in enumerate(headers) if h}
         code_headers = {"ma mon", "ma mon hoc", "ma hp", "ma hoc phan", "course", "course code"}
         name_headers = {"ten mon", "ten mon hoc", "ten hp", "ten hoc phan", "course name"}
         credit_headers = {"so tin chi", "tin chi", "tc", "credits"}
         term_headers = {"hoc ky", "ky", "term"}
-        grade_headers = {"diem", "diem tk", "diem tong ket", "tong ket", "grade", "final grade", "diem hp", "diem hoc phan", "iem hp"}
-        
+        grade_headers = {
+            "diem",
+            "diem tk",
+            "diem tong ket",
+            "tong ket",
+            "grade",
+            "final grade",
+            "diem hp",
+            "diem hoc phan",
+            "iem hp",
+        }
+
         comp_matchers = {
             "Quá trình": {"diem qt", "diem qua trinh", "qt"},
             "Giữa kỳ": {"diem gk", "diem giua ky", "gk"},
             "Thực hành": {"diem th", "diem thuc hanh", "th"},
-            "Cuối kỳ": {"diem ck", "diem cuoi ky", "ck"}
+            "Cuối kỳ": {"diem ck", "diem cuoi ky", "ck"},
         }
-        
+
         comp_idx = {}
         for comp_name, matchers in comp_matchers.items():
             for h, i in col_idx.items():
@@ -145,7 +157,11 @@ def parse_grades_tables(html: str) -> list[dict[str, str | Decimal | int | None]
             tds = tr.find_all("td")
             if len(tds) >= 1 and tds[0].get("colspan"):
                 text = cells[0].strip()
-                m = re.search(r"H[oọ]c\s+k[yỳ]\s+(\d)\s*-\s*N[aă]m\s+h[oọ]c\s+(\d{4})\s*-\s*(\d{4})", text, re.I)
+                m = re.search(
+                    r"H[oọ]c\s+k[yỳ]\s+(\d)\s*-\s*N[aă]m\s+h[oọ]c\s+(\d{4})\s*-\s*(\d{4})",
+                    text,
+                    re.I,
+                )
                 if m:
                     current_term = f"HK{m.group(1)}_{m.group(2)}-{m.group(3)}"
                 continue
@@ -177,7 +193,7 @@ def parse_grades_tables(html: str) -> list[dict[str, str | Decimal | int | None]
                     term = val or term
                 if h in grade_headers:
                     grade = _parse_decimal_maybe(val)
-            
+
             detailed_grades = {}
             for comp_name, i in comp_idx.items():
                 if i < len(cells):
@@ -271,9 +287,7 @@ def _extract_course_code(s: str | None) -> str | None:
 
 
 def _looks_like_course_code(s: str) -> bool:
-    return bool(re.fullmatch(r"[A-Z0-9]+(?:\.[A-Z0-9]+)*", s)) and any(
-        ch.isdigit() for ch in s
-    )
+    return bool(re.fullmatch(r"[A-Z0-9]+(?:\.[A-Z0-9]+)*", s)) and any(ch.isdigit() for ch in s)
 
 
 def parse_exam_rows(html: str) -> list[dict[str, str | None]]:
@@ -294,23 +308,72 @@ def parse_exam_rows(html: str) -> list[dict[str, str | None]]:
     return out
 
 
-def _grade_10_to_4(g10: float) -> float:
-    """Convert UIT grade scale 10 to scale 4."""
-    if g10 >= 9.0:
-        return 4.0
-    if g10 >= 8.0:
-        return 3.5
-    if g10 >= 7.0:
-        return 3.0
-    if g10 >= 6.0:
-        return 2.5
-    if g10 >= 5.0:
-        return 2.0
-    if g10 >= 4.0:
-        return 1.5
-    if g10 >= 3.0:
-        return 1.0
-    return 0.0
+def parse_daa_exam_schedule(html: str, lanthi: int, hocky: int, namhoc: int) -> list[dict]:
+    soup = BeautifulSoup(html, "html.parser")
+    out = []
+    
+    term_code = f"HK{hocky}_{namhoc}-{namhoc+1}"
+    
+    table = soup.find("table", class_="sticky-table") or soup.find("table")
+    if not table:
+        return out
+        
+    tbody = table.find("tbody")
+    if not tbody:
+        tbody = table
+        
+    from datetime import date, datetime, time, timedelta
+    
+    for tr in tbody.find_all("tr"):
+        cells = [td.get_text(" ", strip=True) for td in tr.find_all("td")]
+        if len(cells) < 8 or "empty" in "".join(tr.get("class", [])) or "Hiện tại bạn" in "".join(cells):
+            continue
+            
+        course_code = cells[1].strip()
+        shift_str = cells[3].strip()
+        
+        lowered = shift_str.lower()
+        if "ca 1" in lowered or "tiet 1" in lowered or "ca1" in lowered:
+            start_time = time(7, 30)
+        elif "ca 2" in lowered or "tiet 4" in lowered or "ca2" in lowered:
+            start_time = time(9, 30)
+        elif "ca 3" in lowered or "tiet 7" in lowered or "ca3" in lowered:
+            start_time = time(13, 30)
+        elif "ca 4" in lowered or "tiet 10" in lowered or "ca4" in lowered:
+            start_time = time(15, 30)
+        else:
+            time_matches = re.findall(r"(\d{1,2})[h:](\d{2})", shift_str)
+            if len(time_matches) >= 1:
+                h1, m1 = map(int, time_matches[0])
+                start_time = time(h1, m1)
+            else:
+                start_time = time(7, 30)
+                
+        end_dt = datetime.combine(date(2000, 1, 1), start_time) + timedelta(minutes=120)
+        end_time = end_dt.time()
+                
+        date_str = cells[5].strip().replace("-", "/")
+        try:
+            exam_date = datetime.strptime(date_str, "%d/%m/%Y").date()
+        except Exception:
+            continue
+            
+        room = cells[6].strip() if len(cells) > 6 else None
+        kind = cells[7].strip() if len(cells) > 7 else None
+        
+        kind_label = "Giữa kỳ" if lanthi == 1 else "Cuối kỳ"
+            
+        out.append({
+            "course_code": course_code,
+            "term_code": term_code,
+            "exam_date": exam_date,
+            "start_time": start_time,
+            "end_time": end_time,
+            "room": room,
+            "kind": kind_label[:32],
+        })
+        
+    return out
 
 
 def parse_grades_summary(html: str) -> dict[str, float | int | None]:
@@ -321,14 +384,11 @@ def parse_grades_summary(html: str) -> dict[str, float | int | None]:
       - "So tin chi tich luy"         → credits in td[3]
       - "Diem trung binh chung"       → GPA (scale 10) in td[8]
       - "Diem trung binh chung tich luy" → GPA (scale 10) in td[8]
-    Scale 4 is computed locally using UIT conversion table.
     """
     soup = BeautifulSoup(html, "html.parser")
     result: dict[str, float | int | None] = {
         "dtbc_10": None,
-        "dtbc_4": None,
         "dtbctl_10": None,
-        "dtbctl_4": None,
         "earned_credits": None,
     }
 
@@ -360,7 +420,6 @@ def parse_grades_summary(html: str) -> dict[str, float | int | None]:
                 if m:
                     val = float(m.group(0).replace(",", "."))
                     result["dtbctl_10"] = val
-                    result["dtbctl_4"] = _grade_10_to_4(val)
 
         elif "diem trung binh chung" in label:
             # ĐTBC row — GPA in cells[6]
@@ -369,7 +428,6 @@ def parse_grades_summary(html: str) -> dict[str, float | int | None]:
                 if m:
                     val = float(m.group(0).replace(",", "."))
                     result["dtbc_10"] = val
-                    result["dtbc_4"] = _grade_10_to_4(val)
 
         elif "so tin chi tich luy" in label:
             # Earned credits in the 4th cell (index 3), or next available int
@@ -391,11 +449,11 @@ def parse_registration_table(html: str) -> list[dict[str, str | int | None]]:
     soup = BeautifulSoup(html, "html.parser")
     rows_out: list[dict[str, str | int | None]] = []
 
-    # Extract term info from heading like "HỌC KỲ 2 NĂM 2025 - 2026"
+    # Extract term info from heading like "HỌC KỲ 2 NĂM HỌC 2025 - 2026"
     term_code = "CURRENT"
     heading_text = soup.get_text(" ", strip=True)
     m = re.search(
-        r"H[ỌO]C\s+K[ỲY]\s+(\d)\s+N[ĂA]M\s+(\d{4})\s*-\s*(\d{4})",
+        r"H[ỌO]C\s+K[ỲY]\s+(\d)(?:\s*-\s*|\s+)(?:N[ĂA]M\s+H[ỌO]C|N[ĂA]M)\s+(\d{4})\s*-\s*(\d{4})",
         heading_text,
         re.I,
     )
@@ -409,7 +467,9 @@ def parse_registration_table(html: str) -> list[dict[str, str | int | None]]:
         if not headers:
             first_row = table.find("tr")
             if first_row:
-                headers = [_norm_header(td.get_text(" ", strip=True)) for td in first_row.find_all("td")]
+                headers = [
+                    _norm_header(td.get_text(" ", strip=True)) for td in first_row.find_all("td")
+                ]
 
         # Look for a table with MãMH/Mã MH column
         code_col = None
@@ -440,7 +500,9 @@ def parse_registration_table(html: str) -> list[dict[str, str | int | None]]:
                 continue
             seen_codes.add(code)
 
-            name = cells[name_col].strip() if name_col is not None and name_col < len(cells) else None
+            name = (
+                cells[name_col].strip() if name_col is not None and name_col < len(cells) else None
+            )
             credits = None
             if credit_col is not None and credit_col < len(cells):
                 try:
@@ -448,14 +510,17 @@ def parse_registration_table(html: str) -> list[dict[str, str | int | None]]:
                 except (ValueError, TypeError):
                     pass
 
-            rows_out.append({
-                "course_code": code,
-                "course_name": name,
-                "credits": credits,
-                "term_code": term_code,
-            })
+            rows_out.append(
+                {
+                    "course_code": code,
+                    "course_name": name,
+                    "credits": credits,
+                    "term_code": term_code,
+                }
+            )
 
     return rows_out
+
 
 MAJOR_MAPPING = {
     "ATTN": "Kỹ sư tài năng ngành An toàn Thông tin",
@@ -482,8 +547,9 @@ MAJOR_MAPPING = {
     "PMCL": "Ngành Kỹ thuật Phần mềm – Chương trình Chất lượng cao",
     "TMCL": "Ngành Thương mại Điện tử – Chương trình Chất lượng cao",
     "TMĐT": "Ngành Thương mại Điện tử",
-    "TTĐPT": "Truyền thông Đa phương tiện"
+    "TTĐPT": "Truyền thông Đa phương tiện",
 }
+
 
 def parse_class_code_info(html: str) -> tuple[str | None, int | None]:
     """Parse class code from DAA grades page to extract major_name and enrollment_year."""

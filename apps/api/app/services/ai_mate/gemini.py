@@ -11,7 +11,10 @@ from app.core.config import Settings
 
 logger = logging.getLogger(__name__)
 
-_EMBED_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent"
+_EMBED_URL = (
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent"
+)
+
 
 async def _call_embed(settings: Settings, text: str) -> list[float]:
     headers = {
@@ -36,7 +39,10 @@ async def embed_text(settings: Settings, text: str) -> list[float]:
 
 
 async def batch_embed_texts(
-    settings: Settings, texts: list[str], *, title: str | None = None,
+    settings: Settings,
+    texts: list[str],
+    *,
+    title: str | None = None,
 ) -> list[list[float]]:
     if not texts:
         return []

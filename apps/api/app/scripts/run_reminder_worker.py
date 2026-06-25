@@ -24,11 +24,14 @@ async def main() -> None:
     settings = get_settings()
     configure_logging(settings.app_log_level)
 
-    logger.info("reminder_worker_start", extra={
-        "interval_seconds": settings.reminder_check_interval_seconds,
-        "exam_hours_before": settings.reminder_exam_hours_before,
-        "deadline_hours_before": settings.reminder_deadline_hours_before,
-    })
+    logger.info(
+        "reminder_worker_start",
+        extra={
+            "interval_seconds": settings.reminder_check_interval_seconds,
+            "exam_hours_before": settings.reminder_exam_hours_before,
+            "deadline_hours_before": settings.reminder_deadline_hours_before,
+        },
+    )
 
     init_engine(settings.database_url)
     redis_client = redis_async.from_url(settings.redis_url, decode_responses=True)

@@ -7,8 +7,8 @@ or Apple Calendar updates existing events rather than creating duplicates.
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Sequence
 from datetime import date, datetime, timedelta, timezone
-from typing import Sequence
 
 from icalendar import Calendar, Event
 
@@ -79,6 +79,7 @@ def _monday_of(d: date) -> date:
 # ICS generation
 # ---------------------------------------------------------------------------
 
+
 def generate_ics(
     student_id: str,
     sections: Sequence[Section],
@@ -136,12 +137,20 @@ def generate_ics(
             uid = stable_uid(student_id, section.course_code, week_start)
 
             dtstart = datetime(
-                event_date.year, event_date.month, event_date.day,
-                start_h, start_m, tzinfo=_TZ_HCMC,
+                event_date.year,
+                event_date.month,
+                event_date.day,
+                start_h,
+                start_m,
+                tzinfo=_TZ_HCMC,
             )
             dtend = datetime(
-                event_date.year, event_date.month, event_date.day,
-                end_h, end_m, tzinfo=_TZ_HCMC,
+                event_date.year,
+                event_date.month,
+                event_date.day,
+                end_h,
+                end_m,
+                tzinfo=_TZ_HCMC,
             )
 
             ev = Event()
@@ -150,11 +159,14 @@ def generate_ics(
             ev.add("dtend", dtend)
             ev.add("summary", f"{section.course_code} - {section.course_name}")
             ev.add("location", section.room)
-            ev.add("description", (
-                f"Lớp: {section.section_code}\n"
-                f"GV: {section.instructor_name}\n"
-                f"Tiết: {','.join(str(p) for p in section.periods)}"
-            ))
+            ev.add(
+                "description",
+                (
+                    f"Lớp: {section.section_code}\n"
+                    f"GV: {section.instructor_name}\n"
+                    f"Tiết: {','.join(str(p) for p in section.periods)}"
+                ),
+            )
             cal.add_component(ev)
 
     return cal.to_ical()

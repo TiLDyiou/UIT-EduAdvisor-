@@ -95,9 +95,7 @@ async def resync_daa(
 
     # Load saved credential
     res = await db.execute(
-        select(StudentCredential)
-        .where(StudentCredential.student_id == student.id)
-        .limit(1)
+        select(StudentCredential).where(StudentCredential.student_id == student.id).limit(1)
     )
     cred = res.scalar_one_or_none()
     if cred is None:
@@ -107,9 +105,9 @@ async def resync_daa(
         )
 
     # Decrypt student code and password
-    student_code = (
-        await vault.decrypt_deterministic(student.student_code_ciphertext)
-    ).decode("utf-8")
+    student_code = (await vault.decrypt_deterministic(student.student_code_ciphertext)).decode(
+        "utf-8"
+    )
     password_plain = (await vault.decrypt(cred.password_ciphertext)).decode("utf-8")
 
     # Login DAA with captcha
@@ -125,9 +123,7 @@ async def resync_daa(
         )
     except DaaAuthError as exc:
         await delete_captcha_state(redis, body.captcha_state_id)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except Exception:
         if daa_client is not None:
             await daa_client.aclose()

@@ -33,7 +33,27 @@ def _build_exam_xlsx(path: Path) -> None:
             "Năm học",
         ]
     )
-    ws.append([1, "IT001", "Nhap mon CNTT", "IT001.Q21", "GV A", 20, "CNPM", "06-04-2026", 2, 2, "B1.10", 35, "CQUI", 1, 1, 2, 2025])
+    ws.append(
+        [
+            1,
+            "IT001",
+            "Nhap mon CNTT",
+            "IT001.Q21",
+            "GV A",
+            20,
+            "CNPM",
+            "06-04-2026",
+            2,
+            2,
+            "B1.10",
+            35,
+            "CQUI",
+            1,
+            1,
+            2,
+            2025,
+        ]
+    )
     wb.save(path)
 
 

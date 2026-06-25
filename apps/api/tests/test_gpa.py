@@ -9,59 +9,18 @@ import pytest
 from app.services.academic.gpa import (
     EnrollmentRow,
     compute_cumulative_gpa,
-    grade_10_to_4,
-    grade_10_to_letter,
     is_passed,
     retake_estimate,
     reverse_calculate,
     simulate_gpa,
 )
 
-
 # ---------------------------------------------------------------------------
 # Scale conversion
 # ---------------------------------------------------------------------------
 
 
-class TestGrade10To4:
-    @pytest.mark.parametrize(
-        ("score", "expected"),
-        [
-            (Decimal("10"), Decimal("4.0")),
-            (Decimal("9.5"), Decimal("4.0")),
-            (Decimal("8.5"), Decimal("4.0")),
-            (Decimal("8.4"), Decimal("3.0")),
-            (Decimal("7.0"), Decimal("3.0")),
-            (Decimal("6.9"), Decimal("2.0")),
-            (Decimal("5.5"), Decimal("2.0")),
-            (Decimal("5.4"), Decimal("1.0")),
-            (Decimal("4.0"), Decimal("1.0")),
-            (Decimal("3.9"), Decimal("0.0")),
-            (Decimal("0"), Decimal("0.0")),
-        ],
-    )
-    def test_boundaries(self, score: Decimal, expected: Decimal) -> None:
-        assert grade_10_to_4(score) == expected
 
-
-class TestGrade10ToLetter:
-    @pytest.mark.parametrize(
-        ("score", "expected"),
-        [
-            (Decimal("10"), "A"),
-            (Decimal("8.5"), "A"),
-            (Decimal("8.4"), "B"),
-            (Decimal("7.0"), "B"),
-            (Decimal("6.9"), "C"),
-            (Decimal("5.5"), "C"),
-            (Decimal("5.4"), "D"),
-            (Decimal("4.0"), "D"),
-            (Decimal("3.9"), "F"),
-            (Decimal("0"), "F"),
-        ],
-    )
-    def test_boundaries(self, score: Decimal, expected: str) -> None:
-        assert grade_10_to_letter(score) == expected
 
 
 class TestIsPassed:
@@ -207,7 +166,7 @@ class TestRetakeEstimate:
         ]
         # Old GPA: (15+24)/6 = 6.50
         # Replace first with 8.0: (24+24)/6 = 8.00
-        result = retake_estimate(rows, retake_index=0, new_grade_10=Decimal("8.0"))
+        result = retake_estimate(rows, retakes={0: Decimal("8.0")})
         assert result.old_gpa_10 == Decimal("6.50")
         assert result.new_gpa_10 == Decimal("8.00")
         assert result.delta_gpa_10 == Decimal("1.50")

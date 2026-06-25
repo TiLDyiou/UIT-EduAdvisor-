@@ -286,7 +286,11 @@ def solve_schedule(
         labs: dict[str, list[Section]] = {}
 
         for s in sects:
-            if s.is_lab or s.teaching_type in ("HT1", "HT2") or s.course_code.endswith((".1", ".2")):
+            if (
+                s.is_lab
+                or s.teaching_type in ("HT1", "HT2")
+                or s.course_code.endswith((".1", ".2"))
+            ):
                 # Lab section: base is section_code without the last ".N" suffix.
                 # e.g. "CE118.Q11.1" → base "CE118.Q11"
                 parts = s.section_code.rsplit(".", 1)

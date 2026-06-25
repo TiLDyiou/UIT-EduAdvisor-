@@ -62,10 +62,14 @@ async def test_policy_retrieval_excludes_deprecated_by_default(client, db_sessio
     await db_session.flush()
     emb = pseudo_embedding_768("dao tao")
     db_session.add(
-        PolicyChunk(document_id=active.id, chunk_index=0, content="hoc vu quy che dao tao", embedding=emb)
+        PolicyChunk(
+            document_id=active.id, chunk_index=0, content="hoc vu quy che dao tao", embedding=emb
+        )
     )
     db_session.add(
-        PolicyChunk(document_id=old.id, chunk_index=0, content="hoc vu quy che dao tao cu", embedding=emb)
+        PolicyChunk(
+            document_id=old.id, chunk_index=0, content="hoc vu quy che dao tao cu", embedding=emb
+        )
     )
     await db_session.commit()
 

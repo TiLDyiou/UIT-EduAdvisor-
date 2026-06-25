@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models.bot import BotAccount, LinkToken, ReminderPreference
+from app.db.models.bot import BotAccount, ReminderPreference
 from app.services.bot.bot_linking import (
     create_link_token,
     find_student_by_platform,
@@ -27,35 +27,37 @@ def student_id():
 class TestCreateLinkToken:
     async def test_creates_token(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
-        lt = await create_link_token(db, student_id, "telegram")
-        assert lt.platform == "telegram"
+        lt = await create_link_token(db, student_id, "discord")
+        assert lt.platform == "discord"
         assert lt.student_id == student_id
         assert lt.token is not None
-        assert lt.expires_at > datetime.now(timezone.utc)
+        assert lt.expires_at > datetime.now(UTC)
 
     async def test_token_expires_in_future(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
         lt = await create_link_token(db, student_id, "discord")
         # Default TTL is 600 seconds
-        delta = lt.expires_at - datetime.now(timezone.utc)
+        delta = lt.expires_at - datetime.now(UTC)
         assert 590 < delta.total_seconds() <= 610
 
 
 class TestRedeemLinkToken:
     async def test_redeem_success(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
-        lt = await create_link_token(db, student_id, "telegram")
+        lt = await create_link_token(db, student_id, "discord")
         await db.flush()
 
         acct = await redeem_link_token(db, lt.token, "tg_user_123")
         assert acct is not None
-        assert acct.platform == "telegram"
+        assert acct.platform == "discord"
         assert acct.platform_user_id == "tg_user_123"
         assert acct.student_id == student_id
 
-    async def test_redeem_creates_reminder_preference(self, db: AsyncSession, student_id, create_student):
+    async def test_redeem_creates_reminder_preference(
+        self, db: AsyncSession, student_id, create_student
+    ):
         await create_student(student_id)
-        lt = await create_link_token(db, student_id, "telegram")
+        lt = await create_link_token(db, student_id, "discord")
         await db.flush()
         await redeem_link_token(db, lt.token, "tg_user_456")
 
@@ -69,8 +71,8 @@ class TestRedeemLinkToken:
 
     async def test_redeem_expired_token(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
-        lt = await create_link_token(db, student_id, "telegram")
-        lt.expires_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+        lt = await create_link_token(db, student_id, "discord")
+        lt.expires_at = datetime.now(UTC) - timedelta(minutes=1)
         await db.flush()
 
         acct = await redeem_link_token(db, lt.token, "tg_user_789")
@@ -78,7 +80,7 @@ class TestRedeemLinkToken:
 
     async def test_redeem_used_token(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
-        lt = await create_link_token(db, student_id, "telegram")
+        lt = await create_link_token(db, student_id, "discord")
         await db.flush()
 
         acct1 = await redeem_link_token(db, lt.token, "tg_user_aaa")
@@ -91,17 +93,19 @@ class TestRedeemLinkToken:
         acct = await redeem_link_token(db, uuid.uuid4(), "tg_user_xxx")
         assert acct is None
 
-    async def test_relink_deactivates_old_account(self, db: AsyncSession, student_id, create_student):
+    async def test_relink_deactivates_old_account(
+        self, db: AsyncSession, student_id, create_student
+    ):
         await create_student(student_id)
 
         # First link
-        lt1 = await create_link_token(db, student_id, "telegram")
+        lt1 = await create_link_token(db, student_id, "discord")
         await db.flush()
         await redeem_link_token(db, lt1.token, "tg_old_user")
         await db.flush()
 
         # Second link (new platform_user_id)
-        lt2 = await create_link_token(db, student_id, "telegram")
+        lt2 = await create_link_token(db, student_id, "discord")
         await db.flush()
         await redeem_link_token(db, lt2.token, "tg_new_user")
         await db.flush()
@@ -119,52 +123,52 @@ class TestRedeemLinkToken:
 class TestFindStudentByPlatform:
     async def test_find_linked(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
-        lt = await create_link_token(db, student_id, "telegram")
+        lt = await create_link_token(db, student_id, "discord")
         await db.flush()
         await redeem_link_token(db, lt.token, "tg_find_user")
         await db.flush()
 
-        student = await find_student_by_platform(db, "telegram", "tg_find_user")
+        student = await find_student_by_platform(db, "discord", "tg_find_user")
         assert student is not None
         assert student.id == student_id
 
     async def test_find_unlinked_returns_none(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
-        lt = await create_link_token(db, student_id, "telegram")
+        lt = await create_link_token(db, student_id, "discord")
         await db.flush()
         await redeem_link_token(db, lt.token, "tg_unlink_user")
         await db.flush()
-        await unlink_account(db, student_id, "telegram")
+        await unlink_account(db, student_id, "discord")
         await db.flush()
 
-        student = await find_student_by_platform(db, "telegram", "tg_unlink_user")
+        student = await find_student_by_platform(db, "discord", "tg_unlink_user")
         assert student is None
 
     async def test_find_wrong_platform(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
-        lt = await create_link_token(db, student_id, "telegram")
+        lt = await create_link_token(db, student_id, "discord")
         await db.flush()
-        await redeem_link_token(db, lt.token, "tg_wrong_plat")
+        await redeem_link_token(db, lt.token, "dc_wrong_plat")
         await db.flush()
 
-        student = await find_student_by_platform(db, "discord", "tg_wrong_plat")
+        student = await find_student_by_platform(db, "mail", "dc_wrong_plat")
         assert student is None
 
 
 class TestUnlinkAccount:
     async def test_unlink_existing(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
-        lt = await create_link_token(db, student_id, "telegram")
+        lt = await create_link_token(db, student_id, "discord")
         await db.flush()
         await redeem_link_token(db, lt.token, "tg_to_unlink")
         await db.flush()
 
-        result = await unlink_account(db, student_id, "telegram")
+        result = await unlink_account(db, student_id, "discord")
         assert result is True
 
     async def test_unlink_nonexistent(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
-        result = await unlink_account(db, student_id, "telegram")
+        result = await unlink_account(db, student_id, "discord")
         assert result is False
 
 
@@ -172,17 +176,17 @@ class TestGetLinkedAccounts:
     async def test_list_active(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
 
-        lt1 = await create_link_token(db, student_id, "telegram")
+        lt1 = await create_link_token(db, student_id, "discord")
         await db.flush()
         await redeem_link_token(db, lt1.token, "tg_list_user")
         await db.flush()
 
-        lt2 = await create_link_token(db, student_id, "discord")
+        lt2 = await create_link_token(db, student_id, "mail")
         await db.flush()
-        await redeem_link_token(db, lt2.token, "dc_list_user")
+        await redeem_link_token(db, lt2.token, "mail_list_user")
         await db.flush()
 
         accounts = await get_linked_accounts(db, student_id)
         assert len(accounts) == 2
         platforms = {a.platform for a in accounts}
-        assert platforms == {"telegram", "discord"}
+        assert platforms == {"discord", "mail"}

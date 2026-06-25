@@ -63,9 +63,7 @@ async def admin_login(
     # Trả cùng error cho email-không-tồn-tại và sai password để không leak
     # thông tin tài khoản nào hợp lệ.
     if admin is None or not verify_password(body.password, admin.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_credentials"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_credentials")
 
     sess_token, _csrf = await create_admin_session(
         redis, admin_id=admin.id, ttl_seconds=settings.admin_session_ttl_seconds

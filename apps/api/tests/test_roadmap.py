@@ -21,10 +21,19 @@ from app.services.academic.roadmap import (
 
 
 def _course(cid: int, code: str = "", name: str = "", credits: int = 3) -> CourseInfo:
-    return CourseInfo(course_id=cid, code=code or f"CS{cid}", name=name or f"Course {cid}", credits=credits)
+    return CourseInfo(
+        course_id=cid, code=code or f"CS{cid}", name=name or f"Course {cid}", credits=credits
+    )
 
 
-def _entry(cid: int, term: int = 1, *, is_required: bool = True, eg_id: int | None = None, eg_name: str | None = None) -> CurriculumEntry:
+def _entry(
+    cid: int,
+    term: int = 1,
+    *,
+    is_required: bool = True,
+    eg_id: int | None = None,
+    eg_name: str | None = None,
+) -> CurriculumEntry:
     return CurriculumEntry(
         course=_course(cid),
         term_number=term,
@@ -50,16 +59,19 @@ class TestResolveRoadmap:
     def test_passed(self) -> None:
         """A course with grade >= 4.0 is passed."""
         curriculum = [_entry(1)]
-        enrollments = [EnrollmentInfo(course_id=1, final_grade_10=Decimal("7.5"), is_current_term=False)]
+        enrollments = [
+            EnrollmentInfo(course_id=1, final_grade_10=Decimal("7.5"), is_current_term=False)
+        ]
         nodes = resolve_roadmap(curriculum, enrollments, [])
         assert nodes[0].status == STATUS_PASSED
         assert nodes[0].grade_10 == Decimal("7.5")
-        assert nodes[0].grade_4 == Decimal("3.0")
 
     def test_failed(self) -> None:
         """A course with grade < 4.0 is failed."""
         curriculum = [_entry(1)]
-        enrollments = [EnrollmentInfo(course_id=1, final_grade_10=Decimal("3.5"), is_current_term=False)]
+        enrollments = [
+            EnrollmentInfo(course_id=1, final_grade_10=Decimal("3.5"), is_current_term=False)
+        ]
         nodes = resolve_roadmap(curriculum, enrollments, [])
         assert nodes[0].status == STATUS_FAILED
 
@@ -83,7 +95,9 @@ class TestResolveRoadmap:
         """Prerequisite passed → course is not_started (not locked)."""
         curriculum = [_entry(1, 1), _entry(2, 2)]
         prerequisites = [PrerequisiteEdge(course_id=2, prerequisite_course_id=1)]
-        enrollments = [EnrollmentInfo(course_id=1, final_grade_10=Decimal("5.0"), is_current_term=False)]
+        enrollments = [
+            EnrollmentInfo(course_id=1, final_grade_10=Decimal("5.0"), is_current_term=False)
+        ]
         nodes = resolve_roadmap(curriculum, enrollments, prerequisites)
         assert nodes[0].status == STATUS_PASSED
         assert nodes[1].status == STATUS_NOT_STARTED
@@ -94,7 +108,9 @@ class TestResolveRoadmap:
         """Prerequisite failed → dependent course is still locked."""
         curriculum = [_entry(1, 1), _entry(2, 2)]
         prerequisites = [PrerequisiteEdge(course_id=2, prerequisite_course_id=1)]
-        enrollments = [EnrollmentInfo(course_id=1, final_grade_10=Decimal("3.0"), is_current_term=False)]
+        enrollments = [
+            EnrollmentInfo(course_id=1, final_grade_10=Decimal("3.0"), is_current_term=False)
+        ]
         nodes = resolve_roadmap(curriculum, enrollments, prerequisites)
         assert nodes[0].status == STATUS_FAILED
         assert nodes[1].status == STATUS_LOCKED
@@ -106,7 +122,9 @@ class TestResolveRoadmap:
             PrerequisiteEdge(course_id=3, prerequisite_course_id=1),
             PrerequisiteEdge(course_id=3, prerequisite_course_id=2),
         ]
-        enrollments = [EnrollmentInfo(course_id=1, final_grade_10=Decimal("6.0"), is_current_term=False)]
+        enrollments = [
+            EnrollmentInfo(course_id=1, final_grade_10=Decimal("6.0"), is_current_term=False)
+        ]
         nodes = resolve_roadmap(curriculum, enrollments, prerequisites)
         course_3_node = nodes[2]
         assert course_3_node.status == STATUS_LOCKED
@@ -124,8 +142,11 @@ class TestElectiveGroupStatus:
         """Partially fulfilled credits-based elective group."""
         groups = [
             ElectiveGroupRule(
-                group_id=1, group_name="Tự chọn CN", rule_type="credits",
-                required_value=9, course_ids=[10, 11, 12],
+                group_id=1,
+                group_name="Tự chọn CN",
+                rule_type="credits",
+                required_value=9,
+                course_ids=[10, 11, 12],
             )
         ]
         enrollments = [
@@ -140,8 +161,11 @@ class TestElectiveGroupStatus:
     def test_credits_rule_fulfilled(self) -> None:
         groups = [
             ElectiveGroupRule(
-                group_id=1, group_name="Tự chọn CN", rule_type="credits",
-                required_value=6, course_ids=[10, 11, 12],
+                group_id=1,
+                group_name="Tự chọn CN",
+                rule_type="credits",
+                required_value=6,
+                course_ids=[10, 11, 12],
             )
         ]
         enrollments = [
@@ -157,8 +181,11 @@ class TestElectiveGroupStatus:
         """Courses-count rule: need at least 2 courses, passed 1."""
         groups = [
             ElectiveGroupRule(
-                group_id=2, group_name="Tự chọn ĐC", rule_type="courses",
-                required_value=2, course_ids=[20, 21, 22],
+                group_id=2,
+                group_name="Tự chọn ĐC",
+                rule_type="courses",
+                required_value=2,
+                course_ids=[20, 21, 22],
             )
         ]
         enrollments = [
@@ -173,12 +200,17 @@ class TestElectiveGroupStatus:
         """Failed courses don't count toward group fulfillment."""
         groups = [
             ElectiveGroupRule(
-                group_id=1, group_name="Tự chọn", rule_type="credits",
-                required_value=3, course_ids=[10, 11],
+                group_id=1,
+                group_name="Tự chọn",
+                rule_type="credits",
+                required_value=3,
+                course_ids=[10, 11],
             )
         ]
         enrollments = [
-            EnrollmentInfo(course_id=10, final_grade_10=Decimal("3.0"), is_current_term=False),  # failed
+            EnrollmentInfo(
+                course_id=10, final_grade_10=Decimal("3.0"), is_current_term=False
+            ),  # failed
         ]
         credit_map = {10: 3, 11: 3}
         statuses = compute_elective_group_statuses(groups, enrollments, credit_map)

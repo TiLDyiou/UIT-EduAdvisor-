@@ -1,4 +1,4 @@
-"""Real platform sender: calls Telegram/Discord/Messenger APIs.
+"""Real platform sender: calls Discord APIs and sends emails.
 
 # MOCK_API: Each platform method falls back to MockPlatformSender if the
 # corresponding token is empty. When you set tokens in .env, the real
@@ -8,7 +8,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import hmac
 import logging
 
@@ -27,87 +26,71 @@ class RealPlatformSender:
         self._settings = settings
 
     async def send_message(self, platform: str, recipient_id: str, text: str) -> bool:
-        if platform == "telegram":
-            return await self._send_telegram(recipient_id, text)
         if platform == "discord":
             # Discord messages are sent via discord.py gateway, not HTTP.
             # This path is only used by the reminder worker which needs to
             # reach Discord users without the gateway. Uses webhook fallback.
             return await self._send_discord_dm(recipient_id, text)
-        if platform == "messenger":
-            return await self._send_messenger(recipient_id, text)
+        if platform == "mail":
+            return await self._send_mail(recipient_id, text)
         logger.warning("unknown_platform", extra={"platform": platform})
         return False
 
     async def validate_webhook(self, platform: str, headers: dict, body: bytes) -> bool:
-        if platform == "telegram":
-            return self._validate_telegram(headers)
-        if platform == "messenger":
-            return self._validate_messenger(headers, body)
         return False
 
-    # --- Telegram ---
+    # --- Mail / Email ---
 
-    async def _send_telegram(self, chat_id: str, text: str) -> bool:
-        token = self._settings.telegram_bot_token
-        if not token:
-            # MOCK_API: no token configured, fall back to mock
-            return await _mock.send_message("telegram", chat_id, text)
-        url = f"https://api.telegram.org/bot{token}/sendMessage"
-        try:
-            async with httpx.AsyncClient(timeout=10) as client:
-                r = await client.post(url, json={"chat_id": chat_id, "text": text})
-                if r.status_code == 200:
-                    return True
-                logger.warning("telegram_send_error", extra={"status": r.status_code, "body": r.text[:200]})
-                return False
-        except httpx.HTTPError as e:
-            logger.error("telegram_send_exception", extra={"error": str(e)})
-            return False
-
-    def _validate_telegram(self, headers: dict) -> bool:
-        secret = self._settings.telegram_webhook_secret
-        if not secret:
-            # MOCK_API: no secret configured, skip validation
+    async def _send_mail(self, email_address: str, text: str) -> bool:
+        if not self._settings.smtp_host:
+            # Mock SMTP email sender logging output
+            logger.info(
+                "email_notification_send_mock",
+                extra={
+                    "email": email_address,
+                    "subject": "Thông báo UIT EduAdvisor",
+                    "text_preview": text[:100],
+                },
+            )
             return True
-        header_token = headers.get("x-telegram-bot-api-secret-token", "")
-        return hmac.compare_digest(header_token, secret)
 
-    # --- Messenger ---
+        from email.message import EmailMessage
+        import aiosmtplib
 
-    async def _send_messenger(self, recipient_id: str, text: str) -> bool:
-        token = self._settings.messenger_page_access_token
-        if not token:
-            # MOCK_API: no token configured, fall back to mock
-            return await _mock.send_message("messenger", recipient_id, text)
-        url = "https://graph.facebook.com/v19.0/me/messages"
-        payload = {
-            "recipient": {"id": recipient_id},
-            "message": {"text": text},
-        }
+        import re
+        subject = "Thông báo UIT EduAdvisor"
+        is_html = text.strip().startswith("<")
+        if is_html:
+            title_match = re.search(r"<title>(.*?)</title>", text, re.IGNORECASE | re.DOTALL)
+            if title_match:
+                subject = title_match.group(1).strip()
+
+        message = EmailMessage()
+        message["From"] = self._settings.smtp_from_email or "no-reply@eduadvisor.uit.edu.vn"
+        message["To"] = email_address
+        message["Subject"] = subject
+        if is_html:
+            message.set_content(text, subtype="html")
+        else:
+            message.set_content(text)
+
         try:
-            async with httpx.AsyncClient(timeout=10) as client:
-                r = await client.post(url, json=payload, params={"access_token": token})
-                if r.status_code == 200:
-                    return True
-                logger.warning("messenger_send_error", extra={"status": r.status_code, "body": r.text[:200]})
-                return False
-        except httpx.HTTPError as e:
-            logger.error("messenger_send_exception", extra={"error": str(e)})
-            return False
-
-    def _validate_messenger(self, headers: dict, body: bytes) -> bool:
-        app_secret = self._settings.messenger_app_secret
-        if not app_secret:
-            # MOCK_API: no secret configured, skip validation
+            await aiosmtplib.send(
+                message,
+                hostname=self._settings.smtp_host,
+                port=self._settings.smtp_port,
+                username=self._settings.smtp_user or None,
+                password=self._settings.smtp_password or None,
+                use_tls=self._settings.smtp_use_tls,
+                start_tls=not self._settings.smtp_use_tls and self._settings.smtp_port == 587,
+            )
+            logger.info("email_notification_sent", extra={"email": email_address})
             return True
-        signature = headers.get("x-hub-signature-256", "")
-        if not signature.startswith("sha256="):
+        except Exception as e:
+            logger.error(
+                "email_notification_failed", extra={"email": email_address, "error": str(e)}
+            )
             return False
-        expected = hmac.new(
-            app_secret.encode(), body, hashlib.sha256
-        ).hexdigest()
-        return hmac.compare_digest(signature[7:], expected)
 
     # --- Discord (DM via HTTP API, used by reminder worker) ---
 
@@ -148,10 +131,6 @@ def get_platform_sender(settings: Settings) -> MockPlatformSender | RealPlatform
     # Set any token to activate RealPlatformSender (which still falls back
     # to mock per-platform if that specific token is empty).
     """
-    if (
-        settings.telegram_bot_token
-        or settings.discord_bot_token
-        or settings.messenger_page_access_token
-    ):
+    if settings.discord_bot_token or settings.smtp_host:
         return RealPlatformSender(settings)
     return MockPlatformSender()

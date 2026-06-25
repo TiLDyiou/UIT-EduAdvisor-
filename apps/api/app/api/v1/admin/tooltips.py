@@ -74,10 +74,14 @@ async def create_tooltip(
 ) -> AdminTooltipResponse:
     if body.policy_document_id is not None:
         policy_exists = await db.scalar(
-            select(func.count()).select_from(PolicyDocument).where(PolicyDocument.id == body.policy_document_id)
+            select(func.count())
+            .select_from(PolicyDocument)
+            .where(PolicyDocument.id == body.policy_document_id)
         )
         if not policy_exists:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="policy_not_found")
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="policy_not_found"
+            )
 
     row = TooltipTerm(
         keyword=body.keyword,
@@ -139,10 +143,14 @@ async def update_tooltip(
     changes = body.model_dump(exclude_unset=True)
     if "policy_document_id" in changes and changes["policy_document_id"] is not None:
         policy_exists = await db.scalar(
-            select(func.count()).select_from(PolicyDocument).where(PolicyDocument.id == changes["policy_document_id"])
+            select(func.count())
+            .select_from(PolicyDocument)
+            .where(PolicyDocument.id == changes["policy_document_id"])
         )
         if not policy_exists:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="policy_not_found")
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="policy_not_found"
+            )
 
     if changes:
         before = {

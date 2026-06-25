@@ -16,38 +16,7 @@ from decimal import ROUND_HALF_UP, Decimal
 # Scale conversion
 # ---------------------------------------------------------------------------
 
-_SCALE_4_BANDS: list[tuple[Decimal, Decimal]] = [
-    (Decimal("8.5"), Decimal("4.0")),
-    (Decimal("7.0"), Decimal("3.0")),
-    (Decimal("5.5"), Decimal("2.0")),
-    (Decimal("4.0"), Decimal("1.0")),
-    # anything below 4.0 → 0.0
-]
-
-_LETTER_BANDS: list[tuple[Decimal, str]] = [
-    (Decimal("8.5"), "A"),
-    (Decimal("7.0"), "B"),
-    (Decimal("5.5"), "C"),
-    (Decimal("4.0"), "D"),
-]
-
 PASS_THRESHOLD = Decimal("5.0")
-
-
-def grade_10_to_4(score_10: Decimal) -> Decimal:
-    """Convert a score on the 10-point scale to the 4-point scale."""
-    for threshold, value in _SCALE_4_BANDS:
-        if score_10 >= threshold:
-            return value
-    return Decimal("0.0")
-
-
-def grade_10_to_letter(score_10: Decimal) -> str:
-    """Convert a score on the 10-point scale to a letter grade."""
-    for threshold, letter in _LETTER_BANDS:
-        if score_10 >= threshold:
-            return letter
-    return "F"
 
 
 def is_passed(score_10: Decimal | None) -> bool:
@@ -61,16 +30,18 @@ def is_passed(score_10: Decimal | None) -> bool:
 # GPA computation
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class GpaResult:
     gpa_10: Decimal
-    total_credits: int   # credits attempted (all enrolled with grades)
+    total_credits: int  # credits attempted (all enrolled with grades)
     earned_credits: int  # credits where passed
 
 
 @dataclass(frozen=True)
 class EnrollmentRow:
     """Lightweight view of an enrollment for GPA calculation."""
+
     credits: int
     final_grade_10: Decimal | None
 
@@ -120,6 +91,7 @@ def simulate_gpa(
 # Reverse calculator
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class ReverseResult:
     required_avg_10: Decimal
@@ -150,7 +122,8 @@ def reverse_calculate(
     needed_remaining = needed_total - already
 
     avg_10 = (needed_remaining / remaining_credits).quantize(
-        Decimal("0.01"), rounding=ROUND_HALF_UP,
+        Decimal("0.01"),
+        rounding=ROUND_HALF_UP,
     )
 
     achievable = Decimal("0") <= avg_10 <= Decimal("10")
@@ -166,6 +139,7 @@ def reverse_calculate(
 # ---------------------------------------------------------------------------
 # Retake estimator
 # ---------------------------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class RetakeResult:

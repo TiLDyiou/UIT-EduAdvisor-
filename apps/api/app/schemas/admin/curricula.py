@@ -142,4 +142,3 @@ class AdminMajorListItem(BaseModel):
 
 class AdminMajorListResponse(BaseModel):
     items: list[AdminMajorListItem]
-

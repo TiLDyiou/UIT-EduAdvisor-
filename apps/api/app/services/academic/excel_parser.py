@@ -26,22 +26,22 @@ import openpyxl
 class Section:
     """One section (nhóm lớp) parsed from the TKB Excel."""
 
-    course_code: str       # MÃ MH, e.g. "CE118"
-    section_code: str      # MÃ LỚP, e.g. "CE118.Q11"
-    course_name: str       # TÊN MÔN HỌC
-    credits: int           # TỐ TC
-    is_lab: bool           # True if THỰC HÀNH == 1
-    teaching_type: str     # HTGD: LT, HT1, HT2, TG
-    day_of_week: int       # 2=Mon … 7=Sat
+    course_code: str  # MÃ MH, e.g. "CE118"
+    section_code: str  # MÃ LỚP, e.g. "CE118.Q11"
+    course_name: str  # TÊN MÔN HỌC
+    credits: int  # TỐ TC
+    is_lab: bool  # True if THỰC HÀNH == 1
+    teaching_type: str  # HTGD: LT, HT1, HT2, TG
+    day_of_week: int  # 2=Mon … 7=Sat
     periods: list[int] = field(default_factory=list)  # e.g. [1,2,3]
     biweekly: bool = False  # True if CÁCH TUẦN == 2
     room: str = ""
     capacity: int = 0
     instructor_name: str = ""
-    start_date: str = ""   # ISO date string, e.g. "2025-09-08"
+    start_date: str = ""  # ISO date string, e.g. "2025-09-08"
     end_date: str = ""
-    program: str = ""      # HỆ ĐT: CQUI, CLC, CNTN, ...
-    department: str = ""   # KHOA QL
+    program: str = ""  # HỆ ĐT: CQUI, CLC, CNTN, ...
+    department: str = ""  # KHOA QL
 
 
 # Column indices in the TKB LT sheet (0-based, header row at index 3).

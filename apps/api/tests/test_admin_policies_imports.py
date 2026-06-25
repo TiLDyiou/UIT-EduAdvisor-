@@ -81,7 +81,9 @@ async def test_policy_upload_creates_job_and_document(client, admin_user, db_ses
     assert doc_q.scalar_one_or_none() is not None
 
 
-async def test_policy_upload_accepts_octet_stream_when_extension_ok(client, admin_user, db_session) -> None:
+async def test_policy_upload_accepts_octet_stream_when_extension_ok(
+    client, admin_user, db_session
+) -> None:
     csrf = await _admin_login_and_csrf(client, admin_user)
     files = {"file": ("policy-v1.pdf", b"%PDF-1.4 test file", "application/octet-stream")}
     r = await client.post(
@@ -102,7 +104,9 @@ async def test_policy_delete_removes_document(client, admin_user, db_session) ->
         headers={"X-CSRF-Token": csrf},
     )
     assert up.status_code == 202
-    doc_q = await db_session.execute(select(PolicyDocument).where(PolicyDocument.title == "To delete"))
+    doc_q = await db_session.execute(
+        select(PolicyDocument).where(PolicyDocument.title == "To delete")
+    )
     doc = doc_q.scalar_one()
 
     r = await client.delete(

@@ -19,6 +19,7 @@ class PolicySourceMeta(BaseModel):
     chunk_index: int
     content: str | None = None
     url: str | None = None
+    page_number: int | None = None
 
 
 class AiMateMetaEvent(BaseModel):

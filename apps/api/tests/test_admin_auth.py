@@ -94,9 +94,7 @@ async def test_login_ok_sets_admin_cookie(client, admin_user) -> None:
 async def test_login_writes_audit_log(client, admin_user, db_session) -> None:
     r = await _login(client, admin_user.email, "correct-horse-12")
     assert r.status_code == 204
-    res = await db_session.execute(
-        select(AuditLog).where(AuditLog.action == "admin.session.login")
-    )
+    res = await db_session.execute(select(AuditLog).where(AuditLog.action == "admin.session.login"))
     rows = list(res.scalars().all())
     assert len(rows) == 1
     assert rows[0].actor_id == admin_user.id
@@ -138,9 +136,7 @@ async def test_logout_with_csrf_revokes_session(client, admin_user) -> None:
     await _login(client, admin_user.email, "correct-horse-12")
     me = (await client.get("/api/v1/admin/me")).json()
 
-    r = await client.post(
-        "/api/v1/admin/auth/logout", headers={"X-CSRF-Token": me["csrf_token"]}
-    )
+    r = await client.post("/api/v1/admin/auth/logout", headers={"X-CSRF-Token": me["csrf_token"]})
     assert r.status_code == 204
 
     after = await client.get("/api/v1/admin/me")

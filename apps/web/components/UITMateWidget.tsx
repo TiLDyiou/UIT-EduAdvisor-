@@ -13,10 +13,8 @@ import { parseSseJsonStream } from "@/lib/sse";
 import {
   Send,
   X,
-  Pin,
   Loader2,
   AlertTriangle,
-  FileText,
   Trash2,
 } from "lucide-react";
 
@@ -27,6 +25,7 @@ type Source = {
   tag: string;
   chunk_index: number;
   content?: string;
+  page_number?: number;
 };
 
 const DISCLAIMER =
@@ -120,9 +119,7 @@ export function UITMateWidget() {
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [hasOpenedBefore, setHasOpenedBefore] = useState(true);
   const [hasUnread, setHasUnread] = useState(false);
-  const [pinnedMessage, setPinnedMessage] = useState<string | null>(null);
   const [viewerSource, setViewerSource] = useState<Source | null>(null);
-  const summaryAttempted = useRef(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // ─── Position ────────────────────────────────────────────────────────────
@@ -524,50 +521,7 @@ export function UITMateWidget() {
     }
   }
 
-  async function pinAssistant(content: string) {
-    if (!me) return;
-    try {
-      // Opt out of API alert, handle locally for better UX
-      setPinnedMessage(content);
-      await apiFetch("/api/v1/ai-mate/pins", {
-        method: "POST",
-        headers: { "X-CSRF-Token": me.csrf_token },
-        body: JSON.stringify({ content: content.slice(0, 2000) }),
-      });
-    } catch {
-      // Silently fail API, keeping local pin active
-    }
-  }
 
-  async function endSessionSummary() {
-    if (!me || summaryAttempted.current) return;
-    summaryAttempted.current = true;
-    const sessionStarted =
-      messages[0]?.created_at ?? new Date(Date.now() - 3600000).toISOString();
-    const transcript = messages.map((m) => ({
-      role: m.role,
-      content: m.content.slice(0, 8000),
-    }));
-    try {
-      const r = await apiFetch("/api/v1/ai-mate/summaries", {
-        method: "POST",
-        headers: { "X-CSRF-Token": me.csrf_token },
-        body: JSON.stringify({
-          session_started_at: sessionStarted,
-          messages: transcript,
-        }),
-      });
-      if (!r.ok) {
-        summaryAttempted.current = false;
-        alert("Không tạo được tóm tắt trên server.");
-        return;
-      }
-      alert("Đã tạo tóm tắt phiên học tập gửi lên máy chủ.");
-    } catch {
-      summaryAttempted.current = false;
-      alert("Không tạo được tóm tắt.");
-    }
-  }
 
   async function handleClearChat() {
     if (!threadId) return;
@@ -685,22 +639,13 @@ export function UITMateWidget() {
               onTouchStart={(e) => e.stopPropagation()}
             >
               {messages.length > 0 && (
-                <>
-                  <button
-                    onClick={handleClearChat}
-                    title="Xoá lịch sử chat"
-                    className="p-1.5 text-neutral-400 hover:text-white hover:bg-red-500/20 hover:text-red-400 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={endSessionSummary}
-                    title="Kết thúc và Tóm tắt"
-                    className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors"
-                  >
-                    <FileText className="w-4 h-4" />
-                  </button>
-                </>
+                <button
+                  onClick={handleClearChat}
+                  title="Xoá lịch sử chat"
+                  className="p-1.5 text-neutral-400 hover:text-white hover:bg-red-500/20 hover:text-red-400 rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               )}
               <button
                 onClick={() => setIsOpen(false)}
@@ -710,24 +655,6 @@ export function UITMateWidget() {
               </button>
             </div>
           </div>
-
-          {/* Pinned Message */}
-          {pinnedMessage && (
-            <div className="bg-neutral-800/80 border-b border-neutral-800 px-4 py-2.5 flex items-start justify-between gap-3 shrink-0">
-              <div className="flex items-start gap-2 overflow-hidden">
-                <Pin className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                <div className="text-xs text-neutral-300 line-clamp-2 italic leading-relaxed">
-                  <FormattedText text={pinnedMessage} />
-                </div>
-              </div>
-              <button
-                onClick={() => setPinnedMessage(null)}
-                className="p-1 hover:bg-neutral-700/50 rounded text-neutral-400 hover:text-white transition-colors shrink-0"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          )}
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-neutral-900/40">
@@ -757,7 +684,8 @@ export function UITMateWidget() {
                 } animate-in fade-in slide-in-from-bottom-2 duration-300`}
               >
                 <div
-                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed ${
+                  id={`msg-${m.id}`}
+                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed transition-all duration-500 ${
                     m.role === "user"
                       ? "bg-neutral-800 text-white rounded-tr-sm border border-neutral-700/50"
                       : "bg-neutral-850 text-neutral-200 border border-neutral-800 rounded-tl-sm"
@@ -766,20 +694,8 @@ export function UITMateWidget() {
                   <FormattedText text={m.content} role={m.role} />
                 </div>
 
-                {m.role === "assistant" && (
+                {m.role === "assistant" && m.sources && m.sources.length > 0 && (
                   <div className="flex items-center gap-2 mt-1.5 ml-1">
-                    <button
-                      onClick={() => pinAssistant(m.content)}
-                      title="Ghim phản hồi này"
-                      className="text-[10px] text-neutral-500 hover:text-white transition-colors flex items-center gap-1"
-                    >
-                      <Pin className="w-3 h-3" /> Ghim
-                    </button>
-
-                    {m.sources && m.sources.length > 0 && (
-                      <span className="text-[10px] text-neutral-600">|</span>
-                    )}
-
                     {m.sources?.map((s, idx) => {
                       const shortTitle = s.document_title?.includes("1393")
                         ? "QĐ 1393"
@@ -914,21 +830,31 @@ export function UITMateWidget() {
               </button>
             </div>
             <div className="flex-1 flex overflow-hidden rounded-b-2xl">
-              <iframe
-                src={`${apiBaseUrl()}/api/v1/ai-mate/documents/${viewerSource.document_id}/pdf#search=${encodeURIComponent((viewerSource.content || "").slice(0, 80))}`}
-                className="flex-1 h-full border-0 bg-neutral-800"
-                title={viewerSource.document_title}
-              />
-              <div className="w-80 shrink-0 border-l border-neutral-800 p-5 overflow-y-auto bg-neutral-900 hidden md:block">
-                <h4 className="text-xs font-bold text-neutral-500 mb-4 uppercase tracking-wider">
-                  Đoạn trích xuất
-                </h4>
-                <div className="text-sm text-neutral-300 leading-relaxed">
-                  <FormattedText
-                    text={viewerSource.content || "Đang xử lý..."}
+              {(() => {
+                const normalized = (viewerSource.content || "").replace(/\s+/g, " ").trim();
+                
+                // Trích xuất Điều XX (ví dụ Điều 16) để tìm kiếm chính xác và cuộn trang
+                const dieuMatch = normalized.match(/điều\s+\d+/i);
+                const searchPhrase = dieuMatch 
+                  ? dieuMatch[0] 
+                  : normalized.slice(0, 20);
+                
+                // Wrap in double quotes for exact phrase matching
+                const searchQuery = `"${searchPhrase}"`;
+                
+                const hashParams = viewerSource.page_number
+                  ? `page=${viewerSource.page_number}&search=${encodeURIComponent(searchQuery)}`
+                  : `search=${encodeURIComponent(searchQuery)}`;
+                
+                return (
+                  <iframe
+                    key={`${viewerSource.document_id}-${viewerSource.page_number || 0}-${searchQuery}`}
+                    src={`${apiBaseUrl()}/api/v1/ai-mate/documents/${viewerSource.document_id}/view.pdf#${hashParams}`}
+                    className="flex-1 h-full border-0 bg-neutral-800"
+                    title={viewerSource.document_title}
                   />
-                </div>
-              </div>
+                );
+              })()}
             </div>
           </div>
         </div>

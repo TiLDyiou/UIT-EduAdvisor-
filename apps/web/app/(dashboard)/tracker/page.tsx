@@ -3,7 +3,24 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
-
+import {
+  Calendar,
+  Clock,
+  TrendingUp,
+  Award,
+  BookOpen,
+  RefreshCw,
+  ChevronDown,
+  CheckCircle2,
+  Circle,
+  ExternalLink,
+  ShieldCheck,
+  AlertTriangle,
+  Check,
+  ListTodo,
+  Lock,
+  Sparkles,
+} from "lucide-react";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
@@ -17,8 +34,6 @@ interface RoadmapNode {
   term_number: number;
   status: string;
   grade_10: number | null;
-  grade_4: number | null;
-  grade_letter: string | null;
   prerequisites_met: boolean;
   missing_prerequisites: string[];
   elective_group_id: number | null;
@@ -40,6 +55,7 @@ interface RoadmapData {
   nodes: RoadmapNode[];
   elective_groups: ElectiveGroupStatus[];
   is_preview: boolean;
+  total_credits?: number | null;
 }
 
 interface GpaOverview {
@@ -51,12 +67,6 @@ interface GpaOverview {
   daa_earned_credits?: number | null;
 }
 
-type CaptchaPayload = {
-  captcha_state_id: string;
-  question: string;
-  image_base64: string | null;
-};
-
 type MeResponse = {
   student_id: string;
   student_code_masked: string;
@@ -64,52 +74,79 @@ type MeResponse = {
   csrf_token: string;
 };
 
-type SyncEvent = {
-  stage: string;
-  progress_percent: number;
-  message: string | null;
-};
+interface ExamData {
+  id: number;
+  course_code: string;
+  course_name: string;
+  term_code: string;
+  exam_date: string;
+  start_time: string;
+  end_time: string;
+  room: string | null;
+  kind: string | null;
+}
+
+interface DeadlineData {
+  id: number;
+  course_code: string | null;
+  course_name: string | null;
+  title: string;
+  due_at: string;
+  source: string;
+  source_url: string | null;
+  completed_at: string | null;
+}
 
 /* ------------------------------------------------------------------ */
-/* Helpers                                                            */
+/* Helpers & Mock Data                                                */
 /* ------------------------------------------------------------------ */
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; ring: string }> = {
+const STATUS_CONFIG: Record<
+  string,
+  {
+    label: string;
+    color: string;
+    bg: string;
+    border: string;
+    iconColor: string;
+  }
+> = {
   passed: {
     label: "Đã qua",
-    color: "text-emerald-300",
-    bg: "bg-emerald-900/40 border-emerald-600/60",
-    ring: "ring-emerald-500/30",
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/10",
+    border: "border-emerald-500/20",
+    iconColor: "text-emerald-400",
   },
   in_progress: {
     label: "Đang học",
-    color: "text-amber-300",
-    bg: "bg-amber-900/40 border-amber-500/60",
-    ring: "ring-amber-500/30",
+    color: "text-amber-400",
+    bg: "bg-amber-500/10",
+    border: "border-amber-500/20",
+    iconColor: "text-amber-400",
   },
   failed: {
     label: "Chưa đạt",
-    color: "text-red-300",
-    bg: "bg-red-900/40 border-red-500/60",
-    ring: "ring-red-500/30",
+    color: "text-red-400",
+    bg: "bg-red-500/10",
+    border: "border-red-500/20",
+    iconColor: "text-red-400",
   },
   locked: {
     label: "Bị khóa",
     color: "text-neutral-500",
-    bg: "bg-neutral-800/60 border-neutral-700/60",
-    ring: "ring-neutral-600/20",
+    bg: "bg-neutral-800/40",
+    border: "border-neutral-700/20",
+    iconColor: "text-neutral-600",
   },
   not_started: {
     label: "Chưa học",
     color: "text-neutral-400",
-    bg: "bg-neutral-800/40 border-neutral-700/40",
-    ring: "ring-neutral-600/20",
+    bg: "bg-neutral-800/20",
+    border: "border-neutral-800/40",
+    iconColor: "text-neutral-500",
   },
 };
-
-function statusCfg(status: string) {
-  return STATUS_CONFIG[status] ?? STATUS_CONFIG.not_started;
-}
 
 function asNumber(value: unknown, fallback = 0): number {
   const n = Number(value);
@@ -124,147 +161,358 @@ function asNullableNumber(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-const STAGE_LABELS: Record<string, string> = {
-  daa_profile: "Tải hồ sơ DAA",
-  daa_grades: "Đồng bộ điểm",
-  daa_schedule: "Đồng bộ TKB",
-  daa_exams: "Đồng bộ lịch thi",
-  moodle_authenticating: "Đăng nhập Moodle",
-  persisting: "Lưu dữ liệu",
-  completed: "Hoàn tất",
-  failed: "Lỗi",
-};
-
-/* ------------------------------------------------------------------ */
-/* Components                                                         */
-/* ------------------------------------------------------------------ */
-
-function GpaBadge({ gpa }: { gpa: GpaOverview }) {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div className="flex flex-col bg-neutral-900/50 p-5 rounded-xl border border-neutral-800/60 shadow-sm">
-        <p className="text-sm text-neutral-200 font-medium mb-1">Điểm trung bình chung tích lũy</p>
-        <p className="text-[10px] text-neutral-500 mb-4 flex-grow">
-          Chỉ tính điểm các môn đã tích lũy (từ 5,0 trở lên), dùng để phân loại kết quả và xếp hạng tốt nghiệp.
-        </p>
-        <div className="mt-auto flex items-baseline gap-2">
-          <p className="text-3xl font-bold text-amber-400">{gpa.daa_dtbctl_10?.toFixed(2) || "N/A"}</p>
-        </div>
-      </div>
-
-      <div className="flex flex-col bg-neutral-900/50 p-5 rounded-xl border border-neutral-800/60 shadow-sm">
-        <p className="text-sm text-neutral-200 font-medium mb-1">Tín chỉ tích lũy</p>
-        <p className="text-[10px] text-neutral-500 mb-4 flex-grow">
-          Tổng số tín chỉ của các môn học đã tích lũy thành công.
-        </p>
-        <div className="mt-auto">
-          <p className="text-3xl font-bold text-white">
-            {gpa.daa_earned_credits || 0} <span className="text-base font-medium text-neutral-400">TC</span>
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+function getClassification(score: number | null | undefined): string {
+  if (score === null || score === undefined) return "Chưa xếp loại";
+  if (score >= 9.0) return "Xuất sắc";
+  if (score >= 8.0) return "Giỏi";
+  if (score >= 7.0) return "Khá";
+  if (score >= 5.0) return "Trung bình";
+  return "Yếu";
 }
 
+function getClassificationColor(score: number | null | undefined): string {
+  if (score === null || score === undefined)
+    return "bg-neutral-800 text-neutral-400 border border-neutral-700/35";
+  if (score >= 9.0)
+    return "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20";
+  if (score >= 8.0)
+    return "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+  if (score >= 7.0)
+    return "bg-amber-500/10 text-amber-400 border border-amber-500/20";
+  if (score >= 5.0)
+    return "bg-neutral-700/30 text-neutral-300 border border-neutral-700/20";
+  return "bg-rose-500/10 text-rose-400 border border-rose-500/20";
+}
+
+function getDeadlineStatus(dueAtStr: string, isCompleted: boolean) {
+  if (isCompleted)
+    return {
+      label: "Đã hoàn thành",
+      color: "text-emerald-400 bg-emerald-950/40 border-emerald-800/40",
+    };
+  const due = new Date(dueAtStr);
+  const now = new Date();
+  const diff = due.getTime() - now.getTime();
+  if (diff < 0) {
+    return {
+      label: "Quá hạn",
+      color: "text-red-400 bg-red-950/40 border-red-800/40",
+    };
+  }
+  const hours = Math.floor(diff / 3600000);
+  if (hours < 24) {
+    return {
+      label: `Còn ${hours} giờ`,
+      color: "text-rose-400 bg-rose-950/40 border-rose-800/40 animate-pulse",
+    };
+  }
+  const days = Math.floor(hours / 24);
+  if (days < 3) {
+    return {
+      label: `Còn ${days} ngày`,
+      color: "text-amber-400 bg-amber-950/40 border-amber-800/40",
+    };
+  }
+  return {
+    label: `Còn ${days} ngày`,
+    color: "text-neutral-400 bg-neutral-900/50 border-neutral-800/50",
+  };
+}
+
+const MOCK_EXAMS: ExamData[] = [
+  {
+    id: 101,
+    course_code: "IT003",
+    course_name: "Cấu trúc dữ liệu và giải thuật",
+    term_code: "HK2_2025-2026",
+    exam_date: new Date(Date.now() + 86400000 * 3).toISOString().split("T")[0], // 3 days from now
+    start_time: "07:30:00",
+    end_time: "09:30:00",
+    room: "C301",
+    kind: "Cuối kỳ",
+  },
+  {
+    id: 102,
+    course_code: "MA003",
+    course_name: "Đại số tuyến tính",
+    term_code: "HK2_2025-2026",
+    exam_date: new Date(Date.now() + 86400000 * 7).toISOString().split("T")[0], // 7 days from now
+    start_time: "13:30:00",
+    end_time: "15:30:00",
+    room: "A205",
+    kind: "Cuối kỳ",
+  },
+  {
+    id: 103,
+    course_code: "IT004",
+    course_name: "Cơ sở dữ liệu",
+    term_code: "HK2_2025-2026",
+    exam_date: new Date(Date.now() + 86400000 * 11).toISOString().split("T")[0], // 11 days from now
+    start_time: "08:00:00",
+    end_time: "10:00:00",
+    room: "B102",
+    kind: "Cuối kỳ",
+  },
+];
+
+const MOCK_DEADLINES: DeadlineData[] = [
+  {
+    id: 201,
+    course_code: "IT003",
+    course_name: "Cấu trúc dữ liệu và giải thuật",
+    title: "Nộp đồ án thực hành: Quản lý thư viện sử dụng cây BST",
+    due_at: new Date(Date.now() + 86400000 * 1.5).toISOString(), // 1.5 days from now
+    source: "moodle",
+    source_url: "https://moodle.uit.edu.vn",
+    completed_at: null,
+  },
+  {
+    id: 202,
+    course_code: "IT004",
+    course_name: "Cơ sở dữ liệu",
+    title: "Bài tập lớn thiết kế lược đồ ERD & Lược đồ quan hệ",
+    due_at: new Date(Date.now() + 86400000 * 3.8).toISOString(), // 3.8 days from now
+    source: "moodle",
+    source_url: "https://moodle.uit.edu.vn",
+    completed_at: null,
+  },
+  {
+    id: 203,
+    course_code: "MA003",
+    course_name: "Đại số tuyến tính",
+    title: "Bài tập trắc nghiệm số 3 trên hệ thống Moodle",
+    due_at: new Date(Date.now() - 3600000 * 5).toISOString(), // 5 hours ago (completed)
+    source: "moodle",
+    source_url: "https://moodle.uit.edu.vn",
+    completed_at: new Date(Date.now() - 3600000 * 6).toISOString(),
+  },
+];
+
+/* ------------------------------------------------------------------ */
+/* Subcomponents                                                      */
+/* ------------------------------------------------------------------ */
+
 function TreeViewNode({ node }: { node: RoadmapNode }) {
-  const cfg = statusCfg(node.status);
+  const cfg = STATUS_CONFIG[node.status] || STATUS_CONFIG.not_started;
   const [isExpanded, setIsExpanded] = useState(false);
-  const hasDetails = Boolean(node.detailed_grades && Object.keys(node.detailed_grades).length > 0);
+  const hasDetails = Boolean(
+    node.detailed_grades && Object.keys(node.detailed_grades).length > 0,
+  );
 
   return (
-    <div 
-      className={`px-2 py-1.5 rounded-md transition-colors group ${hasDetails ? "cursor-pointer hover:bg-neutral-800/50" : ""}`} 
-      role="treeitem"
-      onClick={() => hasDetails && setIsExpanded(!isExpanded)}
+    <div
+      className={`border rounded-xl transition-all duration-300 overflow-hidden ${isExpanded ? "border-neutral-700 bg-neutral-900/30" : "border-neutral-800/40 bg-neutral-950/20 hover:border-neutral-700 hover:bg-neutral-900/10"}`}
+      onClick={() => {
+        if (hasDetails) {
+          setIsExpanded(!isExpanded);
+        }
+      }}
     >
-      <div className="flex items-center gap-x-3">
-        <div className={`shrink-0 h-2 w-2 rounded-full ${cfg.bg} border border-neutral-600`} />
-        
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between grow gap-2">
-          <div className="flex flex-col">
-             <div className="flex items-center gap-2">
-               <span className="text-xs font-mono text-neutral-400">{node.course_code}</span>
-               <span className="text-sm font-medium text-neutral-200 group-hover:text-white transition-colors">{node.course_name}</span>
-             </div>
-             <div className="flex items-center gap-2 mt-0.5">
-               <span className="text-[10px] text-neutral-500">{node.credits} TC</span>
-               {node.status === "passed" && node.grade_10 !== null && (
-                 <span className={`text-[10px] ${cfg.color}`}>
-                   Điểm: {node.grade_10.toFixed(1)}
-                 </span>
-               )}
-               {node.status === "failed" && (
-                 <span className={`text-[10px] text-red-400`}>Điểm: {node.grade_10?.toFixed(1)}</span>
-               )}
-               {node.status === "locked" && node.missing_prerequisites.length > 0 && (
-                 <span className={`text-[10px] text-amber-500 truncate max-w-[200px]`}>Tiên quyết: {node.missing_prerequisites.join(", ")}</span>
-               )}
-             </div>
+      <div
+        className={`p-3.5 flex items-center justify-between gap-4 cursor-pointer select-none ${hasDetails ? "" : "pointer-events-none"}`}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="shrink-0">
+            {node.status === "passed" && (
+              <div className="size-5 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
+                <Check className="size-3 text-emerald-400 stroke-[3]" />
+              </div>
+            )}
+            {node.status === "in_progress" && (
+              <div className="size-5 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+                <RefreshCw
+                  className="size-3 text-amber-400 animate-spin"
+                  style={{ animationDuration: "4s" }}
+                />
+              </div>
+            )}
+            {node.status === "failed" && (
+              <div className="size-5 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+                <AlertTriangle className="size-3 text-red-400" />
+              </div>
+            )}
+            {node.status === "locked" && (
+              <div className="size-5 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center">
+                <Lock className="size-2.5 text-neutral-500" />
+              </div>
+            )}
+            {node.status === "not_started" && (
+              <div className="size-5 rounded-full border border-neutral-800 flex items-center justify-center">
+                <div className="size-1.5 rounded-full bg-neutral-600" />
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-1 shrink-0">
-             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${cfg.color} bg-black/20`}>
-               {cfg.label}
-             </span>
-             {!node.is_required && !/(anh văn|tiếng anh)/i.test(node.course_name) && (
-               <span className="text-[9px] font-medium text-violet-400 bg-violet-900/20 px-1 rounded">Tự chọn</span>
-             )}
-             {hasDetails && (
-               <span className="text-neutral-500 ml-1">
-                 <svg className={`size-3.5 transition-transform ${isExpanded ? "rotate-180" : ""}`} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-               </span>
-             )}
+
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="text-[10px] font-mono font-bold text-[#849495] tracking-wider">
+                {node.course_code}
+              </span>
+              <span className="text-xs font-bold text-neutral-200">
+                {node.course_name}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-[10px] text-neutral-500 font-mono">
+                {node.credits} TC
+              </span>
+              {node.grade_10 !== null && (
+                <>
+                  <span className="text-[9px] text-neutral-500">•</span>
+                  <span
+                    className={`text-[10px] font-mono font-bold ${cfg.color}`}
+                  >
+                    Điểm: {node.grade_10.toFixed(1)}
+                  </span>
+                </>
+              )}
+              {node.status === "locked" &&
+                node.missing_prerequisites.length > 0 && (
+                  <>
+                    <span className="text-[9px] text-neutral-750">•</span>
+                    <span
+                      className="text-[10px] text-amber-500 font-medium truncate max-w-[200px]"
+                      title={node.missing_prerequisites.join(", ")}
+                    >
+                      Cần môn: {node.missing_prerequisites.join(", ")}
+                    </span>
+                  </>
+                )}
+            </div>
           </div>
         </div>
-      </div>
-      
-      {isExpanded && hasDetails && (
-        <div className="mt-2 ml-5 p-2 bg-neutral-900/50 rounded-lg border border-neutral-800/60 shadow-inner grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-          {Object.entries(node.detailed_grades!).map(([comp, score]) => (
-            <div key={comp} className="flex flex-col">
-              <span className="text-neutral-500 text-[10px] uppercase tracking-wider">{comp}</span>
-              <span className="font-semibold text-neutral-300">{score.toFixed(1)}</span>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <span
+            className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${cfg.color} ${cfg.bg} border ${cfg.border} uppercase font-mono`}
+          >
+            {cfg.label}
+          </span>
+          {!node.is_required &&
+            !/(anh văn|tiếng anh)/i.test(node.course_name) && (
+              <span className="text-[9px] font-bold text-violet-400 bg-violet-950/40 border border-violet-900/30 px-2 py-0.5 rounded-full uppercase font-mono">
+                Tự chọn
+              </span>
+            )}
+          {hasDetails && (
+            <div
+              className={`p-1 text-neutral-500 transition-transform duration-300 ${isExpanded ? "rotate-180 text-cyan-400" : ""}`}
+            >
+              <ChevronDown className="size-4" />
             </div>
-          ))}
+          )}
+        </div>
+      </div>
+
+      {isExpanded && hasDetails && (
+        <div
+          className="border-t border-neutral-800/80 bg-neutral-950/40 p-4 space-y-3"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-500">
+            Chi tiết điểm thành phần
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {Object.entries(node.detailed_grades!).map(([comp, score]) => {
+              const scorePct = (score / 10) * 100;
+              return (
+                <div
+                  key={comp}
+                  className="bg-black/30 rounded-xl p-3 border border-neutral-850"
+                >
+                  <span
+                    className="text-neutral-500 text-[9px] uppercase tracking-wider block font-semibold truncate"
+                    title={comp}
+                  >
+                    {comp}
+                  </span>
+                  <div className="flex items-baseline gap-1.5 mt-1">
+                    <span className="text-base font-black text-neutral-200">
+                      {score.toFixed(1)}
+                    </span>
+                    <span className="text-[9px] text-neutral-500">/10</span>
+                  </div>
+
+                  <div className="h-1 rounded-full bg-neutral-800 overflow-hidden mt-2">
+                    <div
+                      className={`h-full rounded-full ${score >= 5 ? "bg-cyan-500" : "bg-rose-500"}`}
+                      style={{ width: `${scorePct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-function TreeViewTerm({ termNumber, nodes }: { termNumber: number; nodes: RoadmapNode[] }) {
-  const [isOpen, setIsOpen] = useState(true);
+function TreeViewTerm({
+  termNumber,
+  nodes,
+}: {
+  termNumber: number;
+  nodes: RoadmapNode[];
+}) {
   const isCurrentTerm = nodes.some((n) => n.status === "in_progress");
+  const [isOpen, setIsOpen] = useState(isCurrentTerm);
+
+  const totalTC = nodes.reduce((sum, n) => sum + n.credits, 0);
+  const passedTC = nodes
+    .filter((n) => n.status === "passed")
+    .reduce((sum, n) => sum + n.credits, 0);
 
   return (
-    <div className="hs-accordion active" role="treeitem" aria-expanded={isOpen}>
-      <div className="hs-accordion-heading py-1 flex items-center gap-x-0.5 w-full">
-        <button 
-          onClick={() => setIsOpen(!isOpen)}
-          className={`size-6 flex justify-center items-center hover:bg-neutral-800 rounded-md focus:outline-none ${isCurrentTerm ? "text-amber-400 hover:text-amber-300" : "text-neutral-400 hover:text-white"}`}
-        >
-          <svg className={`size-4 transition-transform ${isOpen ? 'rotate-90' : ''}`} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
-        <div 
-          className={`grow px-1.5 py-1 rounded-md cursor-pointer transition-colors ${isCurrentTerm ? "bg-amber-900/10 hover:bg-amber-900/20" : "hover:bg-neutral-800/50"}`}
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          <div className="flex items-center gap-x-3">
-            <svg className={`shrink-0 size-4 ${isCurrentTerm ? "text-amber-500" : "text-cyan-500"}`} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
-            <div className="grow flex items-center gap-2">
-              <span className={`text-sm font-semibold flex items-center gap-2 ${isCurrentTerm ? "text-amber-400" : "text-cyan-400"}`}>
-                Kỳ {termNumber}
+    <div
+      className={`rounded-2xl border transition-all duration-300 ${isCurrentTerm ? "border-amber-500/20 bg-amber-500/[0.02] hover:border-amber-500/30" : "border-neutral-800/80 bg-neutral-900/10 hover:border-neutral-700/80"}`}
+    >
+      <div
+        onClick={() => setIsOpen(!isOpen)}
+        className="p-4 flex items-center justify-between gap-4 cursor-pointer select-none"
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className={`p-2 rounded-xl flex items-center justify-center ${isCurrentTerm ? "bg-amber-500/10 text-amber-400" : "bg-cyan-500/10 text-cyan-400"}`}
+          >
+            <BookOpen className="size-4.5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span
+                className={`text-sm font-extrabold ${isCurrentTerm ? "text-amber-400" : "text-neutral-100"}`}
+              >
+                Học kỳ {termNumber}
               </span>
-              <span className={`text-xs ${isCurrentTerm ? "text-amber-500/70" : "text-neutral-500"}`}>({nodes.length} môn)</span>
+              {isCurrentTerm && (
+                <span className="text-[8px] font-bold uppercase tracking-wider bg-amber-500/10 border border-amber-500/30 text-amber-400 px-2 py-0.5 rounded-full animate-pulse">
+                  Đang diễn ra
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 mt-0.5 text-[11px] text-neutral-400">
+              <span>{nodes.length} môn học</span>
+              <span>•</span>
+              <span>
+                Tích lũy: {passedTC}/{totalTC} TC
+              </span>
             </div>
           </div>
         </div>
+
+        <button className="p-1 text-neutral-500 hover:text-neutral-350 focus:outline-none transition-transform duration-205">
+          <ChevronDown
+            className={`size-4.5 transition-transform ${isOpen ? "rotate-180 text-cyan-400" : ""}`}
+          />
+        </button>
       </div>
-      
+
       {isOpen && (
-        <div className="hs-accordion-content w-full overflow-hidden transition-[height] duration-300">
-          <div className={`ms-3 ps-3 relative before:absolute before:top-0 before:inset-s-0 before:-ms-px before:h-full before:border-s space-y-1 my-1 ${isCurrentTerm ? "before:border-amber-800/50" : "before:border-neutral-800"}`}>
-            {nodes.map(n => (
+        <div className="p-4 pt-0 border-t border-neutral-800/20 mt-1">
+          <div className="space-y-2 mt-3">
+            {nodes.map((n) => (
               <TreeViewNode key={n.course_id} node={n} />
             ))}
           </div>
@@ -274,16 +522,16 @@ function TreeViewTerm({ termNumber, nodes }: { termNumber: number; nodes: Roadma
   );
 }
 
-function RoadmapTreeView({ sortedTerms }: { sortedTerms: [number, RoadmapNode[]][] }) {
+function RoadmapTreeView({
+  sortedTerms,
+}: {
+  sortedTerms: [number, RoadmapNode[]][];
+}) {
   return (
-    <div className="border border-neutral-800/60 rounded-xl bg-neutral-950/80 p-4 backdrop-blur shadow-xl">
-      <div className="hs-accordion-treeview-root" role="tree" aria-orientation="vertical">
-        <div className="hs-accordion-group" role="group">
-          {sortedTerms.map(([term, nodes]) => (
-            <TreeViewTerm key={term} termNumber={term} nodes={nodes} />
-          ))}
-        </div>
-      </div>
+    <div className="space-y-4">
+      {sortedTerms.map(([term, nodes]) => (
+        <TreeViewTerm key={term} termNumber={term} nodes={nodes} />
+      ))}
     </div>
   );
 }
@@ -291,21 +539,52 @@ function RoadmapTreeView({ sortedTerms }: { sortedTerms: [number, RoadmapNode[]]
 function ElectiveGroupBadges({ groups }: { groups: ElectiveGroupStatus[] }) {
   if (groups.length === 0) return null;
   return (
-    <div className="mt-6">
-      <h3 className="text-sm font-semibold text-neutral-300 mb-2">Nhóm tự chọn</h3>
-      <div className="flex flex-wrap gap-2">
+    <div className="bg-neutral-900/40 rounded-2xl border border-neutral-800/80 p-5 dashboard-glow-card anim-fade-in delay-300">
+      <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-200 mb-4 flex items-center gap-2">
+        <Award className="size-4.5 text-cyan-400" />
+        Điều kiện nhóm tự chọn
+      </h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         {groups.map((g) => (
           <div
             key={g.group_id}
-            className={`rounded-full border px-3 py-1 text-xs ${
+            className={`p-3.5 rounded-xl border flex flex-col justify-between bg-black/20 ${
               g.fulfilled
-                ? "border-emerald-700 bg-emerald-900/30 text-emerald-300"
-                : "border-amber-700 bg-amber-900/30 text-amber-300"
+                ? "border-emerald-500/20 bg-emerald-500/[0.02] text-emerald-400"
+                : "border-amber-500/20 bg-amber-500/[0.02] text-amber-400"
             }`}
           >
-            {g.group_name}: {g.current_value}/{g.required_value}{" "}
-            {g.rule_type === "credits" ? "TC" : "môn"}
-            {g.fulfilled ? " ✓" : ""}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-extrabold text-neutral-250">
+                {g.group_name}
+              </span>
+              <span
+                className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase border font-mono ${g.fulfilled ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-amber-500/10 border-amber-500/20 text-amber-400"}`}
+              >
+                {g.fulfilled ? "Đạt" : "Chưa đạt"}
+              </span>
+            </div>
+
+            <div className="mt-3">
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg font-black text-white">
+                  {g.current_value}
+                </span>
+                <span className="text-xs text-neutral-500">
+                  / {g.required_value}{" "}
+                  {g.rule_type === "credits" ? "TC" : "môn"}
+                </span>
+              </div>
+
+              <div className="h-1 rounded-full bg-neutral-850 overflow-hidden mt-1.5">
+                <div
+                  className={`h-full rounded-full ${g.fulfilled ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" : "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]"}`}
+                  style={{
+                    width: `${Math.min(100, (g.current_value / g.required_value) * 100)}%`,
+                  }}
+                />
+              </div>
+            </div>
           </div>
         ))}
       </div>
@@ -315,28 +594,43 @@ function ElectiveGroupBadges({ groups }: { groups: ElectiveGroupStatus[] }) {
 
 function PreviewBanner() {
   return (
-    <div className="rounded-lg border border-amber-800/40 bg-amber-950/30 p-4 text-sm text-amber-200">
-      <p className="font-medium">📋 Chế độ Preview</p>
-      <p className="mt-1 text-amber-300/70">
-        Bạn chưa có dữ liệu điểm. Roadmap hiển thị theo CTĐT mẫu của ngành.
-        Hãy{" "}
-        <Link href="/onboarding" className="underline text-amber-200 hover:text-amber-100">
-          đồng bộ dữ liệu
-        </Link>{" "}
-        để xem trạng thái thực tế.
-      </p>
+    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-250 flex items-start gap-3.5 anim-fade-in">
+      <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 shrink-0">
+        <AlertTriangle className="size-4.5" />
+      </div>
+      <div>
+        <p className="font-bold text-amber-400 text-xs uppercase tracking-wider font-mono">
+          Chế độ Demo / Preview
+        </p>
+        <p className="mt-1 text-xs text-neutral-400 leading-relaxed">
+          Tài khoản của bạn chưa có dữ liệu điểm chính thức. Lộ trình học tập,
+          lịch thi và deadline hiện tại đang được hiển thị dưới dạng dữ liệu
+          mẫu. Vui lòng{" "}
+          <Link
+            href="/onboarding"
+            className="underline font-bold text-cyan-400 hover:text-cyan-300"
+          >
+            đồng bộ tài khoản
+          </Link>{" "}
+          để xem thông tin thực tế của bạn.
+        </p>
+      </div>
     </div>
   );
 }
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="text-5xl mb-4">📚</div>
-      <h2 className="text-lg font-semibold text-neutral-200">Chưa có CTĐT</h2>
-      <p className="mt-2 max-w-sm text-sm text-neutral-500">
-        Chương trình đào tạo cho ngành của bạn chưa được thiết lập.
-        Hãy liên hệ admin hoặc chờ cập nhật.
+    <div className="flex flex-col items-center justify-center py-20 text-center bg-neutral-900/10 rounded-2xl border border-neutral-800/40">
+      <div className="p-4 rounded-full bg-neutral-900 border border-neutral-850 mb-4">
+        <BookOpen className="size-8 text-neutral-650" />
+      </div>
+      <h2 className="text-base font-bold text-neutral-200">
+        Chưa có chương trình đào tạo
+      </h2>
+      <p className="mt-2 max-w-sm text-xs text-neutral-500 leading-relaxed">
+        Chương trình đào tạo cho ngành học của bạn chưa được thiết lập trên hệ
+        thống. Hãy liên hệ ban quản trị để được hỗ trợ.
       </p>
     </div>
   );
@@ -344,202 +638,20 @@ function EmptyState() {
 
 function StatusLegend() {
   return (
-    <div className="flex flex-wrap gap-3 text-xs">
+    <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs bg-neutral-900/20 p-3.5 rounded-xl border border-neutral-800/40 inline-flex">
       {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-        <div key={key} className="flex items-center gap-1.5">
-          <span className={`inline-block h-2.5 w-2.5 rounded-full ${cfg.bg} border`} />
-          <span className={cfg.color}>{cfg.label}</span>
+        <div key={key} className="flex items-center gap-2">
+          <span
+            className={`inline-block h-2.5 w-2.5 rounded-full ${cfg.bg} border ${cfg.border}`}
+          />
+          <span
+            className={`text-[10px] font-bold uppercase font-mono tracking-wider ${cfg.color}`}
+          >
+            {cfg.label}
+          </span>
         </div>
       ))}
     </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* DAA Re-sync Panel                                                  */
-/* ------------------------------------------------------------------ */
-
-function DaaResyncPanel({
-  csrfToken,
-  onSyncComplete,
-}: {
-  csrfToken: string;
-  onSyncComplete: () => void;
-}) {
-  const [captcha, setCaptcha] = useState<CaptchaPayload | null>(null);
-  const [captchaAnswer, setCaptchaAnswer] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [jobId, setJobId] = useState<string | null>(null);
-  const [syncEvents, setSyncEvents] = useState<SyncEvent[]>([]);
-
-  const loadCaptcha = useCallback(async () => {
-    setError(null);
-    const r = await apiFetch("/api/v1/resync/daa-captcha");
-    if (!r.ok) {
-      const body = await r.json().catch(() => ({}));
-      setError(typeof body?.detail === "string" ? body.detail : "Không tải được captcha");
-      return;
-    }
-    setCaptcha(await r.json());
-  }, []);
-
-  useEffect(() => {
-    void loadCaptcha();
-  }, [loadCaptcha]);
-
-  const imageSrc = useMemo(() => {
-    if (!captcha?.image_base64) return null;
-    return `data:image/png;base64,${captcha.image_base64}`;
-  }, [captcha]);
-
-  // SSE listener
-  useEffect(() => {
-    if (!jobId) return;
-    const es = new EventSource(`/api/v1/sync-jobs/${jobId}/events`);
-    es.onmessage = (ev) => {
-      let payload: SyncEvent | null = null;
-      try {
-        payload = JSON.parse(ev.data) as SyncEvent;
-      } catch {
-        return;
-      }
-      setSyncEvents((prev) => [...prev, payload!]);
-      if (payload.stage === "failed") {
-        setError(payload.message || "Đồng bộ thất bại");
-        return;
-      }
-      if (payload.stage === "completed") {
-        es.close();
-        setTimeout(() => onSyncComplete(), 1200);
-      }
-    };
-    es.onerror = () => es.close();
-    return () => es.close();
-  }, [jobId, onSyncComplete]);
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!captcha) return;
-    setError(null);
-    setBusy(true);
-    setSyncEvents([]);
-    try {
-      const r = await apiFetch("/api/v1/resync/daa", {
-        method: "POST",
-        headers: { "X-CSRF-Token": csrfToken },
-        body: JSON.stringify({
-          captcha_state_id: captcha.captcha_state_id,
-          captcha_answer: captchaAnswer,
-        }),
-      });
-      if (!r.ok) {
-        const body = await r.json().catch(() => ({}));
-        setError(
-          typeof body?.detail === "string"
-            ? body.detail
-            : "Đồng bộ thất bại — kiểm tra captcha và thử lại",
-        );
-        await loadCaptcha();
-        setCaptchaAnswer("");
-        return;
-      }
-      const data = (await r.json()) as { job_id: string };
-      setJobId(data.job_id);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  // Progress display
-  const latest = syncEvents[syncEvents.length - 1];
-  const pct = latest?.progress_percent ?? 0;
-  const isFailed = latest?.stage === "failed" || (!!error && !!jobId);
-  const isCompleted = latest?.stage === "completed";
-
-  if (jobId) {
-    const completedStages = new Set<string>();
-    let activeStage: string | null = null;
-    for (const ev of syncEvents) {
-      if (ev.stage !== "completed" && ev.stage !== "failed") {
-        completedStages.add(ev.stage);
-      }
-    }
-    if (latest && latest.stage !== "completed" && latest.stage !== "failed") {
-      completedStages.delete(latest.stage);
-      activeStage = latest.stage;
-    }
-    const stages = ["daa_profile", "daa_grades", "daa_schedule", "daa_exams", "moodle_authenticating", "persisting"];
-
-    return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-neutral-400">
-            {isCompleted ? "✅ Đồng bộ hoàn tất!" : isFailed ? "❌ Đồng bộ thất bại" : latest?.message || "Đang đồng bộ..."}
-          </span>
-          <span className="font-mono text-neutral-500">{pct}%</span>
-        </div>
-        <div className="h-2 overflow-hidden rounded-full bg-neutral-800">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ease-out ${isFailed ? "bg-red-500" : isCompleted ? "bg-emerald-500" : "bg-cyan-500"}`}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-        <ul className="space-y-1">
-          {stages.map((stage) => {
-            const isDone = completedStages.has(stage) || isCompleted;
-            const isActive = stage === activeStage && !isCompleted && !isFailed;
-            return (
-              <li key={stage} className={`flex items-center gap-2 text-xs ${isDone ? "text-emerald-400" : isActive ? "text-cyan-300" : "text-neutral-600"}`}>
-                <span className="w-4 text-center">{isDone ? "✓" : isActive ? "⟳" : "○"}</span>
-                <span>{STAGE_LABELS[stage] || stage}</span>
-                {isActive && <span className="ml-auto h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-400" />}
-              </li>
-            );
-          })}
-        </ul>
-        {isFailed && error && <p className="text-xs text-red-400">{error}</p>}
-      </div>
-    );
-  }
-
-  return (
-    <form onSubmit={onSubmit} className="space-y-3">
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-neutral-300">Giải captcha DAA</span>
-          <button type="button" onClick={() => void loadCaptcha()} className="text-xs text-cyan-400 hover:underline">
-            Làm mới
-          </button>
-        </div>
-        {captcha ? (
-          <>
-            <p className="text-xs text-neutral-400">{captcha.question}</p>
-            {imageSrc && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={imageSrc} alt="Captcha DAA" className="max-h-20 rounded border border-neutral-700" />
-            )}
-            <input
-              className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm outline-none ring-cyan-500 focus:ring-2"
-              value={captchaAnswer}
-              onChange={(e) => setCaptchaAnswer(e.target.value)}
-              placeholder="Nhập đáp án captcha"
-              required
-            />
-          </>
-        ) : (
-          <p className="text-xs text-neutral-500">Đang tải captcha…</p>
-        )}
-      </div>
-      {error && !jobId && <p className="text-xs text-red-400">{error}</p>}
-      <button
-        type="submit"
-        disabled={busy || !captcha}
-        className="w-full rounded-md bg-cyan-600 py-1.5 text-sm font-medium text-black hover:bg-cyan-500 disabled:opacity-40 transition-colors"
-      >
-        {busy ? "Đang xử lý…" : "Bắt đầu đồng bộ"}
-      </button>
-    </form>
   );
 }
 
@@ -552,18 +664,25 @@ export default function TrackerPage() {
   const [gpa, setGpa] = useState<GpaOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showResync, setShowResync] = useState(false);
   const [me, setMe] = useState<MeResponse | null>(null);
+  const [exams, setExams] = useState<ExamData[]>([]);
+  const [deadlines, setDeadlines] = useState<DeadlineData[]>([]);
+  const [completedDeadlineIds, setCompletedDeadlineIds] = useState<number[]>(
+    [],
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [roadmapRes, gpaRes, meRes] = await Promise.all([
-        apiFetch("/api/v1/tracker/roadmap"),
-        apiFetch("/api/v1/tracker/gpa"),
-        apiFetch("/api/v1/me"),
-      ]);
+      const [roadmapRes, gpaRes, meRes, examsRes, deadlinesRes] =
+        await Promise.all([
+          apiFetch("/api/v1/tracker/roadmap"),
+          apiFetch("/api/v1/tracker/gpa"),
+          apiFetch("/api/v1/me"),
+          apiFetch("/api/v1/tracker/exams"),
+          apiFetch("/api/v1/tracker/deadlines"),
+        ]);
 
       if (roadmapRes.status === 401 || gpaRes.status === 401) {
         setError("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
@@ -581,6 +700,7 @@ export default function TrackerPage() {
 
       const roadmapRaw = (await roadmapRes.json()) as RoadmapData;
       const gpaRaw = (await gpaRes.json()) as GpaOverview;
+
       const normalizedRoadmap: RoadmapData = {
         ...roadmapRaw,
         nodes: (roadmapRaw.nodes ?? []).map((n) => ({
@@ -589,7 +709,6 @@ export default function TrackerPage() {
           credits: asNumber(n.credits),
           term_number: asNumber(n.term_number),
           grade_10: asNullableNumber(n.grade_10),
-          grade_4: asNullableNumber(n.grade_4),
           detailed_grades: n.detailed_grades ?? null,
         })),
         elective_groups: (roadmapRaw.elective_groups ?? []).map((g) => ({
@@ -600,6 +719,7 @@ export default function TrackerPage() {
         })),
         is_preview: Boolean(roadmapRaw.is_preview),
       };
+
       const normalizedGpa: GpaOverview = {
         gpa_10: asNumber(gpaRaw.gpa_10),
         total_credits: asNumber(gpaRaw.total_credits),
@@ -611,6 +731,27 @@ export default function TrackerPage() {
 
       setRoadmap(normalizedRoadmap);
       setGpa(normalizedGpa);
+
+      let fetchedExams: ExamData[] = [];
+      if (examsRes.ok) {
+        try {
+          fetchedExams = await examsRes.json();
+        } catch (e) {
+          console.error("Failed to parse exams data", e);
+        }
+      }
+
+      let fetchedDeadlines: DeadlineData[] = [];
+      if (deadlinesRes.ok) {
+        try {
+          fetchedDeadlines = await deadlinesRes.json();
+        } catch (e) {
+          console.error("Failed to parse deadlines data", e);
+        }
+      }
+
+      setExams(fetchedExams);
+      setDeadlines(fetchedDeadlines);
     } catch {
       setError("Lỗi kết nối. Kiểm tra kết nối mạng và thử lại.");
     } finally {
@@ -622,10 +763,11 @@ export default function TrackerPage() {
     load();
   }, [load]);
 
-  const handleResyncComplete = useCallback(() => {
-    setShowResync(false);
-    void load();
-  }, [load]);
+  const toggleDeadline = (id: number) => {
+    setCompletedDeadlineIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
 
   // Group nodes by term
   const termGroups = new Map<number, RoadmapNode[]>();
@@ -638,70 +780,441 @@ export default function TrackerPage() {
   }
   const sortedTerms = [...termGroups.entries()].sort(([a], [b]) => a - b);
 
+  // Fallbacks for preview mode - FORCED MOCK DATA FOR USER PREVIEW
+  const displayExams = (roadmap?.is_preview ?? true) ? MOCK_EXAMS : exams;
+  const displayDeadlines =
+    (roadmap?.is_preview ?? true) ? MOCK_DEADLINES : deadlines;
+
+  const totalCurriculumCredits = roadmap?.total_credits || 120;
+  const currentEarnedCredits =
+    gpa?.daa_earned_credits ?? gpa?.earned_credits ?? 0;
+  const progressPct = Math.min(
+    100,
+    Math.round((currentEarnedCredits / totalCurriculumCredits) * 100),
+  );
+
   return (
-    <main>
-      <div className="mx-auto max-w-7xl">
-        {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-cyan-400">Academic Tracker</p>
-            <h1 className="text-2xl font-bold tracking-tight text-white">Lộ trình học tập</h1>
+    <main className="space-y-6 pb-12 relative">
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .anim-fade-in {
+          opacity: 0;
+          animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .delay-0 { animation-delay: 0ms; }
+        .delay-75 { animation-delay: 75ms; }
+        .delay-150 { animation-delay: 150ms; }
+        .delay-225 { animation-delay: 225ms; }
+        .delay-300 { animation-delay: 300ms; }
+        
+        .dashboard-glow-card {
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          border: 1px solid rgba(63, 63, 70, 0.4);
+        }
+        .dashboard-glow-card:hover {
+          transform: translateY(-4px);
+          border-color: rgba(6, 182, 212, 0.3) !important;
+          box-shadow: 0 20px 40px -15px rgba(6, 182, 212, 0.15);
+        }
+        
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4); }
+          50% { box-shadow: 0 0 12px 4px rgba(6, 182, 212, 0.15); }
+        }
+        .pulse-glow-border {
+          animation: pulse-glow 2.5s infinite ease-in-out;
+        }
+        
+        .progress-circle-fill {
+          transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes check-bounce {
+          0% { transform: scale(0.8); }
+          50% { transform: scale(1.15); }
+          100% { transform: scale(1); }
+        }
+        .anim-check-bounce {
+          animation: check-bounce 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+      `,
+        }}
+      />
+
+      {/* Header */}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="flex flex-col items-center justify-center py-32 space-y-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
+          <p className="text-xs text-neutral-500 font-mono tracking-widest uppercase">
+            Đang tải dữ liệu...
+          </p>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-5 text-sm text-red-300 flex items-start gap-3.5 anim-fade-in">
+          <div className="p-2 rounded-xl bg-red-500/10 text-red-400 shrink-0">
+            <AlertTriangle className="size-4.5" />
           </div>
-          <div className="flex gap-3">
+          <div>
+            <p className="font-bold text-red-400 text-xs uppercase tracking-wider font-mono">
+              Đã xảy ra lỗi
+            </p>
+            <p className="mt-1 text-xs text-neutral-405 leading-relaxed">
+              {error}
+            </p>
+            <button
+              onClick={() => load()}
+              className="mt-3 text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors uppercase font-mono tracking-wider flex items-center gap-1.5"
+            >
+              <RefreshCw className="size-3.5" /> Thử lại
+            </button>
           </div>
         </div>
+      )}
 
-        {/* Re-sync panel */}
-        {showResync && me && (
-          <div className="mb-6 rounded-xl border border-cyan-800/40 bg-neutral-950/60 p-5 backdrop-blur">
-            <h2 className="mb-3 text-sm font-semibold text-cyan-300">Cập nhật điểm từ DAA</h2>
-            <p className="mb-4 text-xs text-neutral-500">
-              Giải captcha DAA để đồng bộ lại điểm, TKB và lịch thi. Không cần nhập lại mật khẩu.
-            </p>
-            <DaaResyncPanel csrfToken={me.csrf_token} onSyncComplete={handleResyncComplete} />
-          </div>
-        )}
+      {/* Loaded Content Dashboard */}
+      {!loading && !error && roadmap && gpa && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left Column: Metrics & Roadmap */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* GPA Summary Card */}
+            <div className="bg-neutral-900/40 rounded-2xl border border-neutral-800/80 p-6 dashboard-glow-card anim-fade-in delay-75">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+                <div className="space-y-4 flex-grow">
+                  <div>
+                    <h2 className="text-base font-bold uppercase tracking-wider text-neutral-100 flex items-center gap-2">
+                      <TrendingUp className="size-4.5 text-cyan-400" />
+                      Tổng quan kết quả học tập
+                    </h2>
+                    <p className="text-xs text-neutral-400 mt-1">
+                      Thống kê điểm số trung bình tích lũy và tiến độ hoàn thành
+                      chương trình đào tạo.
+                    </p>
+                  </div>
 
-        {/* Loading */}
-        {loading && (
-          <div className="flex items-center justify-center py-20">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
-          </div>
-        )}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-black/30 rounded-xl p-4 border border-neutral-850 transition-all hover:bg-black/40">
+                      <span className="text-[10px] text-neutral-450 uppercase tracking-wider block font-semibold font-mono">
+                        Điểm trung bình (Hệ 10)
+                      </span>
+                      <span className="text-2xl font-black text-cyan-400 mt-1 block">
+                        {gpa.daa_dtbctl_10?.toFixed(2) ||
+                          gpa.gpa_10?.toFixed(2) ||
+                          "N/A"}
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full mt-2.5 uppercase font-mono ${getClassificationColor(gpa.daa_dtbctl_10 || gpa.gpa_10)}`}
+                      >
+                        <Award className="size-3" />
+                        {getClassification(gpa.daa_dtbctl_10 || gpa.gpa_10)}
+                      </span>
+                    </div>
+                    <div className="bg-black/30 rounded-xl p-4 border border-neutral-850 transition-all hover:bg-black/40">
+                      <span className="text-[10px] text-neutral-450 uppercase tracking-wider block font-semibold font-mono">
+                        Tín chỉ tích lũy
+                      </span>
+                      <span className="text-2xl font-black text-white mt-1 block">
+                        {currentEarnedCredits}{" "}
+                        <span className="text-xs text-neutral-500 font-medium">
+                          / {totalCurriculumCredits} TC
+                        </span>
+                      </span>
+                      <span className="text-[10px] text-neutral-500 block mt-3 font-medium">
+                        Đạt {progressPct}% tổng tín chỉ yêu cầu
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-        {/* Error */}
-        {error && !loading && (
-          <div className="rounded-lg border border-red-800/40 bg-red-950/30 p-4 text-sm text-red-300">
-            {error}
-          </div>
-        )}
-
-        {/* Content */}
-        {!loading && !error && roadmap && gpa && (
-          <div className="space-y-8">
-            {/* GPA Summary */}
-            <GpaBadge gpa={gpa} />
+                {/* Radial Progress circle */}
+                <div className="flex flex-col items-center justify-center shrink-0 self-center sm:self-auto pr-2">
+                  <div className="relative flex items-center justify-center">
+                    <svg className="w-28 h-28 transform -rotate-90">
+                      <circle
+                        cx="56"
+                        cy="56"
+                        r="46"
+                        stroke="rgba(63, 63, 70, 0.2)"
+                        strokeWidth="7"
+                        fill="transparent"
+                      />
+                      <circle
+                        cx="56"
+                        cy="56"
+                        r="46"
+                        stroke="url(#cyanGradient)"
+                        strokeWidth="7"
+                        className="progress-circle-fill"
+                        fill="transparent"
+                        strokeDasharray={289}
+                        strokeDashoffset={289 - (289 * progressPct) / 100}
+                        strokeLinecap="round"
+                      />
+                      <defs>
+                        <linearGradient
+                          id="cyanGradient"
+                          x1="0%"
+                          y1="0%"
+                          x2="100%"
+                          y2="100%"
+                        >
+                          <stop offset="0%" stopColor="#00f2fe" />
+                          <stop offset="100%" stopColor="#06b6d4" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <div className="absolute flex flex-col items-center justify-center text-center">
+                      <span className="text-xl font-black text-white tracking-tight">
+                        {progressPct}%
+                      </span>
+                      <span className="text-[8px] text-neutral-500 uppercase tracking-widest mt-0.5 font-bold font-mono">
+                        Đã xong
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* Preview banner */}
-            {roadmap.nodes.length > 0 && roadmap.is_preview && <PreviewBanner />}
+            {roadmap.nodes.length > 0 && roadmap.is_preview && (
+              <PreviewBanner />
+            )}
 
             {/* Empty state */}
             {roadmap.nodes.length === 0 && <EmptyState />}
 
-            {/* Legend */}
-            {roadmap.nodes.length > 0 && <StatusLegend />}
-
-            {/* Roadmap Tree */}
+            {/* Roadmap section */}
             {sortedTerms.length > 0 && (
-              <RoadmapTreeView sortedTerms={sortedTerms} />
+              <div className="space-y-4 anim-fade-in delay-150">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-805 pb-3.5">
+                  <h3 className="text-base font-bold uppercase tracking-wider text-neutral-250 flex items-center gap-2">
+                    <BookOpen className="size-4.5 text-cyan-400" />
+                    Lộ trình & Tiến trình học tập
+                  </h3>
+                  <StatusLegend />
+                </div>
+                <RoadmapTreeView sortedTerms={sortedTerms} />
+              </div>
             )}
 
             {/* Elective groups */}
             <ElectiveGroupBadges groups={roadmap.elective_groups} />
           </div>
-        )}
-      </div>
+
+          {/* Right Column: Sync, Exams, Deadlines */}
+          <div className="lg:col-span-4 space-y-6">
+            {/* Exams Card */}
+            <div className="bg-neutral-900/40 rounded-2xl border border-neutral-800/80 p-5 dashboard-glow-card anim-fade-in delay-150">
+              <div className="flex items-center justify-between mb-4 border-b border-neutral-800/60 pb-3">
+                <h3 className="font-bold text-neutral-200 flex items-center gap-2 text-xs uppercase tracking-wider">
+                  <Calendar className="size-4.5 text-cyan-400" />
+                  Lịch thi
+                </h3>
+                <span className="text-[10px] font-bold bg-neutral-800 text-neutral-400 px-2.5 py-0.5 rounded-full font-mono">
+                  {displayExams.length} môn thi
+                </span>
+              </div>
+
+              {displayExams.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-xs text-neutral-500">
+                    Chưa ghi nhận lịch thi sắp tới.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                  {displayExams.map((e) => {
+                    const examDate = new Date(e.exam_date);
+                    const isSoon =
+                      examDate.getTime() - Date.now() < 86400000 * 3 &&
+                      examDate.getTime() - Date.now() > 0;
+                    const day = examDate.getDate().toString().padStart(2, "0");
+                    const month = `T${(examDate.getMonth() + 1).toString().padStart(2, "0")}`;
+
+                    return (
+                      <div
+                        key={e.id}
+                        className="flex items-center gap-3 p-3 rounded-xl border border-neutral-800/50 bg-black/20 hover:bg-neutral-800/20 transition-all duration-200"
+                      >
+                        <div
+                          className={`w-11 h-11 rounded-lg flex flex-col items-center justify-center shrink-0 border font-mono ${isSoon ? "bg-cyan-950/40 border-cyan-500/50 text-cyan-405 pulse-glow-border" : "bg-neutral-950 border-neutral-800 text-neutral-400"}`}
+                        >
+                          <span className="text-[8px] uppercase font-bold tracking-wider leading-none">
+                            {month}
+                          </span>
+                          <span className="text-base font-black leading-none mt-1">
+                            {day}
+                          </span>
+                        </div>
+
+                        <div className="grow min-w-0">
+                          <p className="text-xs font-bold text-neutral-200 truncate leading-snug">
+                            {e.course_name}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                            <span className="text-[9px] font-mono text-neutral-400">
+                              {e.course_code}
+                            </span>
+                            <span className="text-[9px] text-neutral-700">
+                              •
+                            </span>
+                            <span className="text-[9px] text-neutral-400">
+                              Phòng:{" "}
+                              <strong className="text-neutral-300 font-semibold">
+                                {e.room || "Chưa xếp"}
+                              </strong>
+                            </span>
+                            {e.kind && (
+                              <>
+                                <span className="text-[9px] text-neutral-700">
+                                  •
+                                </span>
+                                <span className="text-[9px] font-bold text-cyan-400 bg-cyan-950/20 border border-cyan-900/30 px-1.5 rounded">
+                                  {e.kind}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 text-right font-mono">
+                          <span className="text-xs font-bold text-cyan-450 block">
+                            {e.start_time.substring(0, 5)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {roadmap.is_preview && (
+                <div className="mt-3 text-center border-t border-neutral-800/40 pt-3">
+                  <span className="text-[9px] font-mono text-amber-500 bg-amber-950/20 border border-amber-900/30 px-2 py-0.5 rounded">
+                    Dữ liệu mẫu
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Deadlines Card */}
+            <div className="bg-neutral-900/40 rounded-2xl border border-neutral-800/80 p-5 dashboard-glow-card anim-fade-in delay-225">
+              <div className="flex items-center justify-between mb-4 border-b border-neutral-800/60 pb-3">
+                <h3 className="font-bold text-neutral-200 flex items-center gap-2 text-xs uppercase tracking-wider">
+                  <Clock className="size-4.5 text-cyan-400" />
+                  Deadlines quan trọng
+                </h3>
+                <span className="text-[10px] font-bold bg-neutral-800 text-neutral-450 px-2 py-0.5 rounded-full">
+                  {
+                    displayDeadlines.filter(
+                      (d) =>
+                        !completedDeadlineIds.includes(d.id) && !d.completed_at,
+                    ).length
+                  }{" "}
+                  việc
+                </span>
+              </div>
+
+              {displayDeadlines.length === 0 ? (
+                <div className="text-center py-6">
+                  <p className="text-xs text-neutral-500">
+                    Chưa ghi nhận deadline nào sắp tới.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                  {displayDeadlines.map((d) => {
+                    const isCompleted =
+                      d.completed_at !== null ||
+                      completedDeadlineIds.includes(d.id);
+                    const status = getDeadlineStatus(d.due_at, isCompleted);
+                    const formattedDue = new Date(d.due_at).toLocaleString(
+                      "vi-VN",
+                      {
+                        day: "2-digit",
+                        month: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      },
+                    );
+
+                    return (
+                      <div
+                        key={d.id}
+                        className={`p-3 rounded-xl border transition-all duration-300 flex items-start gap-3 bg-black/20 ${isCompleted ? "border-neutral-900 opacity-55" : "border-neutral-800/60 hover:bg-neutral-800/20"}`}
+                      >
+                        <button
+                          onClick={() => toggleDeadline(d.id)}
+                          className={`mt-0.5 shrink-0 transition-colors focus:outline-none ${isCompleted ? "text-emerald-400" : "text-neutral-500 hover:text-cyan-400"}`}
+                        >
+                          {isCompleted ? (
+                            <CheckCircle2 className="size-4.5 text-emerald-400 anim-check-bounce fill-emerald-950/40" />
+                          ) : (
+                            <Circle className="size-4.5" />
+                          )}
+                        </button>
+
+                        <div className="grow min-w-0">
+                          <p
+                            className={`text-xs font-semibold text-neutral-200 leading-snug break-words ${isCompleted ? "line-through text-neutral-500" : ""}`}
+                          >
+                            {d.title}
+                          </p>
+
+                          <div className="flex flex-wrap items-center gap-2 mt-2">
+                            {d.course_code && (
+                              <span className="text-[9px] font-mono text-cyan-400 bg-cyan-950/30 border border-cyan-900/30 px-1.5 rounded">
+                                {d.course_code}
+                              </span>
+                            )}
+                            <span
+                              className={`text-[9px] px-1.5 rounded border font-semibold ${status.color}`}
+                            >
+                              {status.label}
+                            </span>
+                            <span className="text-[9px] text-neutral-500 font-mono">
+                              {formattedDue}
+                            </span>
+                          </div>
+                        </div>
+
+                        {d.source_url && (
+                          <a
+                            href={d.source_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0 text-neutral-600 hover:text-cyan-400 transition-colors mt-0.5"
+                            title="Đi tới link nguồn"
+                          >
+                            <ExternalLink className="size-3.5" />
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {roadmap.is_preview && (
+                <div className="mt-3 text-center border-t border-neutral-800/40 pt-3">
+                  <span className="text-[9px] font-mono text-amber-500 bg-amber-950/20 border border-amber-900/30 px-2 py-0.5 rounded">
+                    Dữ liệu mẫu
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
-

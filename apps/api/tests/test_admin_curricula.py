@@ -86,7 +86,12 @@ async def test_create_and_list_curricula(client, admin_user, db_session) -> None
 
     created = await client.post(
         "/api/v1/admin/curricula",
-        json={"major_id": major.id, "name": "KTPM 2026", "effective_year": 2026, "total_credits": 140},
+        json={
+            "major_id": major.id,
+            "name": "KTPM 2026",
+            "effective_year": 2026,
+            "total_credits": 140,
+        },
         headers={"X-CSRF-Token": csrf},
     )
     assert created.status_code == 201
@@ -110,7 +115,12 @@ async def test_replace_curriculum_structure_transactionally(client, admin_user, 
 
     cur = await client.post(
         "/api/v1/admin/curricula",
-        json={"major_id": major.id, "name": "IS 2026", "effective_year": 2026, "total_credits": 130},
+        json={
+            "major_id": major.id,
+            "name": "IS 2026",
+            "effective_year": 2026,
+            "total_credits": 130,
+        },
         headers={"X-CSRF-Token": csrf},
     )
     curriculum_id = cur.json()["id"]
@@ -167,7 +177,12 @@ async def test_delete_curriculum_writes_audit(client, admin_user, db_session) ->
     major = await _create_major(db_session, code="AI", name="Artificial Intelligence")
     created = await client.post(
         "/api/v1/admin/curricula",
-        json={"major_id": major.id, "name": "AI 2026", "effective_year": 2026, "total_credits": 128},
+        json={
+            "major_id": major.id,
+            "name": "AI 2026",
+            "effective_year": 2026,
+            "total_credits": 128,
+        },
         headers={"X-CSRF-Token": csrf},
     )
     curriculum_id = created.json()["id"]
@@ -181,7 +196,9 @@ async def test_delete_curriculum_writes_audit(client, admin_user, db_session) ->
     res = await db_session.execute(select(Curriculum).where(Curriculum.id == curriculum_id))
     assert res.scalar_one_or_none() is None
 
-    logs = await db_session.execute(select(AuditLog).where(AuditLog.action == "admin.curriculum.deleted"))
+    logs = await db_session.execute(
+        select(AuditLog).where(AuditLog.action == "admin.curriculum.deleted")
+    )
     assert len(list(logs.scalars().all())) == 1
 
 
@@ -193,7 +210,12 @@ async def test_replace_structure_writes_audit_and_rows(client, admin_user, db_se
 
     created = await client.post(
         "/api/v1/admin/curricula",
-        json={"major_id": major.id, "name": "CS 2026", "effective_year": 2026, "total_credits": 140},
+        json={
+            "major_id": major.id,
+            "name": "CS 2026",
+            "effective_year": 2026,
+            "total_credits": 140,
+        },
         headers={"X-CSRF-Token": csrf},
     )
     curriculum_id = created.json()["id"]

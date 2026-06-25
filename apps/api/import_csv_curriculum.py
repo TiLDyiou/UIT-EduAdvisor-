@@ -17,7 +17,6 @@ import asyncio
 import csv
 import sys
 from io import StringIO
-from pathlib import Path
 
 from sqlalchemy import select
 
@@ -109,13 +108,15 @@ def parse_csv(csv_path: str):
         kind = KIND_MAP.get(kind_raw, "co_so_nganh")
 
         if code not in seen_codes:
-            courses.append({
-                "code": code,
-                "name": name,
-                "credits": credits,
-                "kind": kind,
-                "difficulty": difficulty or None,
-            })
+            courses.append(
+                {
+                    "code": code,
+                    "name": name,
+                    "credits": credits,
+                    "kind": kind,
+                    "difficulty": difficulty or None,
+                }
+            )
             seen_codes.add(code)
 
     # Second pass: parse term assignments from the bottom part of the CSV
@@ -205,9 +206,7 @@ async def import_curriculum(
                 print(f"  Term {t}: {len(codes)} courses -> {codes}")
 
             # 2. Find or create major
-            res = await session.execute(
-                select(Major).where(Major.code == major_code).limit(1)
-            )
+            res = await session.execute(select(Major).where(Major.code == major_code).limit(1))
             major = res.scalar_one_or_none()
             if major is None:
                 major = Major(code=major_code, name=major_name)
@@ -289,7 +288,9 @@ async def import_curriculum(
 
 def main():
     if len(sys.argv) < 6:
-        print("Usage: python import_csv_curriculum.py <csv_path> <major_name> <major_code> <effective_year> <total_credits>")
+        print(
+            "Usage: python import_csv_curriculum.py <csv_path> <major_name> <major_code> <effective_year> <total_credits>"
+        )
         sys.exit(1)
 
     csv_path = sys.argv[1]

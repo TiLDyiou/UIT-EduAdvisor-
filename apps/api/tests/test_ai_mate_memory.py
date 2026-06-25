@@ -63,7 +63,9 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
 @pytest.mark.asyncio
 async def test_pin_create_list_delete(client, redis_async_client, db_session) -> None:
     st = await _make_student(db_session, "P1")
-    token, csrf = await create_student_session(redis_async_client, student_id=st.id, ttl_seconds=300)
+    token, csrf = await create_student_session(
+        redis_async_client, student_id=st.id, ttl_seconds=300
+    )
     client.cookies.set("uea_session", token)
 
     r = await client.post(
@@ -85,7 +87,9 @@ async def test_pin_create_list_delete(client, redis_async_client, db_session) ->
     assert bad.status_code == 403
 
     st2 = await _make_student(db_session, "P2")
-    token2, csrf2 = await create_student_session(redis_async_client, student_id=st2.id, ttl_seconds=300)
+    token2, csrf2 = await create_student_session(
+        redis_async_client, student_id=st2.id, ttl_seconds=300
+    )
     client.cookies.set("uea_session", token2)
     other = await client.delete(
         f"/api/v1/ai-mate/pins/{pid}",

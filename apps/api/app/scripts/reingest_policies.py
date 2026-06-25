@@ -34,12 +34,17 @@ DOCS = [
     {
         "file": "docs/1393-qd-dhcntt_29-12-2023_cap_nhat_quy_che_dao_tao_theo_hoc_che_tin_chi_cho_he_dai_hoc_chinh_quy.pdf",
         "title": "Cập nhật quy chế đào tạo theo học chế tín chỉ (QĐ 1393)",
-        "tag": "dao_tao",
+        "tag": "dao_tao_bo_sung",
     },
 ]
 
 # Project root (relative to apps/api/app/scripts/reingest_policies.py)
-PROJECT_ROOT = Path(__file__).resolve().parents[4]
+# Fallback to /app if running inside docker
+PROJECT_ROOT = (
+    Path(__file__).resolve().parents[4]
+    if len(Path(__file__).resolve().parents) > 4
+    else Path("/app")
+)
 
 
 async def ingest_one(db, settings, doc_info: dict) -> None:
@@ -77,10 +82,12 @@ async def ingest_one(db, settings, doc_info: dict) -> None:
 
     # 4. Upsert document
     res = await db.execute(
-        select(PolicyDocument).where(
+        select(PolicyDocument)
+        .where(
             PolicyDocument.tag == tag,
             PolicyDocument.title == title,
-        ).limit(1)
+        )
+        .limit(1)
     )
     doc = res.scalar_one_or_none()
 
@@ -88,7 +95,7 @@ async def ingest_one(db, settings, doc_info: dict) -> None:
         doc = PolicyDocument(
             title=title,
             tag=tag,
-            file_path=str(file_path),
+            file_path=doc_info["file"],
             source_filename=file_path.name,
             mime_type="application/pdf" if ext == ".pdf" else "text/plain",
             file_size_bytes=file_path.stat().st_size,

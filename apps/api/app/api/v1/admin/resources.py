@@ -82,9 +82,13 @@ async def create_resource(
     db: Annotated[AsyncSession, Depends(get_db)],
     admin: Annotated[AdminUser, Depends(get_current_admin)],
 ) -> AdminResourceResponse:
-    course_exists = await db.scalar(select(func.count()).select_from(Course).where(Course.id == body.course_id))
+    course_exists = await db.scalar(
+        select(func.count()).select_from(Course).where(Course.id == body.course_id)
+    )
     if not course_exists:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="course_not_found")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="course_not_found"
+        )
 
     row = CourseResource(
         course_id=body.course_id,

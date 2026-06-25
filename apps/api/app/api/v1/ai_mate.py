@@ -7,7 +7,7 @@ import uuid
 from collections.abc import AsyncIterator
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse, StreamingResponse
 from redis.asyncio import Redis
 from sqlalchemy import select
@@ -66,6 +66,121 @@ async def _stream_with_first_byte_timeout(
         yield chunk
 
 
+def _resolve_pdf_path(file_path: str) -> str:
+    import os
+
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+    if "/docs/" in file_path:
+        parts = file_path.split("/docs/")
+        file_path = os.path.join("docs", parts[-1])
+
+    if not os.path.isabs(file_path):
+        file_path_local = os.path.abspath(os.path.join(project_root, "..", "..", file_path))
+        file_path_docker = os.path.abspath(os.path.join(project_root, file_path))
+        if os.path.exists(file_path_local):
+            file_path = file_path_local
+        elif os.path.exists(file_path_docker):
+            file_path = file_path_docker
+        else:
+            file_path = os.path.join("/app", file_path)
+    return file_path
+
+
+_PDF_PAGES_CACHE: dict[int, list[str]] = {}
+
+
+def _get_pdf_pages_clean_text(doc_id: int, file_path: str) -> list[str]:
+    if doc_id in _PDF_PAGES_CACHE:
+        return _PDF_PAGES_CACHE[doc_id]
+
+    import os
+    import re
+
+    from pypdf import PdfReader
+
+    pages_clean = []
+    try:
+        resolved_path = _resolve_pdf_path(file_path)
+        if os.path.exists(resolved_path):
+            reader = PdfReader(resolved_path)
+            for page in reader.pages:
+                txt = page.extract_text() or ""
+                pages_clean.append(re.sub(r"\s+", " ", txt).lower().strip())
+    except Exception as e:
+        logger.warning(f"Failed to read PDF for page search: {e}")
+
+    _PDF_PAGES_CACHE[doc_id] = pages_clean
+    return pages_clean
+
+
+def _find_page_number_for_chunk(doc_id: int, file_path: str, chunk_content: str) -> int:
+    pages_clean = _get_pdf_pages_clean_text(doc_id, file_path)
+    if not pages_clean:
+        return 1
+
+    import re
+
+    lines = chunk_content.split("\n")
+    search_lines = []
+    for line in lines:
+        clean_l = re.sub(r"\s+", " ", line).strip()
+        if (
+            not clean_l.upper().startswith("CHƯƠNG")
+            and not clean_l.startswith("Điều")
+            and len(clean_l) > 10
+        ):
+            search_lines.append(clean_l)
+
+    if not search_lines:
+        for line in lines:
+            clean_l = re.sub(r"\s+", " ", line).strip()
+            if not clean_l.upper().startswith("CHƯƠNG") and len(clean_l) > 5:
+                search_lines.append(clean_l)
+
+    if not search_lines:
+        return 1
+
+    phrases = []
+    for line in search_lines:
+        words = line.split()
+        window_size = 8
+        if len(words) <= window_size:
+            phrase = " ".join(words).lower().strip()
+            if len(phrase) > 10:
+                phrases.append(phrase)
+        else:
+            for idx in range(len(words) - window_size + 1):
+                phrase = " ".join(words[idx : idx + window_size]).lower().strip()
+                if len(phrase) > 10:
+                    phrases.append(phrase)
+
+    if not phrases:
+        return 1
+
+    page_votes = [0] * len(pages_clean)
+    for phrase in phrases:
+        for page_idx, page_text in enumerate(pages_clean):
+            if phrase in page_text:
+                page_votes[page_idx] += 1
+
+    max_votes = -1
+    best_page = 0
+    for page_idx in range(len(pages_clean) - 1, -1, -1):
+        votes = page_votes[page_idx]
+        if votes > max_votes and votes > 0:
+            max_votes = votes
+            best_page = page_idx + 1
+
+    if best_page == 0:
+        first_line = re.sub(r"\s+", " ", search_lines[0]).lower().strip()[:30]
+        for page_idx in range(len(pages_clean) - 1, -1, -1):
+            if first_line in pages_clean[page_idx]:
+                return page_idx + 1
+        return 1
+
+    return best_page
+
+
 @router.post("/chat/stream")
 async def ai_mate_chat_stream(
     body: AiMateChatRequest,
@@ -76,7 +191,7 @@ async def ai_mate_chat_stream(
 ) -> StreamingResponse:
     rid = str(uuid.uuid4())
     rl = RateLimiter(redis)
-    
+
     # Global per-minute limit (27 requests / 60 seconds for the whole system)
     min_allowed, min_remaining, min_reset_in = await rl.check(
         "ai:chat:global:min",
@@ -86,7 +201,11 @@ async def ai_mate_chat_stream(
     if not min_allowed:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail={"error": "ai_rate_limited", "reset_in_seconds": min_reset_in, "limit": "minute"},
+            detail={
+                "error": "ai_rate_limited",
+                "reset_in_seconds": min_reset_in,
+                "limit": "minute",
+            },
         )
 
     # Global per-hour limit
@@ -100,7 +219,7 @@ async def ai_mate_chat_stream(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail={"error": "ai_rate_limited", "reset_in_seconds": hr_reset_in, "limit": "hour"},
         )
-        
+
     remaining = min(min_remaining, hr_remaining)
 
     query_embedding: list[float] | None
@@ -119,16 +238,19 @@ async def ai_mate_chat_stream(
         query_embedding=query_embedding,
         limit=_RAG_LIMIT,
     )
-    sources = [
-        PolicySourceMeta(
-            document_id=doc.id,
-            document_title=doc.title,
-            tag=doc.tag,
-            chunk_index=chunk.chunk_index,
-            content=chunk.content,
+    sources = []
+    for doc, chunk in rows:
+        pg_num = _find_page_number_for_chunk(doc.id, doc.file_path, chunk.content)
+        sources.append(
+            PolicySourceMeta(
+                document_id=doc.id,
+                document_title=doc.title,
+                tag=doc.tag,
+                chunk_index=chunk.chunk_index,
+                content=chunk.content,
+                page_number=pg_num,
+            )
         )
-        for doc, chunk in rows
-    ]
     excerpts = [c.content[:_RAG_SNIPPET] for _, c in rows]
     rag_block = ai_prompt.format_rag_block(sources, excerpts)
 
@@ -158,7 +280,10 @@ async def ai_mate_chat_stream(
                 message="AI chưa được cấu hình (thiếu khóa Groq trên máy chủ).",
             )
             yield _sse("error", err.model_dump(mode="json"))
-            yield _sse("done", AiMateDoneEvent(policy_disclaimer_required=policy_disclaimer_required).model_dump())
+            yield _sse(
+                "done",
+                AiMateDoneEvent(policy_disclaimer_required=policy_disclaimer_required).model_dump(),
+            )
             return
         stream = stream_generate_content(
             settings,
@@ -193,7 +318,10 @@ async def ai_mate_chat_stream(
                 message="Không thể hoàn tất câu trả lời. Thử lại sau.",
             )
             yield _sse("error", err.model_dump(mode="json"))
-        yield _sse("done", AiMateDoneEvent(policy_disclaimer_required=policy_disclaimer_required).model_dump())
+        yield _sse(
+            "done",
+            AiMateDoneEvent(policy_disclaimer_required=policy_disclaimer_required).model_dump(),
+        )
 
     return StreamingResponse(gen(), media_type="text/event-stream")
 
@@ -289,46 +417,34 @@ async def list_pins(
     student: Annotated[Student, Depends(get_current_student)],
 ) -> list[PinnedMessageOut]:
     rows = await ai_memory.list_pins(db, student.id)
-    return [
-        PinnedMessageOut(id=r.id, content=r.content, created_at=r.created_at) for r in rows
-    ]
+    return [PinnedMessageOut(id=r.id, content=r.content, created_at=r.created_at) for r in rows]
 
 
 @router.get("/documents/{doc_id}/pdf")
+@router.get("/documents/{doc_id}/view.pdf")
 async def get_document_pdf(
     doc_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     import os
+
     from app.db.models.rag_chat import PolicyDocument
+
     res = await db.execute(select(PolicyDocument).where(PolicyDocument.id == doc_id))
     doc = res.scalar_one_or_none()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-        
-    # the file path might be "docs/xxx.pdf". We resolve it relative to the api root.
-    # __file__ is /app/app/api/v1/ai_mate.py in docker, project root is /app
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-    
-    file_path = doc.file_path
-    if not os.path.isabs(file_path):
-        file_path = os.path.join(project_root, "..", "..", file_path) # if running locally
-        if not os.path.exists(file_path):
-            file_path = os.path.join(project_root, file_path) # if running in docker
-            
-    if not os.path.exists(file_path):
-        # fallback for docker
-        if doc.file_path.startswith("docs/"):
-            file_path = os.path.join("/app", "..", doc.file_path)
+
+    file_path = _resolve_pdf_path(doc.file_path)
 
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found on disk")
-        
+
     return FileResponse(
-        file_path, 
-        media_type="application/pdf", 
-        content_disposition_type="inline", 
-        filename=doc.source_filename or "document.pdf"
+        file_path,
+        media_type="application/pdf",
+        content_disposition_type="inline",
+        filename=doc.source_filename or "document.pdf",
     )
 
 

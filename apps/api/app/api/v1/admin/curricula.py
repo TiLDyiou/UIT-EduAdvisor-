@@ -46,7 +46,9 @@ async def _get_curriculum_or_404(db: AsyncSession, curriculum_id: int) -> Curric
     return row
 
 
-async def _load_curriculum_detail(db: AsyncSession, curriculum: Curriculum) -> AdminCurriculumDetailResponse:
+async def _load_curriculum_detail(
+    db: AsyncSession, curriculum: Curriculum
+) -> AdminCurriculumDetailResponse:
     term_rows = await db.execute(
         select(CurriculumTerm)
         .where(CurriculumTerm.curriculum_id == curriculum.id)
@@ -62,7 +64,9 @@ async def _load_curriculum_detail(db: AsyncSession, curriculum: Curriculum) -> A
         )
         for row in cc_rows.scalars().all():
             cc_map[row.curriculum_term_id].append(
-                AdminCurriculumTermCourseResponse(course_id=row.course_id, is_required=row.is_required)
+                AdminCurriculumTermCourseResponse(
+                    course_id=row.course_id, is_required=row.is_required
+                )
             )
         for courses in cc_map.values():
             courses.sort(key=lambda c: c.course_id)
@@ -112,7 +116,9 @@ async def _load_curriculum_detail(db: AsyncSession, curriculum: Curriculum) -> A
     )
 
 
-def _curriculum_query(major_id: int | None, effective_year: int | None) -> Select[tuple[Curriculum]]:
+def _curriculum_query(
+    major_id: int | None, effective_year: int | None
+) -> Select[tuple[Curriculum]]:
     query = select(Curriculum)
     if major_id:
         query = query.where(Curriculum.major_id == major_id)
@@ -133,8 +139,7 @@ async def list_curricula(
     base_query = _curriculum_query(major_id, effective_year)
     total = await db.scalar(select(func.count()).select_from(base_query.subquery()))
     rows = await db.execute(
-        base_query
-        .order_by(Curriculum.effective_year.desc(), Curriculum.id.asc())
+        base_query.order_by(Curriculum.effective_year.desc(), Curriculum.id.asc())
         .limit(limit)
         .offset(offset)
     )
@@ -159,12 +164,8 @@ async def list_majors(
 ) -> AdminMajorListResponse:
     res = await db.execute(select(Major).order_by(Major.name.asc()))
     rows = res.scalars().all()
-    items = [
-        AdminMajorListItem(id=row.id, code=row.code, name=row.name)
-        for row in rows
-    ]
+    items = [AdminMajorListItem(id=row.id, code=row.code, name=row.name) for row in rows]
     return AdminMajorListResponse(items=items)
-
 
 
 @router.post(
@@ -184,7 +185,9 @@ async def create_curriculum(
         res = await db.execute(select(Major).where(Major.id == body.major_id).limit(1))
         major = res.scalar_one_or_none()
         if major is None:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="major_not_found")
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="major_not_found"
+            )
     else:
         res = await db.execute(select(Major).where(Major.code == body.major_code).limit(1))
         major = res.scalar_one_or_none()
@@ -362,7 +365,9 @@ async def replace_curriculum_structure(
     existing_term_ids = list(existing_terms.scalars().all())
     if existing_term_ids:
         await db.execute(
-            delete(CurriculumCourse).where(CurriculumCourse.curriculum_term_id.in_(existing_term_ids))
+            delete(CurriculumCourse).where(
+                CurriculumCourse.curriculum_term_id.in_(existing_term_ids)
+            )
         )
     await db.execute(delete(CurriculumTerm).where(CurriculumTerm.curriculum_id == curriculum_id))
 
@@ -372,7 +377,9 @@ async def replace_curriculum_structure(
     existing_group_ids = list(existing_groups.scalars().all())
     if existing_group_ids:
         await db.execute(
-            delete(ElectiveGroupCourse).where(ElectiveGroupCourse.elective_group_id.in_(existing_group_ids))
+            delete(ElectiveGroupCourse).where(
+                ElectiveGroupCourse.elective_group_id.in_(existing_group_ids)
+            )
         )
     await db.execute(delete(ElectiveGroup).where(ElectiveGroup.curriculum_id == curriculum_id))
 

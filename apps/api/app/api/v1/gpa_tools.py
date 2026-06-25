@@ -3,25 +3,21 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.deps import get_current_student, get_db
+from app.api.v1.tracker import _enrollment_to_row, _load_enrollments
 from app.db.models.core_security import Student
+from app.deps import get_current_student, get_db
 from app.schemas.m3 import (
-    GpaOverviewResponse,
     RetakeEstimateRequest,
     RetakeEstimateResponse,
     ReverseCalculateRequest,
     ReverseCalculateResponse,
 )
 from app.services.academic.gpa import (
-    EnrollmentRow,
-    compute_cumulative_gpa,
     retake_estimate,
     reverse_calculate,
 )
-from app.api.v1.tracker import _enrollment_to_row, _load_enrollments
 
 router = APIRouter(tags=["GPA Tools"])
-
 
 
 @router.post("/reverse", response_model=ReverseCalculateResponse)
@@ -47,10 +43,10 @@ async def gpa_retake(
     student: Annotated[Student, Depends(get_current_student)],
 ) -> RetakeEstimateResponse:
     enrollments = await _load_enrollments(db, student.id)
-    
+
     # Map course_id to list index
     id_to_idx = {e.course_id: i for i, e in enumerate(enrollments)}
-    
+
     retakes_dict = {}
     for r in body.retakes:
         if r.enrollment_id not in id_to_idx:

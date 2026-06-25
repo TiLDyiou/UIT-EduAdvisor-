@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models.academic import Course, Deadline, Enrollment, Exam, Schedule
-from app.db.models.bot import BotAccount, ReminderPreference
+from app.db.models.academic import Deadline, Enrollment, Exam, Schedule
+from app.db.models.bot import BotAccount
 from app.schemas.bot import NormalizedCommand
 from app.services.bot.bot_commands import dispatch_command
 
@@ -20,13 +20,15 @@ def student_id():
     return uuid.uuid4()
 
 
-async def _link_student(db: AsyncSession, student_id: uuid.UUID, platform: str = "telegram", puid: str = "tg_test"):
+async def _link_student(
+    db: AsyncSession, student_id: uuid.UUID, platform: str = "discord", puid: str = "tg_test"
+):
     """Helper: create a BotAccount for testing."""
     acct = BotAccount(
         student_id=student_id,
         platform=platform,
         platform_user_id=puid,
-        linked_at=datetime.now(timezone.utc),
+        linked_at=datetime.now(UTC),
     )
     db.add(acct)
     await db.flush()
@@ -35,47 +37,49 @@ async def _link_student(db: AsyncSession, student_id: uuid.UUID, platform: str =
 
 class TestPublicCommands:
     async def test_help(self, db: AsyncSession):
-        cmd = NormalizedCommand(platform="telegram", platform_user_id="unknown", command="/help")
+        cmd = NormalizedCommand(platform="discord", platform_user_id="unknown", command="/help")
         result = await dispatch_command(db, cmd)
         assert "/tkb" in result
         assert "/gpa" in result
         assert "/nhacnho" in result
 
     async def test_start_unlinked(self, db: AsyncSession):
-        cmd = NormalizedCommand(platform="telegram", platform_user_id="unknown", command="/start")
+        cmd = NormalizedCommand(platform="discord", platform_user_id="unknown", command="/start")
         result = await dispatch_command(db, cmd)
         assert "lien ket" in result.lower()
 
     async def test_start_already_linked(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
         await _link_student(db, student_id, puid="tg_linked")
-        cmd = NormalizedCommand(platform="telegram", platform_user_id="tg_linked", command="/start")
+        cmd = NormalizedCommand(platform="discord", platform_user_id="tg_linked", command="/start")
         result = await dispatch_command(db, cmd)
         assert "da lien ket" in result.lower()
 
     async def test_start_with_invalid_token(self, db: AsyncSession):
-        cmd = NormalizedCommand(platform="telegram", platform_user_id="unknown", command="/start", args="not-a-uuid")
+        cmd = NormalizedCommand(
+            platform="discord", platform_user_id="unknown", command="/start", args="not-a-uuid"
+        )
         result = await dispatch_command(db, cmd)
         assert "khong hop le" in result.lower()
 
     async def test_invalid_command(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
         await _link_student(db, student_id, puid="tg_inv")
-        cmd = NormalizedCommand(platform="telegram", platform_user_id="tg_inv", command="/xyz")
+        cmd = NormalizedCommand(platform="discord", platform_user_id="tg_inv", command="/xyz")
         result = await dispatch_command(db, cmd)
         assert "khong hop le" in result.lower()
 
 
 class TestLinkedCommands:
     async def test_unlinked_user_gets_guide(self, db: AsyncSession):
-        cmd = NormalizedCommand(platform="telegram", platform_user_id="no_link", command="/tkb")
+        cmd = NormalizedCommand(platform="discord", platform_user_id="no_link", command="/tkb")
         result = await dispatch_command(db, cmd)
         assert "chua duoc lien ket" in result.lower()
 
     async def test_tkb_no_data(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
         await _link_student(db, student_id, puid="tg_tkb")
-        cmd = NormalizedCommand(platform="telegram", platform_user_id="tg_tkb", command="/tkb")
+        cmd = NormalizedCommand(platform="discord", platform_user_id="tg_tkb", command="/tkb")
         result = await dispatch_command(db, cmd)
         assert "chua co" in result.lower()
 
@@ -96,12 +100,14 @@ class TestLinkedCommands:
         db.add(sch)
         await db.flush()
 
-        cmd = NormalizedCommand(platform="telegram", platform_user_id="tg_tkb2", command="/tkb")
+        cmd = NormalizedCommand(platform="discord", platform_user_id="tg_tkb2", command="/tkb")
         result = await dispatch_command(db, cmd)
         assert "Intro CS" in result
         assert "A101" in result
 
-    async def test_tkb_day_filter(self, db: AsyncSession, student_id, create_student, create_course):
+    async def test_tkb_day_filter(
+        self, db: AsyncSession, student_id, create_student, create_course
+    ):
         await create_student(student_id)
         course = await create_course("CS102", "Algo")
         await _link_student(db, student_id, puid="tg_tkb3")
@@ -119,23 +125,29 @@ class TestLinkedCommands:
         await db.flush()
 
         # Filter matching day
-        cmd = NormalizedCommand(platform="telegram", platform_user_id="tg_tkb3", command="/tkb", args="thu4")
+        cmd = NormalizedCommand(
+            platform="discord", platform_user_id="tg_tkb3", command="/tkb", args="thu4"
+        )
         result = await dispatch_command(db, cmd)
         assert "Algo" in result
 
         # Filter non-matching day
-        cmd2 = NormalizedCommand(platform="telegram", platform_user_id="tg_tkb3", command="/tkb", args="thu2")
+        cmd2 = NormalizedCommand(
+            platform="discord", platform_user_id="tg_tkb3", command="/tkb", args="thu2"
+        )
         result2 = await dispatch_command(db, cmd2)
         assert "khong co" in result2.lower()
 
     async def test_lithi_no_exams(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
         await _link_student(db, student_id, puid="tg_lithi")
-        cmd = NormalizedCommand(platform="telegram", platform_user_id="tg_lithi", command="/lithi")
+        cmd = NormalizedCommand(platform="discord", platform_user_id="tg_lithi", command="/lithi")
         result = await dispatch_command(db, cmd)
         assert "khong co" in result.lower()
 
-    async def test_lithi_with_exam(self, db: AsyncSession, student_id, create_student, create_course):
+    async def test_lithi_with_exam(
+        self, db: AsyncSession, student_id, create_student, create_course
+    ):
         await create_student(student_id)
         course = await create_course("CS103", "DB")
         await _link_student(db, student_id, puid="tg_lithi2")
@@ -152,7 +164,7 @@ class TestLinkedCommands:
         db.add(exam)
         await db.flush()
 
-        cmd = NormalizedCommand(platform="telegram", platform_user_id="tg_lithi2", command="/lithi")
+        cmd = NormalizedCommand(platform="discord", platform_user_id="tg_lithi2", command="/lithi")
         result = await dispatch_command(db, cmd)
         assert "DB" in result
         assert "E301" in result
@@ -166,20 +178,20 @@ class TestLinkedCommands:
             student_id=student_id,
             course_id=course.id,
             title="Bai tap 1",
-            due_at=datetime.now(timezone.utc) + timedelta(days=3),
+            due_at=datetime.now(UTC) + timedelta(days=3),
             source="moodle",
         )
         db.add(dl)
         await db.flush()
 
-        cmd = NormalizedCommand(platform="telegram", platform_user_id="tg_dl", command="/deadline")
+        cmd = NormalizedCommand(platform="discord", platform_user_id="tg_dl", command="/deadline")
         result = await dispatch_command(db, cmd)
         assert "Bai tap 1" in result
 
     async def test_gpa_no_data(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
         await _link_student(db, student_id, puid="tg_gpa")
-        cmd = NormalizedCommand(platform="telegram", platform_user_id="tg_gpa", command="/gpa")
+        cmd = NormalizedCommand(platform="discord", platform_user_id="tg_gpa", command="/gpa")
         result = await dispatch_command(db, cmd)
         assert "chua co" in result.lower()
 
@@ -198,7 +210,7 @@ class TestLinkedCommands:
         db.add(enroll)
         await db.flush()
 
-        cmd = NormalizedCommand(platform="telegram", platform_user_id="tg_gpa2", command="/gpa")
+        cmd = NormalizedCommand(platform="discord", platform_user_id="tg_gpa2", command="/gpa")
         result = await dispatch_command(db, cmd)
         assert "8.5" in result
 
@@ -207,20 +219,26 @@ class TestNhacnhoCommand:
     async def test_nhacnho_status_default(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
         await _link_student(db, student_id, puid="tg_nh")
-        cmd = NormalizedCommand(platform="telegram", platform_user_id="tg_nh", command="/nhacnho", args="status")
+        cmd = NormalizedCommand(
+            platform="discord", platform_user_id="tg_nh", command="/nhacnho", args="status"
+        )
         result = await dispatch_command(db, cmd)
         assert "BAT" in result
 
     async def test_nhacnho_toggle_off(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
         await _link_student(db, student_id, puid="tg_nh2")
-        cmd = NormalizedCommand(platform="telegram", platform_user_id="tg_nh2", command="/nhacnho", args="thi off")
+        cmd = NormalizedCommand(
+            platform="discord", platform_user_id="tg_nh2", command="/nhacnho", args="thi off"
+        )
         result = await dispatch_command(db, cmd)
         assert "tat" in result.lower()
 
     async def test_nhacnho_invalid_syntax(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
         await _link_student(db, student_id, puid="tg_nh3")
-        cmd = NormalizedCommand(platform="telegram", platform_user_id="tg_nh3", command="/nhacnho", args="xyz")
+        cmd = NormalizedCommand(
+            platform="discord", platform_user_id="tg_nh3", command="/nhacnho", args="xyz"
+        )
         result = await dispatch_command(db, cmd)
         assert "cu phap" in result.lower()

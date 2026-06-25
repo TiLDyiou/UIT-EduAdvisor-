@@ -38,7 +38,9 @@ def _client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-def _course_query(search: str | None, kind: str | None, difficulty: str | None) -> Select[tuple[Course]]:
+def _course_query(
+    search: str | None, kind: str | None, difficulty: str | None
+) -> Select[tuple[Course]]:
     query = select(Course)
     if search:
         token = f"%{search.strip()}%"
@@ -175,7 +177,9 @@ async def get_course(
 ) -> AdminCourseDetailResponse:
     row = await _get_course_or_404(db, course_id)
     prerequisites = await _load_prerequisites(db, course_id)
-    return AdminCourseDetailResponse.model_validate({**row.__dict__, "prerequisites": prerequisites})
+    return AdminCourseDetailResponse.model_validate(
+        {**row.__dict__, "prerequisites": prerequisites}
+    )
 
 
 @router.patch(
@@ -242,14 +246,18 @@ async def update_course(
     await db.commit()
     await db.refresh(row)
     prerequisites = await _load_prerequisites(db, row.id)
-    return AdminCourseDetailResponse.model_validate({**row.__dict__, "prerequisites": prerequisites})
+    return AdminCourseDetailResponse.model_validate(
+        {**row.__dict__, "prerequisites": prerequisites}
+    )
 
 
 async def _course_usage_refs(db: AsyncSession, course_id: int) -> dict[str, int]:
     return {
         "prerequisite_links": int(
             await db.scalar(
-                select(func.count()).select_from(CoursePrerequisite).where(
+                select(func.count())
+                .select_from(CoursePrerequisite)
+                .where(
                     or_(
                         CoursePrerequisite.course_id == course_id,
                         CoursePrerequisite.prerequisite_id == course_id,
@@ -260,44 +268,53 @@ async def _course_usage_refs(db: AsyncSession, course_id: int) -> dict[str, int]
         ),
         "curriculum_links": int(
             await db.scalar(
-                select(func.count()).select_from(CurriculumCourse).where(
-                    CurriculumCourse.course_id == course_id
-                )
+                select(func.count())
+                .select_from(CurriculumCourse)
+                .where(CurriculumCourse.course_id == course_id)
             )
             or 0
         ),
         "resources": int(
             await db.scalar(
-                select(func.count()).select_from(CourseResource).where(CourseResource.course_id == course_id)
+                select(func.count())
+                .select_from(CourseResource)
+                .where(CourseResource.course_id == course_id)
             )
             or 0
         ),
         "enrollments": int(
             await db.scalar(
-                select(func.count()).select_from(Enrollment).where(Enrollment.course_id == course_id)
+                select(func.count())
+                .select_from(Enrollment)
+                .where(Enrollment.course_id == course_id)
             )
             or 0
         ),
         "schedules": int(
-            await db.scalar(select(func.count()).select_from(Schedule).where(Schedule.course_id == course_id))
+            await db.scalar(
+                select(func.count()).select_from(Schedule).where(Schedule.course_id == course_id)
+            )
             or 0
         ),
         "exams": int(
-            await db.scalar(select(func.count()).select_from(Exam).where(Exam.course_id == course_id)) or 0
+            await db.scalar(
+                select(func.count()).select_from(Exam).where(Exam.course_id == course_id)
+            )
+            or 0
         ),
         "term_offerings": int(
             await db.scalar(
-                select(func.count()).select_from(TermCourseOffering).where(
-                    TermCourseOffering.course_id == course_id
-                )
+                select(func.count())
+                .select_from(TermCourseOffering)
+                .where(TermCourseOffering.course_id == course_id)
             )
             or 0
         ),
         "term_exams": int(
             await db.scalar(
-                select(func.count()).select_from(TermExamSchedule).where(
-                    TermExamSchedule.course_id == course_id
-                )
+                select(func.count())
+                .select_from(TermExamSchedule)
+                .where(TermExamSchedule.course_id == course_id)
             )
             or 0
         ),
@@ -353,14 +370,14 @@ async def set_course_prerequisites(
     admin: Annotated[AdminUser, Depends(get_current_admin)],
 ) -> AdminCourseDetailResponse:
     row = await _get_course_or_404(db, course_id)
-    
+
     seen = set()
     deduped_prereqs = []
     for p in body.prerequisites:
         if p.prerequisite_id not in seen:
             seen.add(p.prerequisite_id)
             deduped_prereqs.append(p)
-            
+
     deduped_prereq_ids = [p.prerequisite_id for p in deduped_prereqs]
 
     if deduped_prereq_ids:
@@ -378,7 +395,9 @@ async def set_course_prerequisites(
     current_prereqs = await _load_prerequisites(db, course_id)
     await db.execute(delete(CoursePrerequisite).where(CoursePrerequisite.course_id == course_id))
     for p in deduped_prereqs:
-        db.add(CoursePrerequisite(course_id=course_id, prerequisite_id=p.prerequisite_id, kind=p.kind))
+        db.add(
+            CoursePrerequisite(course_id=course_id, prerequisite_id=p.prerequisite_id, kind=p.kind)
+        )
 
     row.admin_locked = True
     row.admin_updated_at = datetime.now(UTC)

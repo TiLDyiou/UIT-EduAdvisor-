@@ -21,12 +21,13 @@ from app.db.models.core_security import Student, SyncJob
 from app.db.session import get_sessionmaker
 from app.services.daa.client import daa_get_text
 from app.services.daa.parser import (
+    parse_daa_exam_schedule,
     parse_exam_rows,
+    parse_grades_summary,
     parse_grades_tables,
     parse_profile_name,
     parse_registration_table,
     parse_schedule_rows,
-    parse_grades_summary,
 )
 from app.services.moodle.client import moodle_get_text, moodle_login
 from app.services.moodle.parser import parse_due_datetime, parse_upcoming_deadlines
@@ -103,19 +104,20 @@ async def _ensure_course(
 
 async def _ensure_major(session: AsyncSession, major_name: str):
     from sqlalchemy import func
+
     from app.db.models.core_security import Major
+
     res = await session.execute(
         select(Major).where(func.lower(Major.name) == major_name.lower()).limit(1)
     )
     m = res.scalar_one_or_none()
     if m:
         return m
-    
+
     clean_name = major_name.lower().replace("ngành ", "").strip()
-    res = await session.execute(
-        select(Major).where(Major.name.ilike(f"%{clean_name}%")).limit(1)
-    )
+    res = await session.execute(select(Major).where(Major.name.ilike(f"%{clean_name}%")).limit(1))
     return res.scalar_one_or_none()
+
 
 async def _persist_grades(session: AsyncSession, student_id, rows: list[dict[str, Any]]) -> None:
     for row in rows:
@@ -148,21 +150,23 @@ async def _persist_grades(session: AsyncSession, student_id, rows: list[dict[str
         else:
             en.final_grade_10 = row.get("final_grade_10")
             en.status = "recorded"
-            
+
         await session.flush()
-        
+
         detailed_grades = row.get("detailed_grades")
         if detailed_grades:
             from app.db.models.academic import Grade
+
             await session.execute(delete(Grade).where(Grade.enrollment_id == en.id))
-            from datetime import datetime, timezone
+            from datetime import datetime
+
             for comp_name, score in detailed_grades.items():
                 g = Grade(
                     enrollment_id=en.id,
                     component=comp_name,
                     score=score,
                     weight=0,
-                    recorded_at=datetime.now(timezone.utc),
+                    recorded_at=datetime.now(UTC),
                 )
                 session.add(g)
 
@@ -260,6 +264,39 @@ async def _persist_exams(session: AsyncSession, student_id, rows: list[dict[str,
         )
 
 
+async def _persist_parsed_exams(session: AsyncSession, student_id, rows: list[dict[str, Any]]) -> None:
+    for r in rows:
+        code = str(r.get("course_code") or "").strip()
+        if not code:
+            continue
+        code = _normalize_course_code(code) or code[:32]
+        if not code:
+            continue
+        c = await _ensure_course(session, code, code, None)
+        await _upsert_enrollment(
+            session,
+            student_id=student_id,
+            course_id=c.id,
+            term_code="CURRENT",
+            status="in_progress",
+            final_grade_10=None,
+        )
+        room = r.get("room")
+        kind_val = r.get("kind")
+        session.add(
+            Exam(
+                student_id=student_id,
+                course_id=c.id,
+                term_code=r.get("term_code")[:32],
+                exam_date=r.get("exam_date"),
+                start_time=r.get("start_time"),
+                end_time=r.get("end_time"),
+                room=str(room)[:500] if room else None,
+                kind=str(kind_val)[:32] if kind_val else "daa",
+            )
+        )
+
+
 async def _upsert_enrollment(
     session: AsyncSession,
     *,
@@ -312,9 +349,7 @@ def _normalize_course_code(raw: str | None) -> str | None:
 
 
 def _looks_like_course_code(s: str) -> bool:
-    return bool(re.fullmatch(r"[A-Z0-9]+(?:\.[A-Z0-9]+)*", s)) and any(
-        ch.isdigit() for ch in s
-    )
+    return bool(re.fullmatch(r"[A-Z0-9]+(?:\.[A-Z0-9]+)*", s)) and any(ch.isdigit() for ch in s)
 
 
 async def _persist_moodle_deadlines(session: AsyncSession, student_id, html: str) -> None:
@@ -375,7 +410,10 @@ async def run_onboarding_sync(
         try:
             with open("/tmp/daa_grades_debug.html", "w", encoding="utf-8") as f:
                 f.write(grades_html)
-            logger.warning("DEBUG: saved grades HTML to /tmp/daa_grades_debug.html (%d bytes)", len(grades_html))
+            logger.warning(
+                "DEBUG: saved grades HTML to /tmp/daa_grades_debug.html (%d bytes)",
+                len(grades_html),
+            )
         except Exception as exc:
             logger.warning("DEBUG: failed to save grades HTML: %s", exc)
         grade_rows = parse_grades_tables(grades_html)
@@ -383,6 +421,7 @@ async def run_onboarding_sync(
         for i, row in enumerate(grade_rows[:5]):
             logger.warning("DEBUG: grade_row[%d] = %s", i, row)
         from app.services.daa.parser import parse_class_code_info
+
         major_name, enrollment_year = parse_class_code_info(grades_html)
 
         async with maker() as session:
@@ -411,23 +450,26 @@ async def run_onboarding_sync(
                 logger.warning("DEBUG: saved grades summary HTML (%d bytes)", len(summary_html))
                 # Also try parsing grades from summary page
                 from app.services.daa.parser import parse_grades_tables as _pgt
+
                 summary_grade_rows = _pgt(summary_html)
-                logger.warning("DEBUG: parse_grades_tables on SUMMARY page returned %d rows", len(summary_grade_rows))
+                logger.warning(
+                    "DEBUG: parse_grades_tables on SUMMARY page returned %d rows",
+                    len(summary_grade_rows),
+                )
                 for i, row in enumerate(summary_grade_rows[:5]):
                     logger.warning("DEBUG: summary_grade_row[%d] = %s", i, row)
             except Exception as exc2:
                 logger.warning("DEBUG: summary debug failed: %s", exc2)
             summary_data = parse_grades_summary(summary_html)
-            summary.update({
-                "daa_dtbc_10": summary_data.get("dtbc_10"),
-                "daa_dtbc_4": summary_data.get("dtbc_4"),
-                "daa_dtbctl_10": summary_data.get("dtbctl_10"),
-                "daa_dtbctl_4": summary_data.get("dtbctl_4"),
-                "daa_earned_credits": summary_data.get("earned_credits"),
-            })
+            summary.update(
+                {
+                    "daa_dtbc_10": summary_data.get("dtbc_10"),
+                    "daa_dtbctl_10": summary_data.get("dtbctl_10"),
+                    "daa_earned_credits": summary_data.get("earned_credits"),
+                }
+            )
         except Exception as exc:
             logger.warning("Failed to parse grades summary from DAA: %s", exc)
-
 
         # Fetch ĐKHP registration page for current semester courses
         await _emit(redis, job_id, "daa_registration", 42, "Đang đồng bộ thông tin ĐKHP")
@@ -466,11 +508,43 @@ async def run_onboarding_sync(
             await session.commit()
 
         await _emit(redis, job_id, "daa_exams", 65, "Đang đồng bộ lịch thi")
-        exams_html = await daa_get_text(daa_client, settings.daa_exams_path)
-        exam_rows = parse_exam_rows(exams_html)
+        current_year = datetime.now().year
+        namhoc = current_year
+        hocky = 3
+        lanthi = 2
+        namhoc_decreased = False
+        exam_rows = []
+        
+        while True:
+            path = f"sinhvien/lichhoc/lichthi?lanthi={lanthi}&hocky={hocky}&namhoc={namhoc}"
+            logger.info("Crawl DAA exams: %s", path)
+            try:
+                html = await daa_get_text(daa_client, path)
+            except Exception as exc:
+                logger.warning("DAA exam fetch failed for %s: %s", path, exc)
+                html = ""
+
+            exam_rows = parse_daa_exam_schedule(html, lanthi, hocky, namhoc) if html else []
+            if not exam_rows:
+                lanthi -= 1
+                if lanthi < 1:
+                    lanthi = 2
+                    hocky -= 1
+                    if hocky < 1:
+                        if not namhoc_decreased:
+                            namhoc -= 1
+                            hocky = 3
+                            lanthi = 2
+                            namhoc_decreased = True
+                        else:
+                            break
+            else:
+                break
+                
         async with maker() as session:
             await session.execute(delete(Exam).where(Exam.student_id == student_id))
-            await _persist_exams(session, student_id, exam_rows)
+            if exam_rows:
+                await _persist_parsed_exams(session, student_id, exam_rows)
             await session.commit()
 
         await _emit(redis, job_id, "moodle_authenticating", 72, "Đang đăng nhập Moodle")

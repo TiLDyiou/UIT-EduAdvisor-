@@ -23,14 +23,16 @@ from app.services.admin_jobs import (
 )
 from app.services.ai_mate.gemini import batch_embed_texts
 from app.services.excel_import import preview_course_offerings_file, preview_exam_schedule_xlsx
-from app.services.policy_ingest import chunk_policy_text, chunk_text, extract_policy_text
+from app.services.policy_ingest import chunk_policy_text, extract_policy_text
 
 logger = logging.getLogger(__name__)
 SUPPORTED_KINDS = {"policy_ingest", "course_offering_import", "exam_schedule_import"}
 
 
 async def _handle_policy_ingest(db, job) -> None:
-    res = await db.execute(select(PolicyDocument).where(PolicyDocument.ingest_job_id == job.id).limit(1))
+    res = await db.execute(
+        select(PolicyDocument).where(PolicyDocument.ingest_job_id == job.id).limit(1)
+    )
     doc = res.scalar_one_or_none()
     if doc is None:
         raise ValueError("policy_document_not_found_for_job")
@@ -162,11 +164,17 @@ async def _apply_offering_import(db, job) -> None:
     job.progress_percent = 20
     term_codes = sorted({str(r["term_code"]) for r in rows})
     if term_codes:
-        existing = await db.execute(select(TermCourseOffering.id).where(TermCourseOffering.term_code.in_(term_codes)))
+        existing = await db.execute(
+            select(TermCourseOffering.id).where(TermCourseOffering.term_code.in_(term_codes))
+        )
         existing_ids = [x for x in existing.scalars().all()]
         if existing_ids:
-            await db.execute(delete(TermCourseSection).where(TermCourseSection.offering_id.in_(existing_ids)))
-        await db.execute(delete(TermCourseOffering).where(TermCourseOffering.term_code.in_(term_codes)))
+            await db.execute(
+                delete(TermCourseSection).where(TermCourseSection.offering_id.in_(existing_ids))
+            )
+        await db.execute(
+            delete(TermCourseOffering).where(TermCourseOffering.term_code.in_(term_codes))
+        )
 
     offering_map: dict[tuple[str, int], int] = {}
     inserted_offerings = 0

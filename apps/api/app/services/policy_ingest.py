@@ -52,8 +52,8 @@ def chunk_text(text: str, *, size: int = 1200, overlap: int = 200) -> list[str]:
     return chunks
 
 
-_RE_CHUONG = re.compile(r'(CHƯƠNG\s+\d+\.?\s*.+)', re.MULTILINE)
-_RE_DIEU = re.compile(r'(Điều\s+\d+\.\s*.+)', re.MULTILINE)
+_RE_CHUONG = re.compile(r"(CHƯƠNG\s+\d+\.?\s*.+)", re.MULTILINE)
+_RE_DIEU = re.compile(r"(Điều\s+\d+\.\s*.+)", re.MULTILINE)
 
 
 def chunk_policy_text(text: str, doc_title: str) -> list[dict]:
@@ -61,9 +61,9 @@ def chunk_policy_text(text: str, doc_title: str) -> list[dict]:
     # TOC lines have dots (\.{3,}) or end with a standalone page number.
     body_start = 0
     for m in _RE_CHUONG.finditer(text):
-        nl = text.find('\n', m.start())
-        line = text[m.start():nl if nl != -1 else len(text)].rstrip()
-        if not re.search(r'\.{3,}', line) and not re.search(r'\s+\d{1,3}\s*$', line):
+        nl = text.find("\n", m.start())
+        line = text[m.start() : nl if nl != -1 else len(text)].rstrip()
+        if not re.search(r"\.{3,}", line) and not re.search(r"\s+\d{1,3}\s*$", line):
             body_start = m.start()
             break
 

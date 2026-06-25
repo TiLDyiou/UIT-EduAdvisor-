@@ -92,19 +92,20 @@ class Settings(BaseSettings):
     groq_model: str = "openai/gpt-oss-120b"
 
     # --- M7: Remote Bot (tokens are secrets; set repr=False) ---
-    telegram_bot_token: str = Field(default="", repr=False)
-    telegram_bot_username: str = ""
-    telegram_webhook_secret: str = Field(default="", repr=False)
     discord_bot_token: str = Field(default="", repr=False)
-    messenger_page_access_token: str = Field(default="", repr=False)
-    messenger_verify_token: str = Field(default="", repr=False)
-    messenger_app_secret: str = Field(default="", repr=False)
-    messenger_page_name: str = ""
-    bot_command_rate_limit_per_hour: int = 10
+    bot_command_rate_limit_per_hour: int = 50
     bot_link_token_ttl_seconds: int = 600
     reminder_check_interval_seconds: int = 300
     reminder_exam_hours_before: int = 36
     reminder_deadline_hours_before: int = 18
+
+    # --- Email / SMTP ---
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = Field(default="", repr=False)
+    smtp_from_email: str = ""
+    smtp_use_tls: bool = False
 
     @property
     def database_url(self) -> str:

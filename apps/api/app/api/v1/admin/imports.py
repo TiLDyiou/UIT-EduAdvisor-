@@ -51,7 +51,9 @@ def _validate_import_file(file: UploadFile, size: int, settings: Settings) -> st
 async def _store_uploaded_file(settings: Settings, suffix: str, payload: bytes) -> str:
     root = Path(settings.admin_private_storage_dir)
     root.mkdir(parents=True, exist_ok=True)
-    filename = f"import_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}_{secrets.token_hex(8)}{suffix}"
+    filename = (
+        f"import_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}_{secrets.token_hex(8)}{suffix}"
+    )
     full_path = root / filename
     full_path.write_bytes(payload)
     return str(full_path)
@@ -82,7 +84,11 @@ async def _enqueue_import_job(
             input_file_path=path,
             result_summary={
                 "filename": file.filename,
-                "preview": {"valid_rows": 0, "invalid_rows": 0, "errors": ["pending_worker_preview"]},
+                "preview": {
+                    "valid_rows": 0,
+                    "invalid_rows": 0,
+                    "errors": ["pending_worker_preview"],
+                },
             },
         )
         await record_audit(
@@ -98,7 +104,9 @@ async def _enqueue_import_job(
         await db.commit()
         committed = True
         job_dict = to_job_response_dict(job)
-        return AdminImportUploadResponse(job_id=job_dict["id"], kind=job_dict["kind"], status=job_dict["status"])
+        return AdminImportUploadResponse(
+            job_id=job_dict["id"], kind=job_dict["kind"], status=job_dict["status"]
+        )
     finally:
         if not committed:
             with suppress(OSError):

@@ -86,6 +86,8 @@ async def test_list_jobs_and_audit_logs(client, admin_user, db_session) -> None:
     )
     assert r.status_code in {202, 422}
 
-    audits = await client.get("/api/v1/admin/audit-logs", params={"action": "admin.import.uploaded"})
+    audits = await client.get(
+        "/api/v1/admin/audit-logs", params={"action": "admin.import.uploaded"}
+    )
     assert audits.status_code == 200
     assert "items" in audits.json()

@@ -69,7 +69,9 @@ async def _fake_stream(*args, **kwargs):
 
 
 @pytest.mark.asyncio
-async def test_chat_stream_emits_meta_delta_done(client, redis_async_client, student_row, monkeypatch) -> None:
+async def test_chat_stream_emits_meta_delta_done(
+    client, redis_async_client, student_row, monkeypatch
+) -> None:
     monkeypatch.setenv("GROQ_API_KEY", "test-key-not-used")
     from app.core.config import get_settings
 
@@ -91,7 +93,9 @@ async def test_chat_stream_emits_meta_delta_done(client, redis_async_client, stu
 
 
 @pytest.mark.asyncio
-async def test_summaries_post_stores_structured_only(client, redis_async_client, student_row) -> None:
+async def test_summaries_post_stores_structured_only(
+    client, redis_async_client, student_row
+) -> None:
     token, csrf = await create_student_session(
         redis_async_client, student_id=student_row.id, ttl_seconds=300
     )

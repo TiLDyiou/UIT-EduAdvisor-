@@ -72,6 +72,9 @@ async def test_chat_stream_429_after_limit(client, redis_async_client, student_r
     n = {"v": 0}
 
     async def fake_check(self, key, limit, window_seconds):
+        # Per-minute check always passes; only count per-hour calls
+        if "min" in key:
+            return True, 99, window_seconds
         n["v"] += 1
         if n["v"] <= 2:
             return True, 2 - n["v"], window_seconds

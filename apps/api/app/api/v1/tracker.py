@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from decimal import Decimal
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -16,14 +15,17 @@ from app.db.models.academic import (
     Curriculum,
     CurriculumCourse,
     CurriculumTerm,
+    Deadline,
     ElectiveGroup,
-    ElectiveGroupCourse,
     Enrollment,
+    Exam,
 )
 from app.db.models.core_security import Student, SyncJob
 from app.deps import get_current_student, get_db
 from app.schemas.m3 import (
+    DeadlineResponse,
     ElectiveGroupStatusResponse,
+    ExamResponse,
     GpaOverviewResponse,
     RoadmapNodeResponse,
     RoadmapResponse,
@@ -31,7 +33,6 @@ from app.schemas.m3 import (
 from app.services.academic.gpa import (
     EnrollmentRow,
     compute_cumulative_gpa,
-    grade_10_to_letter,
 )
 from app.services.academic.roadmap import (
     CourseInfo,
@@ -50,6 +51,7 @@ router = APIRouter(prefix="/tracker", tags=["tracker"])
 # Helpers – load data from DB
 # ---------------------------------------------------------------------------
 
+
 async def _load_enrollments(db: AsyncSession, student_id) -> list[Enrollment]:
     """Load all enrollments for a student, eagerly loading related course."""
     res = await db.execute(
@@ -62,15 +64,17 @@ async def _load_enrollments(db: AsyncSession, student_id) -> list[Enrollment]:
 
 async def _find_curriculum(db: AsyncSession, student: Student) -> Curriculum | None:
     """Find the best matching curriculum for a student's major and enrollment year."""
-    from sqlalchemy import or_, and_
+    from sqlalchemy import and_, or_
+
     from app.db.models.core_security import Major
-    
+
     major_prefix = ""
     if student.major_id:
         res_m = await db.execute(select(Major).where(Major.id == student.major_id))
         m = res_m.scalar_one_or_none()
         if m:
             from app.services.daa.parser import MAJOR_MAPPING
+
             for k, v in MAJOR_MAPPING.items():
                 if v.lower() == m.name.lower():
                     major_prefix = k
@@ -92,16 +96,16 @@ async def _find_curriculum(db: AsyncSession, student: Student) -> Curriculum | N
         return None
 
     query = select(Curriculum).where(or_(*conditions))
-    
+
     # Compare effective_year
     if student.enrollment_year:
         query = query.where(
             or_(
                 Curriculum.effective_year <= student.enrollment_year,
-                Curriculum.effective_year.is_(None)
+                Curriculum.effective_year.is_(None),
             )
         )
-    
+
     query = query.order_by(Curriculum.effective_year.desc().nullslast()).limit(1)
     res = await db.execute(query)
     return res.scalar_one_or_none()
@@ -117,6 +121,7 @@ def _enrollment_to_row(e: Enrollment) -> EnrollmentRow:
 # ---------------------------------------------------------------------------
 # GPA endpoints
 # ---------------------------------------------------------------------------
+
 
 @router.get("/gpa", response_model=GpaOverviewResponse)
 async def gpa_overview(
@@ -159,12 +164,10 @@ async def gpa_overview(
     )
 
 
-
-
-
 # ---------------------------------------------------------------------------
 # Roadmap endpoint
 # ---------------------------------------------------------------------------
+
 
 @router.get("/roadmap", response_model=RoadmapResponse)
 async def roadmap(
@@ -246,7 +249,7 @@ async def roadmap(
             course_id=e.course_id,
             final_grade_10=e.final_grade_10,
             is_current_term=e.term_code in current_terms,
-            detailed_grades={g.component: float(g.score) for g in e.grades}
+            detailed_grades={g.component: float(g.score) for g in e.grades},
         )
         for e in enrollments
     ]
@@ -316,7 +319,7 @@ async def roadmap(
     pe_terms_used = set()
     max_english_level = 0
     import re
-    
+
     # First pass: record PE courses that are already enrolled, and find max English level
     for n in nodes:
         is_pe = "giáo dục thể chất" in n.course_name.lower()
@@ -324,12 +327,12 @@ async def roadmap(
             actual_tc = course_actual_term.get(n.course_id)
             if actual_tc and actual_tc in term_code_to_number:
                 pe_terms_used.add(term_code_to_number[actual_tc])
-                
+
         # English detection
-        m_eng = re.search(r'(?:anh văn|tiếng anh)\s+(\d+)', n.course_name.lower())
+        m_eng = re.search(r"(?:anh văn|tiếng anh)\s+(\d+)", n.course_name.lower())
         if m_eng:
             actual_tc = course_actual_term.get(n.course_id)
-            if actual_tc: # meaning enrolled (passed or in_progress)
+            if actual_tc:  # meaning enrolled (passed or in_progress)
                 level = int(m_eng.group(1))
                 if level > max_english_level:
                     max_english_level = level
@@ -337,16 +340,16 @@ async def roadmap(
     for n in nodes:
         is_gdqp = "giáo dục quốc phòng" in n.course_name.lower()
         is_pe = "giáo dục thể chất" in n.course_name.lower()
-        
+
         # English skip rule
-        m_eng = re.search(r'(?:anh văn|tiếng anh)\s+(\d+)', n.course_name.lower())
+        m_eng = re.search(r"(?:anh văn|tiếng anh)\s+(\d+)", n.course_name.lower())
         if m_eng:
             level = int(m_eng.group(1))
             if level < max_english_level:
                 continue
 
         actual_tc = course_actual_term.get(n.course_id)
-        
+
         actual_status = n.status
         if is_gdqp:
             actual_term = n.term_number
@@ -360,7 +363,7 @@ async def roadmap(
                 while actual_term in pe_terms_used:
                     actual_term += 1
                 pe_terms_used.add(actual_term)
-            
+
         node_responses.append(
             RoadmapNodeResponse(
                 course_id=n.course_id,
@@ -370,8 +373,6 @@ async def roadmap(
                 term_number=actual_term,
                 status=actual_status,
                 grade_10=n.grade_10,
-                grade_4=n.grade_4,
-                grade_letter=grade_10_to_letter(n.grade_10) if n.grade_10 is not None else None,
                 prerequisites_met=n.prerequisites_met,
                 missing_prerequisites=n.missing_prerequisites,
                 elective_group_id=n.elective_group_id,
@@ -399,3 +400,72 @@ async def roadmap(
         elective_groups=eg_responses,
         is_preview=is_preview,
     )
+
+
+# ---------------------------------------------------------------------------
+# Exams & Deadlines endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.get("/exams", response_model=list[ExamResponse])
+async def list_exams(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    student: Annotated[Student, Depends(get_current_student)],
+) -> list[ExamResponse]:
+    from datetime import date, timedelta
+
+    today = date.today()
+    max_date = today + timedelta(days=14)
+
+    res = await db.execute(
+        select(Exam)
+        .options(selectinload(Exam.course))
+        .where(
+            Exam.student_id == student.id,
+            Exam.exam_date >= today,
+            Exam.exam_date <= max_date,
+        )
+        .order_by(Exam.exam_date.asc(), Exam.start_time.asc())
+    )
+    exams = res.scalars().all()
+    return [
+        ExamResponse(
+            id=e.id,
+            course_code=e.course.code or "",
+            course_name=e.course.name,
+            term_code=e.term_code,
+            exam_date=e.exam_date,
+            start_time=e.start_time,
+            end_time=e.end_time,
+            room=e.room,
+            kind=e.kind,
+        )
+        for e in exams
+    ]
+
+
+@router.get("/deadlines", response_model=list[DeadlineResponse])
+async def list_deadlines(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    student: Annotated[Student, Depends(get_current_student)],
+) -> list[DeadlineResponse]:
+    res = await db.execute(
+        select(Deadline)
+        .options(selectinload(Deadline.course))
+        .where(Deadline.student_id == student.id)
+        .order_by(Deadline.due_at.asc())
+    )
+    deadlines = res.scalars().all()
+    return [
+        DeadlineResponse(
+            id=d.id,
+            course_code=d.course.code if d.course else None,
+            course_name=d.course.name if d.course else None,
+            title=d.title,
+            due_at=d.due_at,
+            source=d.source,
+            source_url=d.source_url,
+            completed_at=d.completed_at,
+        )
+        for d in deadlines
+    ]

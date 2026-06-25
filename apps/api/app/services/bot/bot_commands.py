@@ -3,21 +3,19 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime, timedelta, timezone
+import uuid
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.db.models.academic import Course, Deadline, Enrollment, Exam, Schedule
+from app.db.models.academic import Deadline, Enrollment, Exam, Schedule
 from app.db.models.bot import ReminderPreference
 from app.db.models.core_security import Student
 from app.schemas.bot import NormalizedCommand
 from app.services.academic.gpa import EnrollmentRow, compute_cumulative_gpa
 from app.services.bot.bot_linking import find_student_by_platform, redeem_link_token
-
-import uuid
-
 
 # ---------------------------------------------------------------------------
 # Day-of-week helpers (UIT convention: 2=Mon..7=Sat, 8=Sun)
@@ -26,13 +24,20 @@ import uuid
 _DAY_NAMES = {2: "Thứ 2", 3: "Thứ 3", 4: "Thứ 4", 5: "Thứ 5", 6: "Thứ 6", 7: "Thứ 7", 8: "CN"}
 
 _DAY_PARSE = {
-    "thu2": 2, "t2": 2,
-    "thu3": 3, "t3": 3,
-    "thu4": 4, "t4": 4,
-    "thu5": 5, "t5": 5,
-    "thu6": 6, "t6": 6,
-    "thu7": 7, "t7": 7,
-    "cn": 8, "chunhat": 8,
+    "thu2": 2,
+    "t2": 2,
+    "thu3": 3,
+    "t3": 3,
+    "thu4": 4,
+    "t4": 4,
+    "thu5": 5,
+    "t5": 5,
+    "thu6": 6,
+    "t6": 6,
+    "thu7": 7,
+    "t7": 7,
+    "cn": 8,
+    "chunhat": 8,
 }
 
 
@@ -62,10 +67,7 @@ _UNLINKED_TEXT = (
     "Vao UIT EduAdvisor > Settings > Ket noi Bot de lay ma lien ket."
 )
 
-_START_TEXT = (
-    "Chao ban! Day la UIT EduAdvisor Bot.\n\n"
-    + _UNLINKED_TEXT
-)
+_START_TEXT = "Chao ban! Day la UIT EduAdvisor Bot.\n\n" + _UNLINKED_TEXT
 
 
 async def _cmd_start(db: AsyncSession, cmd: NormalizedCommand) -> str:
@@ -130,7 +132,7 @@ async def _cmd_tkb(db: AsyncSession, cmd: NormalizedCommand, student: Student) -
 
 
 async def _cmd_lithi(db: AsyncSession, cmd: NormalizedCommand, student: Student) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     week_later = now + timedelta(days=7)
     res = await db.execute(
         select(Exam)
@@ -159,7 +161,7 @@ async def _cmd_lithi(db: AsyncSession, cmd: NormalizedCommand, student: Student)
 
 
 async def _cmd_deadline(db: AsyncSession, cmd: NormalizedCommand, student: Student) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     res = await db.execute(
         select(Deadline)
         .options(selectinload(Deadline.course))

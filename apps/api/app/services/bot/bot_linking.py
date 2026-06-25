@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,7 +19,7 @@ async def create_link_token(
     platform: str,
 ) -> LinkToken:
     settings = get_settings()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     token = LinkToken(
         student_id=student_id,
         platform=platform,
@@ -40,7 +40,7 @@ async def redeem_link_token(
 
     Returns None if token is invalid, expired, or already used.
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     res = await db.execute(
         select(LinkToken)
         .where(
@@ -121,16 +121,14 @@ async def unlink_account(
     student_id: uuid.UUID,
     platform: str,
 ) -> bool:
-    """Unlink a bot account. Returns True if an active link existed."""
-    now = datetime.now(timezone.utc)
+    """Unlink a bot account (hard delete). Returns True if the account existed."""
+    from sqlalchemy import delete
     result = await db.execute(
-        update(BotAccount)
+        delete(BotAccount)
         .where(
             BotAccount.student_id == student_id,
             BotAccount.platform == platform,
-            BotAccount.unlinked_at.is_(None),
         )
-        .values(unlinked_at=now)
     )
     return result.rowcount > 0
 
@@ -149,3 +147,24 @@ async def get_linked_accounts(
         .order_by(BotAccount.linked_at.desc())
     )
     return list(res.scalars().all())
+
+
+async def get_all_bot_accounts(
+    db: AsyncSession,
+    student_id: uuid.UUID,
+) -> list[BotAccount]:
+    """Return the latest bot accounts (active or unlinked) for each platform."""
+    res = await db.execute(
+        select(BotAccount)
+        .where(BotAccount.student_id == student_id)
+        .order_by(BotAccount.linked_at.desc())
+    )
+    accounts = list(res.scalars().all())
+    # Lọc chỉ lấy tài khoản mới nhất cho mỗi nền tảng (platform)
+    seen = set()
+    latest_accounts = []
+    for a in accounts:
+        if a.platform not in seen:
+            seen.add(a.platform)
+            latest_accounts.append(a)
+    return latest_accounts

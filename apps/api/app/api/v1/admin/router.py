@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.api.v1.admin import auth as admin_auth
 from app.api.v1.admin import audit as admin_audit
+from app.api.v1.admin import auth as admin_auth
 from app.api.v1.admin import courses as admin_courses
 from app.api.v1.admin import curricula as admin_curricula
 from app.api.v1.admin import imports as admin_imports

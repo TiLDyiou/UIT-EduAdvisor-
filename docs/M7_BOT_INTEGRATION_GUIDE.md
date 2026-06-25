@@ -11,55 +11,7 @@ Tìm tất cả mock markers:
 grep -rn "MOCK_API" apps/api/app/services/bot/ apps/api/app/scripts/
 ```
 
-## 1. Telegram
-
-### Bước 1: Tạo bot
-1. Mở Telegram, chat với [@BotFather](https://t.me/BotFather)
-2. Gửi `/newbot`, đặt tên và username
-3. Copy token (dạng `123456:ABC-DEF...`)
-
-### Bước 2: Cập nhật .env
-```env
-TELEGRAM_BOT_TOKEN=123456:ABC-DEF...
-TELEGRAM_BOT_USERNAME=your_bot_username
-TELEGRAM_WEBHOOK_SECRET=your-random-secret-string
-```
-
-### Bước 3: Setup webhook
-Sau khi deploy, gọi API Telegram để đăng ký webhook:
-```bash
-curl -X POST "https://api.telegram.org/bot<TOKEN>/setWebhook" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url": "https://your-domain.com/api/v1/bot/telegram/webhook",
-    "secret_token": "your-random-secret-string"
-  }'
-```
-
-### Bước 4: Setup menu commands
-```bash
-curl -X POST "https://api.telegram.org/bot<TOKEN>/setMyCommands" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "commands": [
-      {"command": "tkb", "description": "Xem TKB"},
-      {"command": "lithi", "description": "Lich thi 7 ngay toi"},
-      {"command": "deadline", "description": "Deadline sap toi"},
-      {"command": "gpa", "description": "GPA tich luy"},
-      {"command": "nhacnho", "description": "Bat/tat nhac nho"},
-      {"command": "help", "description": "Danh sach lenh"}
-    ]
-  }'
-```
-
-### Bước 5: Verify
-- Gửi `/start` cho bot → nhận hướng dẫn liên kết
-- Tạo link token trên web → gửi `/start <token>` → liên kết thành công
-- Gửi `/help` → nhận danh sách lệnh
-
----
-
-## 2. Discord
+## 1. Discord
 
 ### Bước 1: Tạo application
 1. Vào [Discord Developer Portal](https://discord.com/developers/applications)
@@ -86,7 +38,7 @@ Bot sẽ tự đăng ký slash commands khi khởi động.
 
 ---
 
-## 3. Messenger (Facebook)
+## 2. Messenger (Facebook)
 
 ### Bước 1: Tạo Facebook App
 1. Vào [Meta for Developers](https://developers.facebook.com/)

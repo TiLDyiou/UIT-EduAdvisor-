@@ -75,7 +75,9 @@ async def build_realtime_context_block(db: AsyncSession, student: Student) -> st
     for e in enrollments:
         if e.course:
             grade_str = str(e.final_grade_10) if e.final_grade_10 is not None else "(chưa có điểm)"
-            transcript_lines.append(f"- {e.course.code} - {e.course.name} ({e.term_code}): {grade_str}")
+            transcript_lines.append(
+                f"- {e.course.code} - {e.course.name} ({e.term_code}): {grade_str}"
+            )
 
     lines = [
         f"Ngành: {major_name}",
@@ -86,7 +88,7 @@ async def build_realtime_context_block(db: AsyncSession, student: Student) -> st
         f"Môn chưa đạt (đã có điểm): {', '.join(failed_courses) if failed_courses else '(không)'}",
         "Lịch thi sắp tới: " + ("; ".join(exam_lines) if exam_lines else "(không)"),
         "BẢNG ĐIỂM CHI TIẾT:",
-        "\n".join(transcript_lines) if transcript_lines else "(Chưa có dữ liệu bảng điểm)"
+        "\n".join(transcript_lines) if transcript_lines else "(Chưa có dữ liệu bảng điểm)",
     ]
     return "\n".join(lines)
 
@@ -117,7 +119,9 @@ async def build_historical_context_block(
         for s in summaries:
             coi = ", ".join(s.courses_of_interest or [])
             rq = ", ".join(s.recent_questions or [])
-            parts.append(f"- Khóa học quan tâm: {coi or '(trống)'} | Chủ đề gần đây: {rq or '(trống)'}")
+            parts.append(
+                f"- Khóa học quan tâm: {coi or '(trống)'} | Chủ đề gần đây: {rq or '(trống)'}"
+            )
     else:
         parts.append("Chưa có tóm tắt phiên trước trên server.")
 

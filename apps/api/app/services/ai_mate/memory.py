@@ -17,7 +17,9 @@ async def purge_expired_summaries(db: AsyncSession) -> int:
     return res.rowcount or 0
 
 
-async def list_summaries(db: AsyncSession, student_id: UUID, settings: Settings) -> list[ChatSummary]:
+async def list_summaries(
+    db: AsyncSession, student_id: UUID, settings: Settings
+) -> list[ChatSummary]:
     await purge_expired_summaries(db)
     now = datetime.now(UTC)
     res = await db.execute(
@@ -55,7 +57,9 @@ async def create_summary(
 
 async def delete_summary(db: AsyncSession, student_id: UUID, summary_id: UUID) -> bool:
     res = await db.execute(
-        delete(ChatSummary).where(ChatSummary.id == summary_id, ChatSummary.student_id == student_id)
+        delete(ChatSummary).where(
+            ChatSummary.id == summary_id, ChatSummary.student_id == student_id
+        )
     )
     await db.flush()
     return (res.rowcount or 0) > 0
@@ -80,7 +84,9 @@ async def create_pin(db: AsyncSession, *, student_id: UUID, content: str) -> Pin
 
 async def delete_pin(db: AsyncSession, student_id: UUID, pin_id: UUID) -> bool:
     res = await db.execute(
-        delete(PinnedMessage).where(PinnedMessage.id == pin_id, PinnedMessage.student_id == student_id)
+        delete(PinnedMessage).where(
+            PinnedMessage.id == pin_id, PinnedMessage.student_id == student_id
+        )
     )
     await db.flush()
     return (res.rowcount or 0) > 0

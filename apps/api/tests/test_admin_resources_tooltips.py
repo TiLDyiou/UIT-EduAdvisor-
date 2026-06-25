@@ -94,7 +94,9 @@ async def test_admin_resource_crud_and_filter(client, admin_user, db_session) ->
     assert created.status_code == 201
     resource_id = created.json()["id"]
 
-    listed = await client.get("/api/v1/admin/resources", params={"course_id": course_id, "visible": True})
+    listed = await client.get(
+        "/api/v1/admin/resources", params={"course_id": course_id, "visible": True}
+    )
     assert listed.status_code == 200
     assert listed.json()["total"] == 1
 
@@ -109,7 +111,9 @@ async def test_admin_resource_crud_and_filter(client, admin_user, db_session) ->
     row = await db_session.execute(select(CourseResource).where(CourseResource.id == resource_id))
     assert row.scalar_one().is_visible is False
 
-    logs = await db_session.execute(select(AuditLog).where(AuditLog.action == "admin.resource.updated"))
+    logs = await db_session.execute(
+        select(AuditLog).where(AuditLog.action == "admin.resource.updated")
+    )
     assert len(list(logs.scalars().all())) == 1
 
 
@@ -175,5 +179,7 @@ async def test_admin_tooltip_crud_and_public_endpoint(client, admin_user, db_ses
     assert public_all.status_code == 200
     assert len(public_all.json()) >= 1
 
-    logs = await db_session.execute(select(AuditLog).where(AuditLog.action == "admin.tooltip.updated"))
+    logs = await db_session.execute(
+        select(AuditLog).where(AuditLog.action == "admin.tooltip.updated")
+    )
     assert len(list(logs.scalars().all())) == 1

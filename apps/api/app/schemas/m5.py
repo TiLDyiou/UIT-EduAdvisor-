@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-
 # ---------------------------------------------------------------------------
 # Section (parsed from Excel)
 # ---------------------------------------------------------------------------
+
 
 class SectionSchema(BaseModel):
     course_code: str
@@ -38,6 +38,7 @@ class UploadTkbResponse(BaseModel):
 # Smart Recommendation
 # ---------------------------------------------------------------------------
 
+
 class RecommendedCourseSchema(BaseModel):
     course_id: int
     course_code: str
@@ -56,6 +57,7 @@ class RecommendResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # Schedule Solver
 # ---------------------------------------------------------------------------
+
 
 class AvailableSlot(BaseModel):
     day: int = Field(ge=2, le=8, description="2=Mon … 8=Sun")
@@ -92,6 +94,7 @@ class ScheduleResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # ICS Export
 # ---------------------------------------------------------------------------
+
 
 class IcsExportRequest(BaseModel):
     sections: list[SectionSchema]

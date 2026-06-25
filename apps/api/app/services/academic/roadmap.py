@@ -10,12 +10,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from app.services.academic.gpa import PASS_THRESHOLD, grade_10_to_4
-
+from app.services.academic.gpa import PASS_THRESHOLD
 
 # ---------------------------------------------------------------------------
 # Data types
 # ---------------------------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class CourseInfo:
@@ -28,6 +28,7 @@ class CourseInfo:
 @dataclass(frozen=True)
 class CurriculumEntry:
     """One course placed in the curriculum grid."""
+
     course: CourseInfo
     term_number: int
     is_required: bool
@@ -38,6 +39,7 @@ class CurriculumEntry:
 @dataclass(frozen=True)
 class EnrollmentInfo:
     """Minimal view of a student enrollment for roadmap resolution."""
+
     course_id: int
     final_grade_10: Decimal | None
     is_current_term: bool  # True if the enrollment is in the current term
@@ -80,7 +82,6 @@ class RoadmapNode:
     term_number: int
     status: str
     grade_10: Decimal | None
-    grade_4: Decimal | None
     prerequisites_met: bool
     missing_prerequisites: list[str]  # course codes
     elective_group_id: int | None
@@ -103,6 +104,7 @@ class ElectiveGroupStatus:
 # Resolution
 # ---------------------------------------------------------------------------
 
+
 def _build_passed_set(enrollments: list[EnrollmentInfo]) -> set[int]:
     """Course IDs where the student has passed."""
     return {
@@ -116,11 +118,23 @@ def _enrollment_map(enrollments: list[EnrollmentInfo]) -> dict[int, EnrollmentIn
     """Latest enrollment per course_id.
 
     If a student has multiple enrollments for the same course (retake),
-    the most recent one (last in list) wins.
+    the most recent one (last in list) wins. We also prefer enrollments
+    that contain grade data (detailed or final grade).
     """
     m: dict[int, EnrollmentInfo] = {}
     for e in enrollments:
-        m[e.course_id] = e
+        existing = m.get(e.course_id)
+        if existing is None:
+            m[e.course_id] = e
+        else:
+            existing_score = len(existing.detailed_grades or {}) + (100 if existing.final_grade_10 is not None else 0)
+            current_score = len(e.detailed_grades or {}) + (100 if e.final_grade_10 is not None else 0)
+            
+            if current_score > existing_score:
+                m[e.course_id] = e
+            elif current_score == existing_score:
+                if e.is_current_term or not existing.is_current_term:
+                    m[e.course_id] = e
     return m
 
 
@@ -182,7 +196,6 @@ def resolve_roadmap(
             status = STATUS_NOT_STARTED
 
         grade_10 = enrollment.final_grade_10 if enrollment else None
-        grade_4 = grade_10_to_4(grade_10) if grade_10 is not None else None
 
         nodes.append(
             RoadmapNode(
@@ -193,7 +206,6 @@ def resolve_roadmap(
                 term_number=entry.term_number,
                 status=status,
                 grade_10=grade_10,
-                grade_4=grade_4,
                 prerequisites_met=prereqs_met,
                 missing_prerequisites=missing_codes,
                 elective_group_id=entry.elective_group_id,

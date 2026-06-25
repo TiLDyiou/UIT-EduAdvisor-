@@ -189,11 +189,7 @@ async def list_policies(
     if deprecated is not None:
         query = query.where(PolicyDocument.is_deprecated == deprecated)
     total = await db.scalar(select(func.count()).select_from(query.subquery()))
-    rows = await db.execute(
-        query.order_by(PolicyDocument.id.desc())
-        .limit(limit)
-        .offset(offset)
-    )
+    rows = await db.execute(query.order_by(PolicyDocument.id.desc()).limit(limit).offset(offset))
     items = [_to_policy_response(r) for r in rows.scalars().all()]
     return AdminPolicyListResponse(items=items, total=total or 0, limit=limit, offset=offset)
 

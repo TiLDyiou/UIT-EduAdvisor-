@@ -70,11 +70,17 @@ def preview_exam_schedule_xlsx(path: str) -> PreviewResult:
             header = h
             break
     if header_idx < 0:
-        return PreviewResult(ok_rows=[], errors=[{"row": 0, "error": "header_not_found"}], header=[])
+        return PreviewResult(
+            ok_rows=[], errors=[{"row": 0, "error": "header_not_found"}], header=[]
+        )
 
     missing = [k for k in EXAM_REQUIRED_HEADERS if k not in header]
     if missing:
-        return PreviewResult(ok_rows=[], errors=[{"row": header_idx + 1, "error": "missing_headers", "missing": missing}], header=header)
+        return PreviewResult(
+            ok_rows=[],
+            errors=[{"row": header_idx + 1, "error": "missing_headers", "missing": missing}],
+            header=header,
+        )
 
     idx = {k: header.index(k) for k in EXAM_REQUIRED_HEADERS}
     ok_rows: list[dict[str, Any]] = []
@@ -142,14 +148,20 @@ def _ca_to_time(ca: int) -> tuple[time, time]:
 
 def preview_course_offerings_file(path: str) -> PreviewResult:
     if Path(path).suffix.lower() != ".xlsx":
-        return PreviewResult(ok_rows=[], errors=[{"row": 0, "error": "only_xlsx_supported_now"}], header=[])
+        return PreviewResult(
+            ok_rows=[], errors=[{"row": 0, "error": "only_xlsx_supported_now"}], header=[]
+        )
     rows = _load_rows(path)
     if not rows:
         return PreviewResult(ok_rows=[], errors=[{"row": 0, "error": "empty_file"}], header=[])
     header = [_normalize_header(x) for x in rows[0]]
     missing = [k for k in OFFERING_REQUIRED_HEADERS if k not in header]
     if missing:
-        return PreviewResult(ok_rows=[], errors=[{"row": 1, "error": "missing_headers", "missing": missing}], header=header)
+        return PreviewResult(
+            ok_rows=[],
+            errors=[{"row": 1, "error": "missing_headers", "missing": missing}],
+            header=header,
+        )
     idx = {k: header.index(k) for k in OFFERING_REQUIRED_HEADERS}
     ok_rows: list[dict[str, Any]] = []
     errors: list[dict[str, Any]] = []
@@ -171,9 +183,15 @@ def preview_course_offerings_file(path: str) -> PreviewResult:
                     "course_name": course_name,
                     "credits": credits,
                     "section_code": str(vals[idx["section_code"]] or "").strip(),
-                    "day_of_week": int(vals[idx["day_of_week"]]) if vals[idx["day_of_week"]] is not None else None,
-                    "start_period": int(vals[idx["start_period"]]) if vals[idx["start_period"]] is not None else None,
-                    "end_period": int(vals[idx["end_period"]]) if vals[idx["end_period"]] is not None else None,
+                    "day_of_week": int(vals[idx["day_of_week"]])
+                    if vals[idx["day_of_week"]] is not None
+                    else None,
+                    "start_period": int(vals[idx["start_period"]])
+                    if vals[idx["start_period"]] is not None
+                    else None,
+                    "end_period": int(vals[idx["end_period"]])
+                    if vals[idx["end_period"]] is not None
+                    else None,
                     "room": str(vals[idx["room"]]).strip() or None,
                 }
             )

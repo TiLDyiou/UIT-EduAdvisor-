@@ -27,9 +27,7 @@ from app.db.models.mixins import BigIntPkMixin, UUIDPkMixin
 
 class PolicyDocument(BigIntPkMixin, Base):
     __tablename__ = "policy_documents"
-    __table_args__ = (
-        UniqueConstraint("tag", "title", name="uq_policy_tag_title"),
-    )
+    __table_args__ = (UniqueConstraint("tag", "title", name="uq_policy_tag_title"),)
 
     title: Mapped[str] = mapped_column(Text, nullable=False)
     tag: Mapped[str] = mapped_column(String(32), nullable=False)

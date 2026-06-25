@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import uuid
 from datetime import datetime
 from typing import Annotated
-import uuid
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select

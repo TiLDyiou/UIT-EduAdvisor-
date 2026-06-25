@@ -6,9 +6,7 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
-import uuid
 
 import discord
 from discord import app_commands
@@ -62,6 +60,7 @@ async def _run_command(interaction: discord.Interaction, command: str, args: str
 # Slash commands
 # ---------------------------------------------------------------------------
 
+
 @app_commands.command(name="tkb", description="Xem TKB tuan hoac ngay cu the")
 @app_commands.describe(thu="VD: thu2, thu3, ... (de trong = ca tuan)")
 async def _tkb(interaction: discord.Interaction, thu: str = ""):
@@ -103,6 +102,7 @@ async def _help(interaction: discord.Interaction):
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     settings = get_settings()

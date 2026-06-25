@@ -4,17 +4,16 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Literal
-from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-
-Platform = Literal["telegram", "discord", "messenger"]
+Platform = Literal["discord", "mail"]
 
 
 # ---------------------------------------------------------------------------
 # Link token
 # ---------------------------------------------------------------------------
+
 
 class LinkTokenCreateRequest(BaseModel):
     platform: Platform
@@ -30,15 +29,18 @@ class LinkTokenResponse(BaseModel):
 # Bot accounts
 # ---------------------------------------------------------------------------
 
+
 class BotAccountResponse(BaseModel):
     platform: str
     platform_user_id: str
     linked_at: datetime
+    unlinked_at: datetime | None = None
 
 
 # ---------------------------------------------------------------------------
 # Reminder preferences
 # ---------------------------------------------------------------------------
+
 
 class ReminderPreferenceResponse(BaseModel):
     exam_reminder: bool
@@ -53,6 +55,7 @@ class ReminderPreferenceUpdateRequest(BaseModel):
 # ---------------------------------------------------------------------------
 # Internal: normalized command from any platform
 # ---------------------------------------------------------------------------
+
 
 class NormalizedCommand(BaseModel):
     """Platform-agnostic representation of a bot command."""

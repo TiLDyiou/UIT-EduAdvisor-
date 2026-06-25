@@ -13,13 +13,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.db.models.academic import (
-    Course,
     CoursePrerequisite,
     Curriculum,
     CurriculumCourse,
     CurriculumTerm,
     ElectiveGroup,
-    ElectiveGroupCourse,
     Enrollment,
 )
 from app.db.models.core_security import Student
@@ -36,7 +34,11 @@ from app.schemas.m5 import (
     UploadTkbResponse,
 )
 from app.services.academic.excel_parser import Section, parse_tkb_excel
-from app.services.academic.gpa import compute_cumulative_gpa, EnrollmentRow, PASS_THRESHOLD, grade_10_to_4
+from app.services.academic.gpa import (
+    PASS_THRESHOLD,
+    EnrollmentRow,
+    compute_cumulative_gpa,
+)
 from app.services.academic.ics_export import generate_ics
 from app.services.academic.roadmap import ElectiveGroupRule, EnrollmentInfo
 from app.services.academic.scheduler import (
@@ -54,6 +56,7 @@ _MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _section_to_schema(s: Section) -> SectionSchema:
     return SectionSchema(
@@ -109,6 +112,7 @@ async def _load_enrollments(db: AsyncSession, student_id) -> list[Enrollment]:
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
 
 @router.post("/upload-tkb", response_model=UploadTkbResponse)
 async def upload_tkb(file: UploadFile) -> UploadTkbResponse:
@@ -266,7 +270,12 @@ async def recommend(
 
     available_set = set(available_course_codes) if available_course_codes else None
     scored = smart_recommend(
-        candidates, student_ctx, eg_rules, enrollment_infos, credit_map, available_set,
+        candidates,
+        student_ctx,
+        eg_rules,
+        enrollment_infos,
+        credit_map,
+        available_set,
     )
 
     return RecommendResponse(
@@ -296,7 +305,9 @@ async def solve(body: ScheduleRequest) -> ScheduleResponse:
         available_slots = {(slot.day, slot.period) for slot in body.available_slots}
 
     solutions, warnings = solve_schedule(
-        body.course_codes, sections, available_slots,
+        body.course_codes,
+        sections,
+        available_slots,
     )
 
     return ScheduleResponse(

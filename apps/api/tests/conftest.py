@@ -255,4 +255,3 @@ def create_course(db_session):
         return c
 
     return _create
-

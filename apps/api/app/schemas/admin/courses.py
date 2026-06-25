@@ -4,7 +4,17 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-ALLOWED_COURSE_KINDS = {"core", "elective", "thesis", "internship", "general", "foundation", "major", "other", "thesis_internship"}
+ALLOWED_COURSE_KINDS = {
+    "core",
+    "elective",
+    "thesis",
+    "internship",
+    "general",
+    "foundation",
+    "major",
+    "other",
+    "thesis_internship",
+}
 ALLOWED_COURSE_DIFFICULTIES = {"easy", "medium", "hard"}
 
 

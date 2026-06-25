@@ -36,7 +36,9 @@ class Course(BigIntPkMixin, TimestampUpdateMixin, Base):
     kind: Mapped[str] = mapped_column(String(32), nullable=False)
     difficulty: Mapped[str | None] = mapped_column(String(16), nullable=True)
     admin_locked: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
-    admin_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    admin_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
 
 
@@ -309,9 +311,7 @@ class ElectiveGroupCourse(Base):
 
 class TermCourseOffering(BigIntPkMixin, TimestampUpdateMixin, Base):
     __tablename__ = "term_course_offerings"
-    __table_args__ = (
-        UniqueConstraint("term_code", "course_id", name="uq_term_course_offering"),
-    )
+    __table_args__ = (UniqueConstraint("term_code", "course_id", name="uq_term_course_offering"),)
 
     term_code: Mapped[str] = mapped_column(String(32), nullable=False)
     course_id: Mapped[int] = mapped_column(

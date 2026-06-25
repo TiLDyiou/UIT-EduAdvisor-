@@ -49,9 +49,7 @@ async def _upsert_admin(email: str, password: str) -> str:
     try:
         maker = get_sessionmaker()
         async with maker() as session:
-            res = await session.execute(
-                select(AdminUser).where(AdminUser.email == email).limit(1)
-            )
+            res = await session.execute(select(AdminUser).where(AdminUser.email == email).limit(1))
             existing = res.scalar_one_or_none()
             pw_hash = hash_password(password)
             if existing is None:

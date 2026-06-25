@@ -30,7 +30,9 @@ async def list_admin_jobs(
     if status:
         query = query.where(AdminJob.status == status.strip())
     rows = await db.execute(query.order_by(AdminJob.created_at.desc()).limit(limit).offset(offset))
-    return [AdminJobResponse.model_validate(to_job_response_dict(row)) for row in rows.scalars().all()]
+    return [
+        AdminJobResponse.model_validate(to_job_response_dict(row)) for row in rows.scalars().all()
+    ]
 
 
 @router.get("/{job_id}", response_model=AdminJobResponse)

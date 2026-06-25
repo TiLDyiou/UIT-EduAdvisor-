@@ -78,7 +78,9 @@ async def get_current_admin_session(
     token = request.cookies.get(settings.admin_session_cookie_name)
     sess = await get_admin_session(redis, token)
     if sess is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="admin_session_required")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="admin_session_required"
+        )
     return sess
 
 

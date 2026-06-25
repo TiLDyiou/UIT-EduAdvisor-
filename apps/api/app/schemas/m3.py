@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
+from datetime import date, datetime, time
 from decimal import Decimal
 
-from pydantic import BaseModel, Field
-
+from pydantic import BaseModel, ConfigDict, Field
 
 # ---------------------------------------------------------------------------
 # GPA
 # ---------------------------------------------------------------------------
+
 
 class GpaOverviewResponse(BaseModel):
     gpa_10: Decimal
@@ -64,10 +65,10 @@ class RetakeEstimateResponse(BaseModel):
     delta_gpa_10: Decimal
 
 
-
 # ---------------------------------------------------------------------------
 # Roadmap
 # ---------------------------------------------------------------------------
+
 
 class RoadmapNodeResponse(BaseModel):
     course_id: int
@@ -77,8 +78,6 @@ class RoadmapNodeResponse(BaseModel):
     term_number: int
     status: str
     grade_10: Decimal | None = None
-    grade_4: Decimal | None = None
-    grade_letter: str | None = None
     prerequisites_met: bool
     missing_prerequisites: list[str]
     elective_group_id: int | None = None
@@ -100,4 +99,36 @@ class RoadmapResponse(BaseModel):
     total_credits: int | None = None
     nodes: list[RoadmapNodeResponse]
     elective_groups: list[ElectiveGroupStatusResponse]
-    is_preview: bool = False# True when student has no enrollment data
+    is_preview: bool = False  # True when student has no enrollment data
+
+
+# ---------------------------------------------------------------------------
+# Exams & Deadlines
+# ---------------------------------------------------------------------------
+
+
+class ExamResponse(BaseModel):
+    id: int
+    course_code: str
+    course_name: str
+    term_code: str
+    exam_date: date
+    start_time: time
+    end_time: time
+    room: str | None = None
+    kind: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DeadlineResponse(BaseModel):
+    id: int
+    course_code: str | None = None
+    course_name: str | None = None
+    title: str
+    due_at: datetime
+    source: str
+    source_url: str | None = None
+    completed_at: datetime | None = None
+
+    model_config = ConfigDict(from_attributes=True)

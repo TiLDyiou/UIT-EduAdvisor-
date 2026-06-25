@@ -62,7 +62,9 @@ async def _admin_login_and_csrf(client: httpx.AsyncClient, admin_user: AdminUser
     return me.json()["csrf_token"]
 
 
-async def test_create_course_normalizes_code_and_writes_audit(client, admin_user, db_session) -> None:
+async def test_create_course_normalizes_code_and_writes_audit(
+    client, admin_user, db_session
+) -> None:
     csrf = await _admin_login_and_csrf(client, admin_user)
     r = await client.post(
         "/api/v1/admin/courses",
@@ -80,18 +82,34 @@ async def test_create_course_normalizes_code_and_writes_audit(client, admin_user
     assert body["code"] == "IT001"
     assert body["admin_locked"] is True
 
-    res = await db_session.execute(select(AuditLog).where(AuditLog.action == "admin.course.created"))
+    res = await db_session.execute(
+        select(AuditLog).where(AuditLog.action == "admin.course.created")
+    )
     logs = list(res.scalars().all())
     assert len(logs) == 1
     assert logs[0].actor_id == admin_user.id
 
 
-async def test_list_courses_with_search_filter_and_pagination(client, admin_user, db_session) -> None:
+async def test_list_courses_with_search_filter_and_pagination(
+    client, admin_user, db_session
+) -> None:
     csrf = await _admin_login_and_csrf(client, admin_user)
     payloads = [
         {"code": "IT001", "name": "Nhap mon", "credits": 3, "kind": "core", "difficulty": "easy"},
-        {"code": "IT002", "name": "Cau truc du lieu", "credits": 4, "kind": "core", "difficulty": "hard"},
-        {"code": "IT003", "name": "Do an", "credits": 2, "kind": "elective", "difficulty": "medium"},
+        {
+            "code": "IT002",
+            "name": "Cau truc du lieu",
+            "credits": 4,
+            "kind": "core",
+            "difficulty": "hard",
+        },
+        {
+            "code": "IT003",
+            "name": "Do an",
+            "credits": 2,
+            "kind": "elective",
+            "difficulty": "medium",
+        },
     ]
     for payload in payloads:
         r = await client.post(
@@ -101,7 +119,9 @@ async def test_list_courses_with_search_filter_and_pagination(client, admin_user
         )
         assert r.status_code == 201
 
-    r = await client.get("/api/v1/admin/courses", params={"search": "cau", "limit": 10, "offset": 0})
+    r = await client.get(
+        "/api/v1/admin/courses", params={"search": "cau", "limit": 10, "offset": 0}
+    )
     assert r.status_code == 200
     assert r.json()["total"] == 1
     assert r.json()["items"][0]["code"] == "IT002"
@@ -132,14 +152,14 @@ async def test_set_prerequisites_rejects_cycle(client, admin_user) -> None:
 
     set_a = await client.put(
         f"/api/v1/admin/courses/{course_a['id']}/prerequisites",
-        json={"prerequisite_ids": [course_b["id"]]},
+        json={"prerequisites": [{"prerequisite_id": course_b["id"], "kind": "prerequisite"}]},
         headers={"X-CSRF-Token": csrf},
     )
     assert set_a.status_code == 200
 
     set_b = await client.put(
         f"/api/v1/admin/courses/{course_b['id']}/prerequisites",
-        json={"prerequisite_ids": [course_a["id"]]},
+        json={"prerequisites": [{"prerequisite_id": course_a["id"], "kind": "prerequisite"}]},
         headers={"X-CSRF-Token": csrf},
     )
     assert set_b.status_code == 422
@@ -150,7 +170,13 @@ async def test_delete_course_rejected_when_referenced_as_prerequisite(client, ad
     csrf = await _admin_login_and_csrf(client, admin_user)
     c1 = await client.post(
         "/api/v1/admin/courses",
-        json={"code": "IT020", "name": "Target", "credits": 3, "kind": "core", "difficulty": "easy"},
+        json={
+            "code": "IT020",
+            "name": "Target",
+            "credits": 3,
+            "kind": "core",
+            "difficulty": "easy",
+        },
         headers={"X-CSRF-Token": csrf},
     )
     c2 = await client.post(
@@ -163,7 +189,7 @@ async def test_delete_course_rejected_when_referenced_as_prerequisite(client, ad
 
     await client.put(
         f"/api/v1/admin/courses/{owner['id']}/prerequisites",
-        json={"prerequisite_ids": [target["id"]]},
+        json={"prerequisites": [{"prerequisite_id": target["id"], "kind": "prerequisite"}]},
         headers={"X-CSRF-Token": csrf},
     )
     delete_resp = await client.delete(
@@ -178,7 +204,13 @@ async def test_update_course_marks_admin_locked(client, admin_user, db_session) 
     csrf = await _admin_login_and_csrf(client, admin_user)
     created = await client.post(
         "/api/v1/admin/courses",
-        json={"code": "IT030", "name": "Mon cu", "credits": 3, "kind": "core", "difficulty": "easy"},
+        json={
+            "code": "IT030",
+            "name": "Mon cu",
+            "credits": 3,
+            "kind": "core",
+            "difficulty": "easy",
+        },
         headers={"X-CSRF-Token": csrf},
     )
     course_id = created.json()["id"]

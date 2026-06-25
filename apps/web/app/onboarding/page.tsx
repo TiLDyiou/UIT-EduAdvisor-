@@ -15,6 +15,8 @@ import {
   Bot,
   Calendar,
   Check,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 import { apiFetch } from "@/lib/api";
@@ -78,7 +80,9 @@ function SyncGraphic({
   const [buffer, setBuffer] = useState(10);
   const [displayedProgress, setDisplayedProgress] = useState(0);
   const [simulatedIndex, setSimulatedIndex] = useState(0);
-  const [completedStages, setCompletedStages] = useState<Set<string>>(new Set());
+  const [completedStages, setCompletedStages] = useState<Set<string>>(
+    new Set(),
+  );
   const [activeStage, setActiveStage] = useState<string | null>("daa_profile");
 
   // Simulation state machine for real-time visual progress
@@ -163,6 +167,14 @@ function SyncGraphic({
           50% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
           100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
+        @keyframes shimmer-slide {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(200%); }
+        }
+        @keyframes pulse-bright {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
       `,
         }}
       />
@@ -189,34 +201,108 @@ function SyncGraphic({
         </p>
       </div>
 
-      <div className="space-y-3 p-4.5 rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-md shadow-2xl">
-        <div className="flex justify-between items-end">
-          <span className="text-sm font-medium text-slate-300">
-            Tiến độ tổng thể
-          </span>
-          <span className="text-3xl font-mono font-light text-cyan-400">
-            {Math.round(displayedProgress)}%
-          </span>
+      <div className="space-y-4 p-6 rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-md shadow-2xl">
+        <div className="flex justify-between items-center mb-1">
+          <div className="flex items-center gap-3">
+            <div className="relative flex h-3 w-3">
+              {isCompleted ? (
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
+              ) : isFailed ? (
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]"></span>
+              ) : (
+                <>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+                </>
+              )}
+            </div>
+            <span className={`text-[11px] font-bold uppercase tracking-widest ${isCompleted ? "text-emerald-400" : isFailed ? "text-red-400" : "text-cyan-400"}`}>
+              {isCompleted ? "Hoàn tất" : isFailed ? "Gián đoạn" : "Đang xử lý"}
+            </span>
+          </div>
+          <div className="flex items-baseline gap-0.5 pr-1">
+            <span className={`text-4xl font-mono font-light tracking-tighter ${isCompleted ? "text-emerald-400" : isFailed ? "text-red-400" : "text-cyan-400"}`}>
+              {Math.round(displayedProgress)}
+            </span>
+            <span className={`text-xl font-light ${isCompleted ? "text-emerald-500/50" : isFailed ? "text-red-500/50" : "text-cyan-500/50"}`}>
+              %
+            </span>
+          </div>
         </div>
 
-        {/* Advanced Linear Buffer Progress Bar */}
-        <div className="relative h-2 rounded-full bg-slate-800/80 overflow-hidden backdrop-blur-sm border border-slate-700/50 shadow-inner">
-          {/* Buffer Layer */}
-          <div
-            className="absolute top-0 left-0 h-full bg-slate-600/40 transition-all duration-300 ease-out"
-            style={{ width: `${buffer}%` }}
-          />
-          {/* Progress Layer */}
-          <div
-            className={`absolute top-0 left-0 h-full transition-all duration-100 ease-out ${isFailed ? "bg-red-500" : isCompleted ? "bg-emerald-500" : "bg-gradient-to-r from-cyan-600 to-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.7)]"}`}
-            style={{ width: `${displayedProgress}%` }}
-          />
+        {/* Segmented Progress Bar */}
+        <div className="flex items-center gap-x-1.5 w-full mt-3">
+          {Array.from({ length: 10 }).map((_, i) => {
+            const min = i * 10;
+            const max = (i + 1) * 10;
+            let percent = 0;
+            if (displayedProgress >= max) percent = 100;
+            else if (displayedProgress > min) percent = ((displayedProgress - min) / 10) * 100;
+
+            const isCurrent = percent > 0 && percent < 100;
+            const isFilled = percent === 100;
+
+            let fillClass = "bg-gradient-to-r from-cyan-600 to-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.8)]";
+            if (isFailed) fillClass = "bg-gradient-to-r from-red-600 to-red-500 shadow-[0_0_12px_rgba(239,68,68,0.8)]";
+            else if (isCompleted) fillClass = "bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.8)]";
+
+            return (
+              <div
+                key={i}
+                className="w-full h-3 flex flex-col justify-center rounded-[3px] bg-slate-800/80 overflow-hidden relative border border-slate-700/60 backdrop-blur-md shadow-inner"
+              >
+                {/* Buffer Layer */}
+                <div
+                  className="absolute top-0 left-0 h-full bg-slate-600/30 transition-all duration-500 ease-out"
+                  style={{ width: `${Math.max(0, Math.min(100, ((buffer - min) / 10) * 100))}%` }}
+                />
+                
+                {/* Progress Layer */}
+                <div
+                  className={`absolute top-0 left-0 h-full transition-all duration-[400ms] ease-out ${fillClass}`}
+                  style={{ width: `${percent}%` }}
+                >
+                  {/* Shimmer Effect */}
+                  {(isFilled || isCurrent) && !isFailed && !isCompleted && (
+                    <div className="absolute inset-0 w-full h-full animate-[shimmer-slide_1.2s_infinite_linear] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+                  )}
+                  {/* Glowing Leading Edge */}
+                  {isCurrent && !isFailed && !isCompleted && (
+                    <div className="absolute top-0 right-0 h-full w-2 bg-white shadow-[0_0_8px_2px_rgba(255,255,255,0.9)] rounded-full translate-x-1 animate-[pulse-bright_1s_infinite_ease-in-out]" />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          <div className="ms-2 relative flex items-center justify-center">
+            {(!isCompleted && !isFailed && displayedProgress > 0 && displayedProgress < 100) && (
+              <div className="absolute -inset-[3px] rounded-full border-2 border-transparent border-t-cyan-400 border-r-cyan-400 animate-spin opacity-80" />
+            )}
+            <span
+              className={`relative shrink-0 flex justify-center items-center rounded-full transition-all duration-500 z-10 ${
+                isCompleted
+                  ? "w-7 h-7 bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.6)] scale-110"
+                  : isFailed
+                    ? "w-6 h-6 bg-red-500 text-white shadow-[0_0_12px_rgba(239,68,68,0.5)]"
+                    : "w-6 h-6 bg-slate-900 text-cyan-400 border border-slate-700"
+              }`}
+            >
+              {isCompleted ? (
+                <Check className="w-3.5 h-3.5" />
+              ) : isFailed ? (
+                <XCircle className="w-3.5 h-3.5" />
+              ) : (
+                <Activity className={`w-3.5 h-3.5 ${displayedProgress > 0 && displayedProgress < 100 ? "animate-pulse opacity-100" : "opacity-50"}`} />
+              )}
+            </span>
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         {stages.map((stage, idx) => {
-          const isDone = completedStages.has(stage) || (isCompleted && idx < simulatedIndex);
+          const isDone =
+            completedStages.has(stage) || (isCompleted && idx < simulatedIndex);
           const isActive = stage === activeStage && !isCompleted && !isFailed;
           const label = STAGE_LABELS[stage] || stage;
 
@@ -225,9 +311,16 @@ function SyncGraphic({
           if (isDone) {
             ratio = 1.0;
           } else if (isActive) {
-            const prevTarget = idx > 0 ? (STAGE_PROGRESS[STAGE_ORDER[idx - 1]] ?? 0) : 0;
+            const prevTarget =
+              idx > 0 ? (STAGE_PROGRESS[STAGE_ORDER[idx - 1]] ?? 0) : 0;
             const stageTarget = STAGE_PROGRESS[stage] ?? 100;
-            ratio = Math.min(1.0, Math.max(0.0, (displayedProgress - prevTarget) / (stageTarget - prevTarget)));
+            ratio = Math.min(
+              1.0,
+              Math.max(
+                0.0,
+                (displayedProgress - prevTarget) / (stageTarget - prevTarget),
+              ),
+            );
           }
 
           return (
@@ -546,6 +639,7 @@ export default function OnboardingPage() {
   const [busy, setBusy] = useState(false);
   const [studentCode, setStudentCode] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [privacy, setPrivacy] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -686,7 +780,6 @@ export default function OnboardingPage() {
                     className="w-full rounded-xl border border-slate-700/80 bg-slate-900/50 pl-11 pr-4 py-3 text-sm outline-none ring-offset-slate-950 transition-all focus:border-cyan-500 focus:bg-slate-900 focus:ring-2 focus:ring-cyan-500/20"
                     value={studentCode}
                     onChange={(e) => setStudentCode(e.target.value)}
-                    placeholder="VD: 20520000"
                     autoComplete="username"
                     required
                     disabled={busy || !!jobId}
@@ -703,15 +796,22 @@ export default function OnboardingPage() {
                     <Lock className="h-4 w-4" />
                   </div>
                   <input
-                    type="password"
-                    className="w-full rounded-xl border border-slate-700/80 bg-slate-900/50 pl-11 pr-4 py-3 text-sm outline-none ring-offset-slate-950 transition-all focus:border-cyan-500 focus:bg-slate-900 focus:ring-2 focus:ring-cyan-500/20"
+                    type={showPassword ? "text" : "password"}
+                    className="w-full rounded-xl border border-slate-700/80 bg-slate-900/50 pl-11 pr-11 py-3 text-sm outline-none ring-offset-slate-950 transition-all focus:border-cyan-500 focus:bg-slate-900 focus:ring-2 focus:ring-cyan-500/20"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
                     autoComplete="current-password"
                     required
                     disabled={busy || !!jobId}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-cyan-400 transition-colors focus:outline-none"
+                    disabled={busy || !!jobId}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
               </div>
             </div>
@@ -840,7 +940,7 @@ export default function OnboardingPage() {
             <SyncGraphic
               events={syncEvents}
               error={error}
-              onComplete={() => router.push("/tracker")}
+              onComplete={() => { window.location.href = "/tracker"; }}
             />
           )}
         </div>
