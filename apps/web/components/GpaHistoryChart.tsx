@@ -171,9 +171,10 @@ export function GpaHistoryChart({ nodes }: { nodes: RoadmapNode[] }) {
             "& .MuiChartsAxis-tick": { stroke: colors.grid },
             "& .MuiChartsAxis-line": { stroke: colors.grid },
             "& .MuiChartsLegend-root": { mb: 2 },
+            "& .MuiChartsGrid-line": { stroke: colors.grid, opacity: 0.5 },
           }}
         >
-          <ChartsGrid horizontal sx={{ stroke: colors.grid, opacity: 0.5 }} />
+          <ChartsGrid horizontal />
           <BarPlot />
           <LinePlot />
           <MarkPlot />
