@@ -181,6 +181,7 @@ export function GpaHistoryChart({ nodes }: { nodes: RoadmapNode[] }) {
           <ChartsXAxis />
           <ChartsYAxis axisId="leftAxis" />
           <ChartsYAxis axisId="rightAxis" />
+          {/* @ts-expect-error MUI X Charts types might be out of sync */}
           <ChartsLegend direction="horizontal" position={{ vertical: 'top', horizontal: 'middle' }} />
           <ChartsTooltip trigger="axis" />
         </ChartsContainer>
