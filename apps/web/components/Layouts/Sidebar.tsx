@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { apiFetch } from "@/lib/api";
+import { apiBaseUrl, apiFetch } from "@/lib/api";
 import {
   LayoutDashboard,
   Calendar,
@@ -84,7 +84,7 @@ function DaaResyncPanel({
   // SSE listener
   useEffect(() => {
     if (!jobId) return;
-    const es = new EventSource(`/api/v1/sync-jobs/${jobId}/events`);
+    const es = new EventSource(`${apiBaseUrl()}/api/v1/sync-jobs/${jobId}/events`, { withCredentials: true });
     es.onmessage = (ev) => {
       let payload: SyncEvent | null = null;
       try {

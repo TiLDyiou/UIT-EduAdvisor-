@@ -19,7 +19,7 @@ import {
   EyeOff,
 } from "lucide-react";
 
-import { apiFetch } from "@/lib/api";
+import { apiBaseUrl, apiFetch } from "@/lib/api";
 import { TRexRunner } from "./trex-runner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -593,7 +593,7 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (!jobId) return;
-    const es = new EventSource(`/api/v1/sync-jobs/${jobId}/events`);
+    const es = new EventSource(`${apiBaseUrl()}/api/v1/sync-jobs/${jobId}/events`, { withCredentials: true });
     es.onmessage = (ev) => {
       let payload: SyncEvent | null = null;
       try {
