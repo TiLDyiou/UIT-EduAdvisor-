@@ -10,6 +10,7 @@ import {
   GraduationCap,
   Calculator,
   Calendar,
+  CalendarClock,
   Settings,
   Sparkles,
   ChevronRight,
