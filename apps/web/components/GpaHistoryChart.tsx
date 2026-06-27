@@ -68,7 +68,7 @@ export function GpaHistoryChart({ nodes }: { nodes: RoadmapNode[] }) {
   const dataset = React.useMemo(() => {
     const termsMap = new Map<
       number,
-      { totalGradeCredits: number; totalCredits: number; hasInProgress: boolean }
+      { totalGradeCredits: number; totalCredits: number; passedCredits: number; hasInProgress: boolean }
     >();
 
     nodes.forEach((n) => {
