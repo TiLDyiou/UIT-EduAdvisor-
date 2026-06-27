@@ -39,18 +39,18 @@ services:
       start_period: 5s
 
   vault:
-    # WARNING: dev-mode. Auto-unseals, in-memory storage, restart wipes data.
-    # Switch to production mode (file/raft backend + unseal key) in M1
-    # before any real credential is encrypted. See README.
+    # PRODUCTION MODE: File storage backend. Manual unseal required after restart.
     image: hashicorp/vault:1.18
     restart: unless-stopped
     cap_add:
       - IPC_LOCK
     environment:
-      VAULT_ADDR: http://0.0.0.0:8200
-      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
-      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID}
-    command: ["server", "-dev"]
+      VAULT_ADDR: http://127.0.0.1:8200
+      VAULT_API_ADDR: http://127.0.0.1:8200
+      VAULT_LOCAL_CONFIG: '{"storage": {"file": {"path": "/vault/file"}}, "listener": {"tcp": {"address": "0.0.0.0:8200", "tls_disable": 1}}, "ui": true}'
+    command: ["server"]
+    volumes:
+      - vault-data:/vault/file
     healthcheck:
       # `vault status` returns 0 only when initialized AND unsealed.
       test: ["CMD", "vault", "status"]
@@ -212,4 +212,4 @@ volumes:
   postgres-data:
   redis-data:
   admin-uploads:
-
+  vault-data:
