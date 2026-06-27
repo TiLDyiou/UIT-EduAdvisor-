@@ -21,6 +21,7 @@ import {
   Upload,
   Lock,
   Send,
+  Download,
 } from "lucide-react";
 
 // Feature Card Props
@@ -369,6 +370,15 @@ function SchedulerMockup() {
         <span className="text-[9px] font-bold text-tokyo-green bg-tokyo-green/10 px-2 py-0.5 rounded">
           0 xung đột
         </span>
+      </div>
+      {/* Action buttons */}
+      <div className="flex gap-2">
+        <button className="flex-1 flex items-center justify-center gap-1.5 bg-tokyo-cyan/10 hover:bg-tokyo-cyan/20 text-tokyo-cyan text-[10px] font-semibold py-2 rounded-xl transition-colors border border-tokyo-cyan/20">
+          <Download className="w-3 h-3" /> Xuất ảnh
+        </button>
+        <button className="flex-1 flex items-center justify-center gap-1.5 bg-tokyo-purple/10 hover:bg-tokyo-purple/20 text-tokyo-purple text-[10px] font-semibold py-2 rounded-xl transition-colors border border-tokyo-purple/20">
+          <Calendar className="w-3 h-3" /> Xuất .ics
+        </button>
       </div>
     </div>
   );
