@@ -44,6 +44,31 @@ const config: Config = {
       boxShadow: {
         "theme-xs": "0px 1px 2px 0px rgba(16, 24, 40, 0.05)",
       },
+      animation: {
+        "gradient-x": "gradient-x 3s ease infinite",
+      },
+      keyframes: {
+        "gradient-x": {
+          "0%, 100%": {
+            "background-size": "200% 200%",
+            "background-position": "left center",
+          },
+          "50%": {
+            "background-size": "200% 200%",
+            "background-position": "right center",
+          },
+        },
+        "fade-in-up": {
+          "0%": {
+            opacity: "0",
+            transform: "translateY(20px)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translateY(0)",
+          },
+        },
+      },
     },
   },
   plugins: [],

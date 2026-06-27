@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.db.models.academic import Course, Enrollment, TermExamSchedule
-from app.db.models.core_security import Student
+from app.db.models.core_security import Student, SyncJob
 from app.db.models.rag_chat import ChatSummary, PinnedMessage
 from app.services.academic.gpa import EnrollmentRow, compute_cumulative_gpa, is_passed
 
@@ -79,11 +79,33 @@ async def build_realtime_context_block(db: AsyncSession, student: Student) -> st
                 f"- {e.course.code} - {e.course.name} ({e.term_code}): {grade_str}"
             )
 
+    # Fetch DAA GPAs from the latest successful SyncJob
+    job_res = await db.execute(
+        select(SyncJob)
+        .where(
+            SyncJob.student_id == st.id,
+            SyncJob.status == "completed",
+            SyncJob.kind.in_(["onboarding", "resync_daa"]),
+        )
+        .order_by(SyncJob.finished_at.desc())
+        .limit(1)
+    )
+    job = job_res.scalar_one_or_none()
+    
+    gpa_10 = gpa.gpa_10
+    earned_credits = gpa.earned_credits
+    
+    if job and job.result_summary:
+        if "daa_dtbctl_10" in job.result_summary:
+            gpa_10 = job.result_summary["daa_dtbctl_10"]
+        if "daa_earned_credits" in job.result_summary:
+            earned_credits = job.result_summary["daa_earned_credits"]
+
     lines = [
         f"Ngành: {major_name}",
         f"Năm nhập học (hồ sơ): {st.enrollment_year}",
-        f"GPA (thang 10): {gpa.gpa_10} | "
-        f"Tín chỉ tích lũy (có điểm): {gpa.total_credits} | Tín chỉ đạt: {gpa.earned_credits}",
+        f"Điểm trung bình chung tích lũy (hệ 10): {gpa_10} | "
+        f"Tín chỉ tích lũy (đạt): {earned_credits}",
         f"Môn đang học/chưa có điểm cuối kỳ: {', '.join(current_courses) if current_courses else '(không có trong DB)'}",
         f"Môn chưa đạt (đã có điểm): {', '.join(failed_courses) if failed_courses else '(không)'}",
         "Lịch thi sắp tới: " + ("; ".join(exam_lines) if exam_lines else "(không)"),

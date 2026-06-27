@@ -44,6 +44,11 @@ async def get_current_student_session(
 ) -> StudentSession:
     settings = get_settings()
     token = request.cookies.get(settings.session_cookie_name)
+    
+    import logging
+    logger = logging.getLogger("app.deps")
+    logger.info(f"Session check: cookie_name={settings.session_cookie_name}, token={token}, cookies={list(request.cookies.keys())}")
+    
     sess = await get_student_session(redis, token)
     if sess is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="session_required")

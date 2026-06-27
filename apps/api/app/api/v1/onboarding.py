@@ -42,16 +42,16 @@ async def daa_captcha(
     redis: Annotated[Redis, Depends(get_redis)],
     settings: Annotated[Settings, Depends(get_settings_dep)],
 ) -> DaaCaptchaResponse:
-    rl = RateLimiter(redis)
-    ip = _client_ip(request)
-    allowed, _, reset_in = await rl.check(
-        f"daa:captcha:ip:{ip}", settings.daa_captcha_rate_limit_per_hour, 3600
-    )
-    if not allowed:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail={"error": "rate_limited", "retry_in_seconds": reset_in},
-        )
+    # rl = RateLimiter(redis)
+    # ip = _client_ip(request)
+    # allowed, _, reset_in = await rl.check(
+    #     f"daa:captcha:ip:{ip}", settings.daa_captcha_rate_limit_per_hour, 3600
+    # )
+    # if not allowed:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+    #         detail={"error": "rate_limited", "retry_in_seconds": reset_in},
+    #     )
     bundle = await fetch_captcha_bundle(redis, settings)
     return DaaCaptchaResponse(
         captcha_state_id=bundle.captcha_state_id,
@@ -76,23 +76,7 @@ async def onboarding_start(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="consent_required")
 
     mssv = body.student_code.strip()
-    cooldown_key = f"daa:captcha:cooldown:{mssv}"
-    if await redis.get(cooldown_key):
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="captcha_cooldown_active",
-        )
-
-    rl = RateLimiter(redis)
     ip = _client_ip(request)
-    allowed, _, reset_in = await rl.check(
-        f"daa:login:ip:{ip}", settings.daa_login_rate_limit_per_hour, 3600
-    )
-    if not allowed:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail={"error": "rate_limited", "retry_in_seconds": reset_in},
-        )
 
     daa_client = None
     try:
@@ -105,11 +89,11 @@ async def onboarding_start(
             captcha_answer=body.captcha_answer.strip(),
         )
     except DaaAuthError as exc:
-        fails_key = f"daa:captcha:fails:{mssv}"
-        fails = int(await redis.incr(fails_key))
-        await redis.expire(fails_key, 3600)
-        if fails >= settings.captcha_fail_threshold:
-            await redis.set(cooldown_key, "1", ex=settings.captcha_cooldown_seconds)
+        # fails_key = f"daa:captcha:fails:{mssv}"
+        # fails = int(await redis.incr(fails_key))
+        # await redis.expire(fails_key, 3600)
+        # if fails >= settings.captcha_fail_threshold:
+        #     await redis.set(cooldown_key, "1", ex=settings.captcha_cooldown_seconds)
         await delete_captcha_state(redis, body.captcha_state_id)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except Exception:
@@ -210,7 +194,7 @@ async def onboarding_start(
             max_age=settings.student_session_ttl_seconds,
             httponly=True,
             secure=settings.session_cookie_secure,
-            samesite="strict",
+            samesite="lax",
             path="/",
         )
         return resp

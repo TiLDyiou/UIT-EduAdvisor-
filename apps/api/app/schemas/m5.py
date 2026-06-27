@@ -65,7 +65,7 @@ class AvailableSlot(BaseModel):
 
 
 class ScheduleRequest(BaseModel):
-    course_codes: list[str] = Field(min_length=1)
+    course_codes: list[str]
     sections: list[SectionSchema]
     available_slots: list[AvailableSlot] | None = None
 

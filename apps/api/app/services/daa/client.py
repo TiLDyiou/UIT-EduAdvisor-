@@ -14,7 +14,7 @@ from redis.asyncio import Redis
 
 from app.core.config import Settings
 from app.services.daa.errors import DaaAuthError
-from app.services.daa.parser import DaaLoginForm, login_failed, parse_login_form
+from app.services.daa.parser import DaaLoginForm, get_login_error, login_failed, parse_login_form
 
 
 def _cookie_snapshot(client: httpx.AsyncClient, base_url: str) -> list[dict[str, str]]:
@@ -139,6 +139,9 @@ async def daa_login_with_state(
         resp = await client.post(post_path, data=body)
         if resp.status_code >= 400:
             raise DaaAuthError(f"daa_http_{resp.status_code}")
+        err_msg = get_login_error(resp.text)
+        if err_msg:
+            raise DaaAuthError(err_msg)
         if login_failed(resp.text):
             raise DaaAuthError("daa_login_rejected")
         return client

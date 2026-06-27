@@ -29,6 +29,7 @@ type Me = {
 type BotAccount = {
   platform: string;
   platform_user_id: string;
+  platform_username?: string | null;
   linked_at: string;
   unlinked_at?: string | null;
 };
@@ -369,7 +370,7 @@ export default function SettingsPage() {
       {/* Header section with Tokyo Night colors (navigation links deleted) */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-[#414868]/40 pb-6">
         <div>
-          <p className="text-xs font-mono uppercase tracking-[0.25em] text-[#73daca]">
+          <p className="text-xs  uppercase tracking-[0.25em] text-[#73daca]">
             UIT EduAdvisor // System Settings
           </p>
         </div>
@@ -380,7 +381,7 @@ export default function SettingsPage() {
         <div className="flex items-start gap-3 text-sm text-[#f7768e] bg-[#f7768e]/10 border border-[#f7768e]/35 rounded-xl p-4 shadow-lg animate-in slide-in-from-top duration-300">
           <XCircle className="h-5 w-5 shrink-0 mt-0.5" />
           <div>
-            <span className="font-semibold font-mono">Error: </span>
+            <span className="font-semibold ">Error: </span>
             {error}
           </div>
         </div>
@@ -390,18 +391,18 @@ export default function SettingsPage() {
         <div className="flex items-start gap-3 text-sm text-[#73daca] bg-[#73daca]/10 border border-[#73daca]/35 rounded-xl p-4 shadow-lg animate-in slide-in-from-top duration-300">
           <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />
           <div>
-            <span className="font-semibold font-mono">Success: </span>
+            <span className="font-semibold ">Success: </span>
             {success}
           </div>
         </div>
       )}
 
       {me ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 ">
           {/* Left Column: Diagnostics Console & Standalone Danger Button (Profile Card Deleted) */}
           <div className="lg:col-span-5 flex flex-col gap-6">
             {/* Retro Terminal Diagnostics Widget */}
-            <div className="relative overflow-hidden rounded-2xl border border-[#414868]/60 bg-[#1a1b26] p-5 shadow-2xl font-mono text-xs text-[#9aa5ce] animate-float-subtle">
+            <div className="relative overflow-hidden rounded-2xl border border-[#414868]/60 bg-[#1a1b26] p-5 shadow-2xl  text-xs text-[#9aa5ce] animate-float-subtle font-mono">
               <div className="absolute top-3 right-4 flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-[#f7768e] opacity-75"></span>
                 <span className="h-2 w-2 rounded-full bg-[#e0af68] opacity-75"></span>
@@ -490,7 +491,7 @@ export default function SettingsPage() {
                     action: onDeleteAll,
                   });
                 }}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[#f7768e] hover:bg-[#f7768e]/85 px-5 py-3.5 text-sm font-medium text-[#1a1b26] shadow-theme-xs transition"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[#f7768e] hover:bg-[#f7768e]/85 px-5 py-3.5 text-sm font-medium text-slate-50 shadow-theme-xs transition"
               >
                 <Trash2 className="h-5 w-5" />
                 Xóa toàn bộ dữ liệu tài khoản
@@ -509,7 +510,7 @@ export default function SettingsPage() {
                 </h2>
                 <p className="text-xs text-[#565f89] mt-1">
                   Đồng bộ để nhận thông báo thời khóa biểu, lịch thi và hạn nộp
-                  bài tập tự động từ chatbot.
+                  bài tập tự động từ hệ thống.
                 </p>
               </div>
 
@@ -560,35 +561,38 @@ export default function SettingsPage() {
 
                         <div>
                           <h3 className="text-sm font-semibold text-[#c0caf5]">
-                            Discord Bot
+                            Discord
                           </h3>
                           <p className="text-xs text-[#9aa5ce] mt-1.5 leading-relaxed">
                             Nhận nhắc nhở lịch học và deadline học tập trực tiếp
-                            qua bot Discord.
+                            qua Discord.
                           </p>
                         </div>
 
                         {discordAccount ? (
                           <div
-                            className={`flex items-center gap-1.5 text-[11px] font-mono ${
+                            className={`flex items-center gap-1.5 text-[11px]  ${
                               isDiscordActive
                                 ? "text-[#7aa2f7] bg-[#7aa2f7]/10 border border-[#7aa2f7]/25"
                                 : "text-[#565f89] bg-[#414868]/15 border border-[#414868]/30"
                             } px-2.5 py-1 rounded-md w-fit`}
                           >
                             <span
-                              className={`h-1.5 w-1.5 rounded-full ${isDiscordActive ? "bg-[#7aa2f7] animate-pulse" : "bg-[#565f89]"}`}
+                              className={` ${isDiscordActive ? "bg-[#7aa2f7] animate-pulse" : "bg-[#565f89]"}`}
                             ></span>
                             <span
                               className="truncate max-w-[150px]"
-                              title={discordAccount.platform_user_id}
+                              title={discordAccount.platform_username || discordAccount.platform_user_id}
                             >
-                              {discordAccount.platform_user_id}{" "}
-                              {isDiscordActive ? "" : "(Tắt)"}
+                              {discordAccount.platform_username ? (
+                                discordAccount.platform_username
+                              ) : (
+                                discordAccount.platform_user_id
+                              )}
                             </span>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-1.5 text-[11px] font-mono text-[#565f89] bg-[#414868]/15 border border-[#414868]/30 px-2.5 py-1 rounded-md w-fit">
+                          <div className="flex items-center gap-1.5 text-[11px]  text-[#565f89] bg-[#414868]/15 border border-[#414868]/30 px-2.5 py-1 rounded-md w-fit">
                             <span>Chưa liên kết</span>
                           </div>
                         )}
@@ -598,7 +602,7 @@ export default function SettingsPage() {
                       <div className="mt-4 flex justify-between items-center border-t border-[#414868]/30 pt-3">
                         {discordAccount ? (
                           <>
-                            <span className="text-[10px] text-[#565f89] font-mono">
+                            <span className="text-[10px] text-[#565f89] ">
                               Kích hoạt:{" "}
                               {discordAccount.linked_at.split("T")[0]}
                             </span>
@@ -681,7 +685,7 @@ export default function SettingsPage() {
 
                         {emailAccount ? (
                           <div
-                            className={`flex items-center gap-1.5 text-[11px] font-mono ${
+                            className={`flex items-center gap-1.5 text-[11px]  ${
                               isEmailActive
                                 ? "text-[#73daca] bg-[#73daca]/10 border border-[#73daca]/25"
                                 : "text-[#565f89] bg-[#414868]/15 border border-[#414868]/30"
@@ -695,7 +699,7 @@ export default function SettingsPage() {
                             </span>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-1.5 text-[11px] font-mono text-[#565f89] bg-[#414868]/15 border border-[#414868]/30 px-2.5 py-1 rounded-md w-fit">
+                          <div className="flex items-center gap-1.5 text-[11px]  text-[#565f89] bg-[#414868]/15 border border-[#414868]/30 px-2.5 py-1 rounded-md w-fit">
                             <span>Chưa liên kết</span>
                           </div>
                         )}
@@ -705,7 +709,7 @@ export default function SettingsPage() {
                       <div className="mt-4 flex justify-between items-center border-t border-[#414868]/30 pt-3">
                         {emailAccount ? (
                           <>
-                            <span className="text-[10px] text-[#565f89] font-mono">
+                            <span className="text-[10px] text-[#565f89] ">
                               Kích hoạt: {emailAccount.linked_at.split("T")[0]}
                             </span>
                             <button
@@ -810,9 +814,7 @@ export default function SettingsPage() {
       ) : (
         <div className="py-20 text-center">
           <Loader2 className="h-10 w-10 animate-spin text-[#73daca] mx-auto mb-4" />
-          <p className="text-[#9aa5ce] font-mono text-xs">
-            Loading profile settings...
-          </p>
+          <p className="text-[#9aa5ce]  text-xs">Loading profile settings...</p>
         </div>
       )}
 
@@ -842,7 +844,7 @@ export default function SettingsPage() {
               disabled={loading}
               className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-lg bg-[#24283b] text-[#9aa5ce] border border-[#414868]/40 transition-colors hover:text-[#7dcfff] hover:bg-[#414868]/30 disabled:opacity-50"
             >
-              <span className="text-lg font-mono">×</span>
+              <span className="text-lg ">×</span>
             </button>
 
             <div>
@@ -861,7 +863,7 @@ export default function SettingsPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="mb-2 block text-xs font-mono text-[#bb9af7]">
+                  <label className="mb-2 block text-xs  text-[#bb9af7]">
                     Địa chỉ Email
                   </label>
                   <input
@@ -875,7 +877,7 @@ export default function SettingsPage() {
 
                 {emailStep === "otp" && (
                   <div className="space-y-3 animate-in slide-in-from-bottom duration-300">
-                    <label className="block text-xs font-mono text-center text-[#e0af68]">
+                    <label className="block text-xs  text-center text-[#e0af68]">
                       Mã OTP (gồm 6 số)
                     </label>
                     <div className="flex justify-center gap-x-2">
@@ -937,9 +939,7 @@ export default function SettingsPage() {
               </div>
 
               {error && (
-                <p className="mt-4 text-xs text-[#f7768e] font-mono">
-                  Error: {error}
-                </p>
+                <p className="mt-4 text-xs text-[#f7768e] ">Error: {error}</p>
               )}
 
               <div className="mt-8 flex w-full gap-3 sm:justify-end">
@@ -999,7 +999,7 @@ export default function SettingsPage() {
             className="fixed inset-0 h-full w-full bg-[#131318]/70 backdrop-blur-md transition-opacity duration-300"
           />
 
-          <div className="relative w-full max-w-[520px] rounded-2xl bg-[#1a1b26] border border-[#414868]/80 p-6 sm:p-8 shadow-2xl text-[#c0caf5] transform transition-all duration-300 scale-100 animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[520px] max-h-[90vh] overflow-y-auto rounded-2xl bg-[#1a1b26] border border-[#414868]/80 p-6 sm:p-8 shadow-2xl text-[#c0caf5] transform transition-all duration-300 scale-100 animate-in zoom-in-95 duration-200">
             <button
               onClick={() => {
                 setShowLinkModal(false);
@@ -1008,7 +1008,7 @@ export default function SettingsPage() {
               }}
               className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-lg bg-[#24283b] text-[#9aa5ce] border border-[#414868]/40 transition-colors hover:text-[#7dcfff] hover:bg-[#414868]/30"
             >
-              <span className="text-lg font-mono">×</span>
+              <span className="text-lg ">×</span>
             </button>
 
             <div>
@@ -1022,64 +1022,125 @@ export default function SettingsPage() {
               </p>
 
               <div className="space-y-4">
-                <div className="rounded-xl bg-[#24283b]/60 p-4 border border-[#414868]/50 space-y-2.5">
-                  <p className="text-xs font-mono font-semibold text-[#73daca]">
-                    Cách 1: Gửi mã kích hoạt qua tin nhắn bot
-                  </p>
-                  <p className="text-[11px] text-[#9aa5ce] leading-relaxed">
-                    Nhập câu lệnh sau vào khung chat riêng của Bot:
-                  </p>
-                  <div className="flex items-center justify-between rounded-lg bg-[#1a1b26] border border-[#414868]/85 p-3 font-mono text-xs text-[#73daca]">
-                    <span className="break-all font-semibold select-all text-sm">
-                      {linkResult.token}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy(linkResult.token, "token")}
-                      className="p-1.5 rounded bg-[#24283b] border border-[#414868]/60 text-[#9aa5ce] hover:text-[#7dcfff] hover:bg-[#414868]/40 transition-colors ml-2 shrink-0"
-                    >
-                      {copiedText === "token" ? (
-                        <Check className="h-4 w-4 text-[#9ece6a] animate-in zoom-in-50" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
+                {linkPlatform === "discord" ? (
+                  <>
+                    <div className="rounded-xl bg-[#24283b]/60 p-4 border border-[#414868]/50 space-y-2.5">
+                      <p className="text-xs  font-semibold text-[#bb9af7]">
+                        Bước 1: Thêm App vào Discord (Nếu chưa có)
+                      </p>
+                      <p className="text-[11px] text-[#9aa5ce] leading-relaxed">
+                        Thêm ứng dụng vào tài khoản Discord của bạn. Khi nhấn
+                        vào link dưới, hãy chọn{" "}
+                        <b className="text-white">
+                          Thêm vào Ứng dụng của tôi (Add to My Apps)
+                        </b>
+                        .
+                      </p>
+                      <a
+                        href="https://discord.com/oauth2/authorize?client_id=1519376251977072750"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] px-3 py-2 text-xs font-bold text-white transition-all shadow-theme-xs mt-1"
+                      >
+                        Thêm Ứng dụng
+                        <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                      </a>
+                    </div>
 
-                <div className="rounded-xl bg-[#24283b]/60 p-4 border border-[#414868]/50 space-y-2.5">
-                  <p className="text-xs font-mono font-semibold text-[#7aa2f7]">
-                    Cách 2: Sử dụng liên kết kích hoạt nhanh
-                  </p>
-                  <p className="text-[11px] text-[#9aa5ce] leading-relaxed">
-                    Nhấp vào nút dưới để tự động chuyển tiếp và điền mã kích
-                    hoạt trên ứng dụng Bot:
-                  </p>
-                  <div className="flex items-center justify-between rounded-lg bg-[#1a1b26] border border-[#414868]/85 p-3">
-                    <a
-                      href={linkResult.deep_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="break-all text-xs text-[#7aa2f7] hover:underline inline-flex items-center gap-1.5 font-mono font-semibold"
-                    >
-                      Mở liên kết nhanh
-                      <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                    </a>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy(linkResult.deep_link, "link")}
-                      className="p-1.5 rounded bg-[#24283b] border border-[#414868]/60 text-[#9aa5ce] hover:text-[#7dcfff] hover:bg-[#414868]/40 transition-colors ml-2 shrink-0"
-                    >
-                      {copiedText === "link" ? (
-                        <Check className="h-4 w-4 text-[#9ece6a] animate-in zoom-in-50" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
+                    <div className="rounded-xl bg-[#24283b]/60 p-4 border border-[#414868]/50 space-y-2.5">
+                      <p className="text-xs  font-semibold text-[#73daca]">
+                        Bước 2: Sử dụng lệnh /link
+                      </p>
+                      <p className="text-[11px] text-[#9aa5ce] leading-relaxed">
+                        Gõ lệnh{" "}
+                        <code className="bg-[#1a1b26] px-1 py-0.5 rounded text-[#7dcfff]">
+                          /link
+                        </code>{" "}
+                        ở bất kỳ đâu trên Discord (trong server hoặc tin nhắn cá
+                        nhân), sau đó dán mã kích hoạt dưới đây vào:
+                      </p>
+                      <div className="flex items-center justify-between rounded-lg bg-[#1a1b26] border border-[#414868]/85 p-3  text-xs text-[#73daca]">
+                        <span className="break-all font-semibold select-all text-sm">
+                          {linkResult.token}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(linkResult.token, "token")}
+                          className="p-1.5 rounded bg-[#24283b] border border-[#414868]/60 text-[#9aa5ce] hover:text-[#7dcfff] hover:bg-[#414868]/40 transition-colors ml-2 shrink-0"
+                        >
+                          {copiedText === "token" ? (
+                            <Check className="h-4 w-4 text-[#9ece6a] animate-in zoom-in-50" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="rounded-xl bg-[#24283b]/60 p-4 border border-[#414868]/50 space-y-2.5">
+                      <p className="text-xs  font-semibold text-[#73daca]">
+                        Cách 1: Gửi mã kích hoạt qua tin nhắn bot
+                      </p>
+                      <p className="text-[11px] text-[#9aa5ce] leading-relaxed">
+                        Nhập câu lệnh sau vào khung chat riêng của Bot:
+                      </p>
+                      <div className="flex items-center justify-between rounded-lg bg-[#1a1b26] border border-[#414868]/85 p-3  text-xs text-[#73daca]">
+                        <span className="break-all font-semibold select-all text-sm">
+                          {linkResult.token}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(linkResult.token, "token")}
+                          className="p-1.5 rounded bg-[#24283b] border border-[#414868]/60 text-[#9aa5ce] hover:text-[#7dcfff] hover:bg-[#414868]/40 transition-colors ml-2 shrink-0"
+                        >
+                          {copiedText === "token" ? (
+                            <Check className="h-4 w-4 text-[#9ece6a] animate-in zoom-in-50" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
 
-                <div className="flex items-start gap-2.5 rounded-lg bg-[#ff9e64]/10 border border-[#ff9e64]/25 p-3.5 text-[11px] text-[#ff9e64]/95 leading-relaxed font-mono">
+                    <div className="rounded-xl bg-[#24283b]/60 p-4 border border-[#414868]/50 space-y-2.5">
+                      <p className="text-xs  font-semibold text-[#7aa2f7]">
+                        Cách 2: Sử dụng liên kết kích hoạt nhanh
+                      </p>
+                      <p className="text-[11px] text-[#9aa5ce] leading-relaxed">
+                        Nhấp vào nút dưới để tự động chuyển tiếp và điền mã kích
+                        hoạt trên ứng dụng Bot:
+                      </p>
+                      <div className="flex items-center justify-between rounded-lg bg-[#1a1b26] border border-[#414868]/85 p-3">
+                        <a
+                          href={linkResult.deep_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="break-all text-xs text-[#7aa2f7] hover:underline inline-flex items-center gap-1.5  font-semibold"
+                        >
+                          Mở liên kết nhanh
+                          <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleCopy(linkResult.deep_link, "link")
+                          }
+                          className="p-1.5 rounded bg-[#24283b] border border-[#414868]/60 text-[#9aa5ce] hover:text-[#7dcfff] hover:bg-[#414868]/40 transition-colors ml-2 shrink-0"
+                        >
+                          {copiedText === "link" ? (
+                            <Check className="h-4 w-4 text-[#9ece6a] animate-in zoom-in-50" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div className="flex items-start gap-2.5 rounded-lg bg-[#ff9e64]/10 border border-[#ff9e64]/25 p-3.5 text-[11px] text-[#ff9e64]/95 leading-relaxed ">
                   <Info className="h-4 w-4 shrink-0 mt-0.5" />
                   <p>
                     Mã liên kết này chỉ có hiệu lực trong vòng 10 phút. Hết hạn
@@ -1123,7 +1184,7 @@ export default function SettingsPage() {
               onClick={() => setShowConfirmModal(null)}
               className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-lg bg-[#24283b] text-[#9aa5ce] border border-[#414868]/40 transition-colors hover:text-[#7dcfff] hover:bg-[#414868]/30"
             >
-              <span className="text-lg font-mono">×</span>
+              <span className="text-lg ">×</span>
             </button>
 
             <div className="flex flex-col items-center">
@@ -1131,7 +1192,7 @@ export default function SettingsPage() {
                 <AlertTriangle className="h-8 w-8 animate-bounce" />
               </div>
 
-              <h4 className="text-base font-bold text-[#7dcfff] mb-2">
+              <h4 className="text-base font-bold text-[#c0caf5] mb-2">
                 {showConfirmModal.title}
               </h4>
               <p className="text-xs leading-relaxed text-[#9aa5ce] mb-8 max-w-sm">

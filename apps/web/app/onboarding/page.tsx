@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 
 import { apiFetch } from "@/lib/api";
+import { TRexRunner } from "./trex-runner";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type CaptchaPayload = {
   captcha_state_id: string;
@@ -64,6 +66,16 @@ const STAGE_ORDER = [
   "persisting",
 ];
 
+const SYNC_TIPS = [
+  "Đang kết nối hệ thống trường...",
+  "Đang cào dữ liệu bảng điểm, sắp xong rồi...",
+  "Hệ thống dạo này hơi chậm, bạn thông cảm chờ chút nhé...",
+  "Đang trích xuất lịch thi và thời khóa biểu...",
+  "Gần xong rồi, cố chờ thêm chút nữa...",
+  "Dữ liệu của bạn đang được mã hóa an toàn...",
+  "Vẫn đang tải, hãy giải trí với chú khủng long ở dưới...",
+];
+
 function SyncGraphic({
   events,
   error,
@@ -85,12 +97,48 @@ function SyncGraphic({
   );
   const [activeStage, setActiveStage] = useState<string | null>("daa_profile");
 
+  const [tipIndex, setTipIndex] = useState(0);
+  const [tipFade, setTipFade] = useState(true);
+
+  // Tips rotation effect
+  useEffect(() => {
+    if (isCompleted || isFailed) return;
+    const interval = setInterval(() => {
+      setTipFade(false); // Bắt đầu mờ đi
+      setTimeout(() => {
+        setTipIndex((prev) => {
+          let next = Math.floor(Math.random() * SYNC_TIPS.length);
+          // Đảm bảo câu tiếp theo luôn khác câu hiện tại
+          while (next === prev) {
+            next = Math.floor(Math.random() * SYNC_TIPS.length);
+          }
+          return next;
+        });
+        setTipFade(true); // Hiện rõ lại
+      }, 300); // 300ms đợi cho chữ mờ hẳn mới đổi text
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [isCompleted, isFailed]);
+
+
   // Simulation state machine for real-time visual progress
   useEffect(() => {
     if (isFailed) return;
 
+    if (isCompleted) {
+      setDisplayedProgress(100);
+      setBuffer(100);
+      setCompletedStages(new Set(STAGE_ORDER));
+      setActiveStage(null);
+      const delayTimer = setTimeout(() => {
+        onComplete();
+      }, 500);
+      return () => clearTimeout(delayTimer);
+    }
+
     const currentStage = STAGE_ORDER[simulatedIndex];
     if (!currentStage) {
+      if (!isCompleted) return;
       // Tự động chuyển hướng sau 1.5 giây khi đã hoàn thành các bước
       const delayTimer = setTimeout(() => {
         onComplete();
@@ -105,7 +153,7 @@ function SyncGraphic({
         if (prev >= stageTarget) {
           clearInterval(timer);
 
-          // Trì hoãn 200ms để vòng tròn cyan hoàn tất vẽ full circle 100%
+          // Trì hoãn 100ms để vòng tròn cyan hoàn tất vẽ full circle 100%
           setTimeout(() => {
             setCompletedStages((prevSet) => {
               const next = new Set(prevSet);
@@ -114,8 +162,14 @@ function SyncGraphic({
             });
             setActiveStage(null);
 
-            // Chờ thêm 800ms cho hiệu ứng success-pop chạy xong rồi mới qua stage tiếp theo
+            // Chỉ chuyển sang stage tiếp theo nếu backend đã gửi event cho stage đó hoặc đã vượt qua nó
+            const hasRealEvent = events.some(e => e.stage === currentStage) || isCompleted;
+
             setTimeout(() => {
+              if (!hasRealEvent && !isCompleted && currentStage !== "daa_profile") {
+                // Đợi backend trả về event trước khi tiếp tục
+                return;
+              }
               const nextIndex = simulatedIndex + 1;
               setSimulatedIndex(nextIndex);
               if (nextIndex < STAGE_ORDER.length) {
@@ -123,18 +177,19 @@ function SyncGraphic({
               } else {
                 setActiveStage(null);
               }
-            }, 800);
-          }, 200);
+            }, 300);
+          }, 100);
 
           return stageTarget;
         }
-        // Giảm tốc độ xuống 0.45 để progress chạy từ từ, mượt mà và an toàn về mặt thời gian
-        return Math.min(stageTarget, prev + 0.45);
+        // Giảm tốc độ progress chờ backend
+        const increment = events.some(e => e.stage === currentStage) ? 2.5 : 0.5;
+        return Math.min(stageTarget, prev + increment);
       });
-    }, 30);
+    }, 50);
 
     return () => clearInterval(timer);
-  }, [simulatedIndex, isFailed, onComplete]);
+  }, [simulatedIndex, isFailed, isCompleted, onComplete, events]);
 
   // LinearBuffer effect
   useEffect(() => {
@@ -158,7 +213,7 @@ function SyncGraphic({
   const stages = STAGE_ORDER;
 
   return (
-    <div className="w-full max-w-xl space-y-6 animate-in fade-in slide-in-from-right-8 duration-700 z-20">
+    <div className="w-full max-w-xl space-y-6 animate-in fade-in slide-in-from-right-8 duration-200 z-20">
       <style
         dangerouslySetInnerHTML={{
           __html: `
@@ -179,246 +234,26 @@ function SyncGraphic({
         }}
       />
 
-      <div className="space-y-2.5">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tokyo-cyan/10 border border-tokyo-cyan/20 text-tokyo-cyan text-xs font-semibold mb-1">
+      <div className="space-y-2.5 h-[112px]">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tokyo-cyan/10 border-2 border-tokyo-cyan text-tokyo-cyan text-xs font-semibold mb-1">
           <Activity className="w-3.5 h-3.5 animate-pulse" />
           <span>Tiến trình đồng bộ</span>
         </div>
-        <h2 className="text-3xl font-light tracking-tight text-tokyo-fg">
+        <h2 className={`text-3xl font-light tracking-tight text-tokyo-fg transition-opacity duration-300 ${tipFade ? "opacity-100" : "opacity-0"}`}>
           {isCompleted
             ? "Dữ liệu đã sẵn sàng."
             : isFailed
               ? "Đồng bộ gián đoạn."
-              : "Đang kết nối hệ thống..."}
+              : SYNC_TIPS[tipIndex]}
         </h2>
-        <p className="text-tokyo-comment text-sm font-light leading-relaxed">
-          {isCompleted
-            ? "Tuyệt vời! Tất cả thông tin học tập của bạn đã được cập nhật thành công."
-            : isFailed
-              ? "Đã xảy ra lỗi trong quá trình xử lý. Vui lòng thử lại."
-              : latest?.message ||
-                "Đang thiết lập kênh giao tiếp an toàn với hệ thống trường."}
-        </p>
       </div>
 
-      <div className="space-y-4 p-6 rounded-2xl bg-tokyo-storm/50 border border-tokyo-border backdrop-blur-md shadow-2xl">
-        <div className="flex justify-between items-center mb-1">
-          <div className="flex items-center gap-3">
-            <div className="relative flex h-3 w-3">
-              {isCompleted ? (
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
-              ) : isFailed ? (
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]"></span>
-              ) : (
-                <>
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
-                </>
-              )}
-            </div>
-            <span
-              className={`text-[11px] font-bold uppercase tracking-widest ${isCompleted ? "text-emerald-400" : isFailed ? "text-red-400" : "text-cyan-400"}`}
-            >
-              {isCompleted ? "Hoàn tất" : isFailed ? "Gián đoạn" : "Đang xử lý"}
-            </span>
-          </div>
-          <div className="flex items-baseline gap-0.5 pr-1">
-            <span
-              className={`text-4xl font-mono font-light tracking-tighter ${isCompleted ? "text-emerald-400" : isFailed ? "text-red-400" : "text-cyan-400"}`}
-            >
-              {Math.round(displayedProgress)}
-            </span>
-            <span
-              className={`text-xl font-light ${isCompleted ? "text-emerald-500/50" : isFailed ? "text-red-500/50" : "text-cyan-500/50"}`}
-            >
-              %
-            </span>
-          </div>
-        </div>
-
-        {/* Segmented Progress Bar */}
-        <div className="flex items-center gap-x-1.5 w-full mt-3">
-          {Array.from({ length: 10 }).map((_, i) => {
-            const min = i * 10;
-            const max = (i + 1) * 10;
-            let percent = 0;
-            if (displayedProgress >= max) percent = 100;
-            else if (displayedProgress > min)
-              percent = ((displayedProgress - min) / 10) * 100;
-
-            const isCurrent = percent > 0 && percent < 100;
-            const isFilled = percent === 100;
-
-            let fillClass =
-              "bg-gradient-to-r from-cyan-600 to-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.8)]";
-            if (isFailed)
-              fillClass =
-                "bg-gradient-to-r from-red-600 to-red-500 shadow-[0_0_12px_rgba(239,68,68,0.8)]";
-            else if (isCompleted)
-              fillClass =
-                "bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.8)]";
-
-            return (
-              <div
-                key={i}
-                className="w-full h-3 flex flex-col justify-center rounded-[3px] bg-tokyo-panel/80 overflow-hidden relative border border-tokyo-border/60 backdrop-blur-md shadow-inner"
-              >
-                {/* Buffer Layer */}
-                <div
-                  className="absolute top-0 left-0 h-full bg-slate-600/30 transition-all duration-500 ease-out"
-                  style={{
-                    width: `${Math.max(0, Math.min(100, ((buffer - min) / 10) * 100))}%`,
-                  }}
-                />
-
-                {/* Progress Layer */}
-                <div
-                  className={`absolute top-0 left-0 h-full transition-all duration-[400ms] ease-out ${fillClass}`}
-                  style={{ width: `${percent}%` }}
-                >
-                  {/* Shimmer Effect */}
-                  {(isFilled || isCurrent) && !isFailed && !isCompleted && (
-                    <div className="absolute inset-0 w-full h-full animate-[shimmer-slide_1.2s_infinite_linear] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-                  )}
-                  {/* Glowing Leading Edge */}
-                  {isCurrent && !isFailed && !isCompleted && (
-                    <div className="absolute top-0 right-0 h-full w-2 bg-white shadow-[0_0_8px_2px_rgba(255,255,255,0.9)] rounded-full translate-x-1 animate-[pulse-bright_1s_infinite_ease-in-out]" />
-                  )}
-                </div>
-              </div>
-            );
-          })}
-          <div className="ms-2 relative flex items-center justify-center">
-            {!isCompleted &&
-              !isFailed &&
-              displayedProgress > 0 &&
-              displayedProgress < 100 && (
-                <div className="absolute -inset-[3px] rounded-full border-2 border-transparent border-t-cyan-400 border-r-cyan-400 animate-spin opacity-80" />
-              )}
-            <span
-              className={`relative shrink-0 flex justify-center items-center rounded-full transition-all duration-500 z-10 ${
-                isCompleted
-                  ? "w-7 h-7 bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.6)] scale-110"
-                  : isFailed
-                    ? "w-6 h-6 bg-red-500 text-white shadow-[0_0_12px_rgba(239,68,68,0.5)]"
-                    : "w-6 h-6 bg-tokyo-storm text-cyan-400 border border-tokyo-border/80"
-              }`}
-            >
-              {isCompleted ? (
-                <Check className="w-3.5 h-3.5" />
-              ) : isFailed ? (
-                <XCircle className="w-3.5 h-3.5" />
-              ) : (
-                <Activity
-                  className={`w-3.5 h-3.5 ${displayedProgress > 0 && displayedProgress < 100 ? "animate-pulse opacity-100" : "opacity-50"}`}
-                />
-              )}
-            </span>
-          </div>
-        </div>
+      <div className="overflow-hidden rounded-2xl bg-tokyo-storm/50 border border-tokyo-border-2 backdrop-blur-md shadow-2xl">
+        <TRexRunner isCompleted={isCompleted} isFailed={isFailed} />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-        {stages.map((stage, idx) => {
-          const isDone =
-            completedStages.has(stage) || (isCompleted && idx < simulatedIndex);
-          const isActive = stage === activeStage && !isCompleted && !isFailed;
-          const label = STAGE_LABELS[stage] || stage;
 
-          // Calculate current stage progress ratio for the active stage circle
-          let ratio = 0;
-          if (isDone) {
-            ratio = 1.0;
-          } else if (isActive) {
-            const prevTarget =
-              idx > 0 ? (STAGE_PROGRESS[STAGE_ORDER[idx - 1]] ?? 0) : 0;
-            const stageTarget = STAGE_PROGRESS[stage] ?? 100;
-            ratio = Math.min(
-              1.0,
-              Math.max(
-                0.0,
-                (displayedProgress - prevTarget) / (stageTarget - prevTarget),
-              ),
-            );
-          }
 
-          return (
-            <div
-              key={stage}
-              className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all duration-500 ${
-                isDone
-                  ? "bg-emerald-500/15 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
-                  : isActive
-                    ? "bg-cyan-500/15 border-cyan-500/40 shadow-[0_0_15px_rgba(34,211,238,0.15)] scale-[1.01]"
-                    : "bg-tokyo-storm/40 border-tokyo-border/80"
-              }`}
-              style={
-                isDone
-                  ? { animation: "success-pop 0.6s ease-out forwards" }
-                  : undefined
-              }
-            >
-              <div className="flex-shrink-0">
-                {isDone ? (
-                  <div className="relative w-5 h-5 flex items-center justify-center animate-in zoom-in duration-300">
-                    <svg className="w-5 h-5 -rotate-90">
-                      <circle
-                        cx="10"
-                        cy="10"
-                        r="8"
-                        className="stroke-slate-800 fill-none stroke-[1.5]"
-                      />
-                      <circle
-                        cx="10"
-                        cy="10"
-                        r="8"
-                        className="stroke-emerald-500 fill-none stroke-[1.5]"
-                        strokeDasharray="50.27"
-                        strokeDashoffset={0}
-                      />
-                    </svg>
-                    <Check className="w-3 h-3 text-emerald-400 absolute animate-in fade-in zoom-in duration-300" />
-                  </div>
-                ) : isActive ? (
-                  <div className="relative w-5 h-5 flex items-center justify-center">
-                    <svg className="w-5 h-5 -rotate-90">
-                      <circle
-                        cx="10"
-                        cy="10"
-                        r="8"
-                        className="stroke-slate-800 fill-none stroke-[1.5]"
-                      />
-                      <circle
-                        cx="10"
-                        cy="10"
-                        r="8"
-                        className="stroke-cyan-400 fill-none stroke-[1.5] transition-all duration-100 ease-out"
-                        strokeDasharray="50.27"
-                        strokeDashoffset={50.27 * (1 - ratio)}
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </div>
-                ) : (
-                  <div className="w-5 h-5 rounded-full border border-tokyo-border bg-tokyo-night/40" />
-                )}
-              </div>
-              <span
-                className={`text-sm font-medium ${isDone ? "text-emerald-300" : isActive ? "text-cyan-100" : "text-tokyo-comment"}`}
-              >
-                {label}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      {isFailed && error && (
-        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-start gap-3 shadow-lg">
-          <XCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-500" />
-          <p className="leading-relaxed">{error}</p>
-        </div>
-      )}
     </div>
   );
 }
@@ -426,57 +261,48 @@ function SyncGraphic({
 function PrivacyPolicyPanel() {
   return (
     <div className="w-full max-w-xl flex flex-col animate-in fade-in slide-in-from-right-8 duration-500 max-h-[75vh] z-20">
-      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tokyo-panel border border-tokyo-border/80 text-tokyo-fg text-xs font-medium mb-4 w-fit shadow-lg">
-        <Shield className="w-3.5 h-3.5 text-cyan-400" />
+      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full  border border-tokyo-border/80 text-tokyo-fg text-xs font-medium mb-4 w-fit shadow-lg">
+        <Shield className="w-3.5 h-3.5 text-tokyo-cyan" />
         <span>Chính sách Quyền riêng tư</span>
       </div>
       <h2 className="text-3xl font-light tracking-tight text-tokyo-fg mb-6">
         Cam kết bảo mật dữ liệu
       </h2>
 
-      <div className="overflow-y-auto pr-4 pb-4 space-y-6 text-tokyo-comment text-sm font-light leading-relaxed scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+      <div className="overflow-y-auto pr-4 pb-4 space-y-6 text-tokyo-comment text-sm font-light leading-relaxed scrollbar-thin scrollbar-thumb-tokyo-border/80 scrollbar-track-transparent">
         <p className="text-base text-tokyo-variable font-light">
           UIT EduAdvisor được xây dựng với nguyên tắc bảo vệ quyền riêng tư của
           sinh viên lên hàng đầu. Các thông tin đăng nhập của bạn được sử dụng
-          trực tiếp để chứng thực với hệ thống của trường (DAA/Moodle) và{""}
+          trực tiếp để chứng thực với hệ thống của trường (DAA/Moodle) và{" "}
           <strong>hoàn toàn không được lưu trữ</strong> trên máy chủ của chúng
           tôi.
         </p>
-        <section className="space-y-2 text-tokyo-variable p-4.5 rounded-2xl bg-tokyo-storm/50 border border-tokyo-border">
-          <h3 className="font-medium text-tokyo-fg text-lg flex items-center gap-2.5">
-            <span className="w-7 h-7 rounded-lg bg-tokyo-panel border border-tokyo-border/80 flex items-center justify-center text-xs text-cyan-400 shadow-inner">
-              01
-            </span>
+        <section className=" text-tokyo-variable p-4.5 rounded-2xl bg-tokyo-storm/50 border border-tokyo-border">
+          <h3 className="font-medium text-tokyo-fg text-lg flex items-center gap-2 ml-9">
             Thu thập dữ liệu
           </h3>
-          <p className="ml-9 text-tokyo-comment">
+          <p className="ml-9 text-tokyo-comment mr-2">
             Chúng tôi chỉ đồng bộ và lưu trữ các dữ liệu học tập cần thiết: điểm
             số, thời khóa biểu, lịch thi và hồ sơ sinh viên cơ bản nhằm phục vụ
             quá trình học tập.
           </p>
         </section>
-        <section className="space-y-2 text-tokyo-variable p-4.5 rounded-2xl bg-tokyo-storm/50 border border-tokyo-border">
-          <h3 className="font-medium text-tokyo-fg text-lg flex items-center gap-2.5">
-            <span className="w-7 h-7 rounded-lg bg-tokyo-panel border border-tokyo-border/80 flex items-center justify-center text-xs text-cyan-400 shadow-inner">
-              02
-            </span>
+        <section className="text-tokyo-variable p-4.5 rounded-2xl bg-tokyo-storm/50 border border-tokyo-border">
+          <h3 className="font-medium text-tokyo-fg text-lg flex items-center ml-9">
             Sử dụng dữ liệu
           </h3>
-          <p className="ml-9 text-tokyo-comment">
+          <p className="ml-9 text-tokyo-comment mr-2">
             Dữ liệu của bạn được sử dụng duy nhất cho mục đích cung cấp các tính
             năng của EduAdvisor (gợi ý môn học, phân tích học tập, sắp xếp thời
             gian). Chúng tôi cam kết tuyệt đối không chia sẻ dữ liệu với bất kỳ
             bên thứ ba nào.
           </p>
         </section>
-        <section className="space-y-2 text-tokyo-variable p-4.5 rounded-2xl bg-tokyo-storm/50 border border-tokyo-border">
-          <h3 className="font-medium text-tokyo-fg text-lg flex items-center gap-2.5">
-            <span className="w-7 h-7 rounded-lg bg-tokyo-panel border border-tokyo-border/80 flex items-center justify-center text-xs text-cyan-400 shadow-inner">
-              03
-            </span>
+        <section className="text-tokyo-variable p-4.5 rounded-2xl bg-tokyo-storm/50 border border-tokyo-border">
+          <h3 className="font-medium text-tokyo-fg text-lg flex items-center ml-9">
             Quyền kiểm soát
           </h3>
-          <p className="ml-9 text-tokyo-comment">
+          <p className="ml-9 text-tokyo-comment mr-2">
             Bạn có toàn quyền yêu cầu xóa vĩnh viễn toàn bộ dữ liệu học tập của
             mình khỏi hệ thống EduAdvisor bất cứ lúc nào thông qua phần Cài đặt
             tài khoản sau khi đăng nhập.
@@ -489,7 +315,7 @@ function PrivacyPolicyPanel() {
 
 function DefaultGraphic() {
   return (
-    <div className="flex flex-col items-center justify-center text-center w-full h-full animate-in fade-in zoom-in-95 duration-1000 z-20">
+    <div className="flex flex-col items-center justify-center text-center w-full h-full animate-in fade-in zoom-in-95 duration-200 z-20">
       <style
         dangerouslySetInnerHTML={{
           __html: `
@@ -542,7 +368,12 @@ function DefaultGraphic() {
           style={{ animation: "float-large 8s ease-in-out infinite" }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-cyan-400/10 to-transparent rounded-[2rem] opacity-50" />
-          <Bot className="w-12 h-12 text-cyan-400 mb-1.5 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/ai.png"
+            alt="UIT Mate"
+            className="w-12 h-12 mb-1.5 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)] object-contain"
+          />
           <span className="text-xs font-semibold tracking-wider text-tokyo-fg mb-2.5">
             UIT Mate
           </span>
@@ -570,22 +401,22 @@ function DefaultGraphic() {
           <div className="space-y-2 w-full text-[10px]">
             <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col gap-0.5 text-left">
               <div className="flex justify-between items-center text-emerald-400 font-semibold">
-                <span className="font-mono">IT003</span>
+                <span className="">IT003</span>
                 <span className="flex-shrink-0">Thứ 2</span>
               </div>
               <div className="flex justify-between text-[9px] text-emerald-500/80">
                 <span>Phòng E3.1</span>
-                <span className="font-mono">07:30</span>
+                <span className="">07:30</span>
               </div>
             </div>
             <div className="p-2 rounded-xl bg-tokyo-storm/60 border border-tokyo-border/30 flex flex-col gap-0.5 opacity-60 text-left mb-2">
               <div className="flex justify-between items-center text-tokyo-variable font-medium">
-                <span className="font-mono">MA006</span>
+                <span className="">MA006</span>
                 <span className="flex-shrink-0">Thứ 4</span>
               </div>
               <div className="flex justify-between text-[9px] text-tokyo-comment">
                 <span>Phòng C2.2</span>
-                <span className="font-mono">09:30</span>
+                <span className="">09:30</span>
               </div>
             </div>
           </div>
@@ -651,6 +482,70 @@ function DefaultGraphic() {
   );
 }
 
+const ERROR_TRANSLATIONS: Record<string, string> = {
+  consent_required:
+    "Vui lòng đồng ý với Điều khoản dịch vụ và Chính sách bảo mật.",
+  captcha_cooldown_active:
+    "Tài khoản của bạn đang bị tạm khóa captcha do nhập sai nhiều lần. Vui lòng thử lại sau.",
+  captcha_state_expired:
+    "Mã captcha đã hết hạn. Vui lòng tải lại mã captcha mới.",
+  daa_login_rejected:
+    "Đăng nhập thất bại. Vui lòng kiểm tra lại MSSV hoặc mật khẩu.",
+  rate_limited:
+    "Hệ thống đang bận do nhận quá nhiều yêu cầu. Vui lòng thử lại sau.",
+};
+
+function formatAuthError(detail: string): string {
+  if (ERROR_TRANSLATIONS[detail]) {
+    return ERROR_TRANSLATIONS[detail];
+  }
+  const lowerDetail = detail.toLowerCase();
+  
+  const hasCaptchaErr =
+    lowerDetail.includes("captcha was not correct") ||
+    (lowerDetail.includes("captcha") && lowerDetail.includes("not correct"));
+
+  const hasCredsErr =
+    lowerDetail.includes("unrecognized username or password") ||
+    lowerDetail.includes("invalid username or password") ||
+    lowerDetail.includes("tên đăng nhập hoặc mật khẩu không chính xác") ||
+    lowerDetail.includes("login rejected");
+
+  if (hasCaptchaErr && hasCredsErr) {
+    return "Mã xác nhận DAA (captcha) và thông tin tài khoản/mật khẩu không chính xác. Vui lòng kiểm tra lại.";
+  }
+  if (hasCaptchaErr) {
+    return "Mã xác nhận DAA (captcha) không chính xác. Vui lòng nhập lại.";
+  }
+  if (hasCredsErr) {
+    return "Đăng nhập thất bại. Vui lòng kiểm tra lại MSSV hoặc mật khẩu.";
+  }
+  
+  // Clean up prefix like "x " or "Thông báo lỗi " if present
+  let cleaned = detail.trim();
+  if (cleaned.startsWith("x ")) {
+    cleaned = cleaned.substring(2).trim();
+  }
+  if (cleaned.startsWith("Thông báo lỗi ")) {
+    cleaned = cleaned.substring("Thông báo lỗi ".length).trim();
+  }
+  return cleaned;
+}
+
+function formatSyncError(msg: string): string {
+  if (!msg) return "Đồng bộ thất bại.";
+  const lowerMsg = msg.toLowerCase();
+  if (
+    lowerMsg.includes("connecttimeout") ||
+    lowerMsg.includes("connecterror") ||
+    lowerMsg.includes("timeoutexception") ||
+    lowerMsg.includes("timeout")
+  ) {
+    return "Không thể kết nối tới hệ thống trường (DAA/Moodle). Hệ thống trường có thể đang bảo trì hoặc quá tải. Vui lòng thử lại sau.";
+  }
+  return formatAuthError(msg);
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [captcha, setCaptcha] = useState<CaptchaPayload | null>(null);
@@ -669,8 +564,8 @@ export default function OnboardingPage() {
     "default" | "privacy" | "sync"
   >("default");
 
-  const loadCaptcha = useCallback(async () => {
-    setError(null);
+  const loadCaptcha = useCallback(async (clearError = true) => {
+    if (clearError) setError(null);
     setIsLoadingCaptcha(true);
     try {
       const r = await apiFetch("/api/v1/onboarding/daa-captcha");
@@ -708,7 +603,11 @@ export default function OnboardingPage() {
       }
       setSyncEvents((prev) => [...prev, payload!]);
       if (payload.stage === "failed") {
-        setError(payload.message || "Đồng bộ thất bại");
+        setError(formatSyncError(payload.message || "Đồng bộ thất bại"));
+        setJobId(null);
+        setBusy(false);
+        void loadCaptcha(false);
+        es.close();
         return;
       }
       if (payload.stage === "completed") {
@@ -722,44 +621,87 @@ export default function OnboardingPage() {
   }, [jobId, router]);
 
   useEffect(() => {
-    if (jobId || busy || syncEvents.length > 0) {
+    if (busy || jobId || syncEvents.length > 0) {
       setRightPanelView("sync");
+    } else if (rightPanelView === "sync" && !error) {
+      setRightPanelView("default");
     }
-  }, [jobId, busy, syncEvents.length]);
+  }, [busy, jobId, syncEvents.length, rightPanelView, error]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    // 1. Kiểm tra MSSV (Mã số sinh viên)
+    const mssvTrimmed = studentCode.trim();
+    if (!mssvTrimmed) {
+      setError("Mã số sinh viên không được để trống.");
+      return;
+    }
+    const mssvRegex = /^\d{8}$/;
+    if (!mssvRegex.test(mssvTrimmed)) {
+      setError(
+        "Mã số sinh viên (MSSV) không hợp lệ. Phải bao gồm đúng 8 chữ số.",
+      );
+      return;
+    }
+
+    // 2. Kiểm tra Mật khẩu
+    if (!password) {
+      setError("Mật khẩu không được để trống.");
+      return;
+    }
+
+    // 3. Kiểm tra Mã xác nhận DAA (Captcha)
+    if (!captcha) {
+      setError(
+        "Mã xác nhận DAA (captcha) chưa được tải. Vui lòng bấm để tải captcha.",
+      );
+      return;
+    }
+    const captchaTrimmed = captchaAnswer.trim();
+    if (!captchaTrimmed) {
+      setError("Vui lòng nhập mã xác nhận DAA (captcha).");
+      return;
+    }
+
+    // 4. Kiểm tra Đồng ý Chính sách
+    if (!privacy) {
+      setError("Vui lòng đồng ý với Chính sách quyền riêng tư để tiếp tục.");
+      return;
+    }
+
     setBusy(true);
     setSyncEvents([]);
     try {
-      if (!captcha) {
-        setError("Captcha chưa sẵn sàng");
-        return;
-      }
       const r = await apiFetch("/api/v1/onboarding/start", {
         method: "POST",
         body: JSON.stringify({
-          student_code: studentCode,
+          student_code: mssvTrimmed,
           password,
           captcha_state_id: captcha.captcha_state_id,
-          captcha_answer: captchaAnswer,
+          captcha_answer: captchaTrimmed,
           privacy_accepted: privacy,
           tos_accepted: true,
         }),
       });
       if (!r.ok) {
         const body = await r.json().catch(() => ({}));
-        setError(
-          typeof body?.detail === "string"
-            ? body.detail
-            : "Đăng nhập thất bại — kiểm tra MSSV, mật khẩu hoặc captcha",
-        );
-        await loadCaptcha();
+        const detail = body?.detail;
+        let errMsg =
+          "Đăng nhập thất bại — kiểm tra MSSV, mật khẩu hoặc captcha";
+        if (typeof detail === "string") {
+          errMsg = formatAuthError(detail);
+        }
+        setError(errMsg);
+        await loadCaptcha(false);
         return;
       }
       const data = (await r.json()) as StartPayload;
       setJobId(data.job_id);
+    } catch (e: any) {
+      setError(e?.message || "Đã xảy ra lỗi khi kết nối tới máy chủ.");
+      await loadCaptcha(false);
     } finally {
       setBusy(false);
     }
@@ -767,6 +709,9 @@ export default function OnboardingPage() {
 
   return (
     <div className="flex min-h-screen lg:h-screen lg:overflow-hidden w-full bg-tokyo-night text-tokyo-fg font-sans selection:bg-cyan-500/30">
+      <div className="absolute top-6 right-6 z-50">
+        <ThemeToggle />
+      </div>
       {/* Left Panel */}
       <div className="w-full lg:w-5/12 xl:w-[40%] lg:h-full flex flex-col justify-center px-8 sm:px-16 lg:px-12 xl:px-20 py-12 lg:py-0 border-r border-tokyo-border/60 bg-tokyo-night/80 backdrop-blur-3xl relative z-20 shadow-2xl lg:overflow-y-auto">
         <div className="w-full max-w-sm mx-auto space-y-10 py-12">
@@ -774,12 +719,7 @@ export default function OnboardingPage() {
             <Link
               href="/"
               className="inline-block hover:opacity-80 transition-opacity"
-            >
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-cyan-400 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-                UIT EduAdvisor
-              </p>
-            </Link>
+            ></Link>
             <h1 className="text-3xl font-semibold tracking-tight text-tokyo-fg">
               Đồng bộ dữ liệu
             </h1>
@@ -820,7 +760,7 @@ export default function OnboardingPage() {
                   </div>
                   <input
                     type={showPassword ? "text" : "password"}
-                    className="w-full rounded-xl border border-tokyo-border/80 bg-tokyo-storm pl-11 pr-11 py-3 text-sm outline-none ring-offset-slate-950 transition-all focus:border-cyan-500 focus:bg-tokyo-storm focus:ring-2 focus:ring-cyan-500/20"
+                    className="w-full rounded-xl border border-tokyo-border/80 bg-tokyo-storm pl-11 pr-11 py-3 text-sm outline-none  transition-all focus:border-cyan-500 focus:bg-tokyo-storm focus:ring-2 focus:ring-cyan-500/20"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="current-password"
@@ -854,7 +794,9 @@ export default function OnboardingPage() {
                   className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1.5 transition-colors"
                   disabled={busy || !!jobId || isLoadingCaptcha}
                 >
-                  <RefreshCw className={`w-3 h-3 ${isLoadingCaptcha ? 'animate-spin' : ''}`} />
+                  <RefreshCw
+                    className={`w-3 h-3 ${isLoadingCaptcha ? "animate-spin" : ""}`}
+                  />
                   Làm mới
                 </button>
               </div>
@@ -924,7 +866,7 @@ export default function OnboardingPage() {
               </label>
             </div>
 
-            {error && rightPanelView !== "sync" ? (
+            {error ? (
               <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-2.5 animate-in fade-in slide-in-from-top-2">
                 <XCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <span className="leading-relaxed">{error}</span>
@@ -933,14 +875,19 @@ export default function OnboardingPage() {
 
             <button
               type="submit"
-              disabled={busy || !!jobId || !privacy}
+              disabled={busy || !!jobId}
               className="w-full relative group overflow-hidden rounded-xl bg-white px-4 py-3.5 text-sm font-medium text-tokyo-night transition-all hover:bg-tokyo-fg   disabled:opacity-50 disabled:hover:bg-white "
             >
               <div className="relative z-10 flex items-center justify-center gap-2">
-                {busy || !!jobId ? (
+                {busy ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin text-tokyo-comment" />
-                    Đang thiết lập...
+                    Đang xác thực...
+                  </>
+                ) : jobId ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-tokyo-comment" />
+                    Đang đồng bộ...
                   </>
                 ) : (
                   <>

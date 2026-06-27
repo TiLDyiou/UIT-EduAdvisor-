@@ -132,13 +132,13 @@ async def gpa_overview(
     rows = [_enrollment_to_row(e) for e in enrollments]
     result = compute_cumulative_gpa(rows)
 
-    # Get official DAA GPAs from the latest successful onboarding SyncJob
+    # Get official DAA GPAs from the latest successful SyncJob (onboarding or resync)
     res = await db.execute(
         select(SyncJob)
         .where(
             SyncJob.student_id == student.id,
             SyncJob.status == "completed",
-            SyncJob.kind == "onboarding",
+            SyncJob.kind.in_(["onboarding", "resync_daa"]),
         )
         .order_by(SyncJob.finished_at.desc())
         .limit(1)
@@ -320,6 +320,15 @@ async def roadmap(
     max_english_level = 0
     import re
 
+    has_english_in_first_term = False
+    if sorted_terms:
+        first_term = sorted_terms[0]
+        for e in enrollments:
+            if e.term_code == first_term and e.course:
+                if re.search(r"(?:anh văn|tiếng anh)\s+(\d+)", e.course.name.lower()):
+                    has_english_in_first_term = True
+                    break
+
     # First pass: record PE courses that are already enrolled, and find max English level
     for n in nodes:
         is_pe = "giáo dục thể chất" in n.course_name.lower()
@@ -336,6 +345,9 @@ async def roadmap(
                 level = int(m_eng.group(1))
                 if level > max_english_level:
                     max_english_level = level
+
+    if sorted_terms and not has_english_in_first_term:
+        max_english_level = 999  # Exempt all English courses
 
     for n in nodes:
         is_gdqp = "giáo dục quốc phòng" in n.course_name.lower()

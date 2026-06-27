@@ -186,11 +186,32 @@ export default function Step2TimePreference({
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center justify-end gap-4 pt-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+        <div className="flex-1 w-full">
+          {error && (
+            <>
+              <style dangerouslySetInnerHTML={{ __html: `
+                @keyframes errorWiggle {
+                  0%, 100% { transform: translateX(0); }
+                  20%, 60% { transform: translateX(-4px); }
+                  40%, 80% { transform: translateX(4px); }
+                }
+                .error-wiggle-anim {
+                  animation: errorWiggle 0.4s ease-in-out;
+                }
+              `}} />
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3 animate-in slide-in-from-left-4 error-wiggle-anim duration-300 w-full sm:w-auto sm:max-w-md">
+                <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+                <p className="text-sm text-red-300 leading-relaxed m-0">{error}</p>
+              </div>
+            </>
+          )}
+        </div>
+        
         <button
           disabled={loading}
           onClick={handleSolve}
-          className="w-full sm:w-auto px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold transition-all shadow-md shadow-indigo-900/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
+          className="w-full sm:w-auto shrink-0 px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold transition-all shadow-md shadow-indigo-900/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
         >
           {loading ? (
             <>
@@ -203,25 +224,6 @@ export default function Step2TimePreference({
           )}
         </button>
       </div>
-
-      {error && (
-        <>
-          <style dangerouslySetInnerHTML={{ __html: `
-            @keyframes errorWiggle {
-              0%, 100% { transform: translateX(0); }
-              20%, 60% { transform: translateX(-4px); }
-              40%, 80% { transform: translateX(4px); }
-            }
-            .error-wiggle-anim {
-              animation: errorWiggle 0.4s ease-in-out;
-            }
-          `}} />
-          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 mt-4 animate-in slide-in-from-top-4 error-wiggle-anim duration-300">
-            <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-            <p className="text-sm text-red-300 leading-relaxed">{error}</p>
-          </div>
-        </>
-      )}
     </div>
   );
 }

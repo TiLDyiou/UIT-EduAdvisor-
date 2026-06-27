@@ -10,6 +10,9 @@ import {
   Lightbulb,
   Plus,
   Trash2,
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
@@ -180,7 +183,7 @@ function GpaOverviewCard({
         <div className="space-y-6">
           <div>
             <p className="text-xs text-neutral-400 uppercase tracking-wider mb-1">
-              GPA Tích luỹ (Thang 10)
+              Điểm trung bình chung tích lũy
             </p>
             <div className="flex items-baseline gap-1">
               <span className="text-4xl font-bold text-violet-300">
@@ -199,7 +202,7 @@ function GpaOverviewCard({
       </div>
       <div className="mt-8 pt-6 border-t border-neutral-800 flex justify-between items-center">
         <div>
-          <p className="text-xs text-neutral-400 mb-1">Tín chỉ tích luỹ</p>
+          <p className="text-xs text-neutral-400 mb-1">Số tín chỉ tích lũy</p>
           <p className="text-lg font-semibold text-neutral-100">
             {gpa.earned_credits}{" "}
             <span className="text-sm text-neutral-500 font-normal">
@@ -454,9 +457,8 @@ function RetakeEstimatorSection({
 
       <div className="p-6">
         <div className="hidden md:grid grid-cols-12 gap-4 pb-3 border-b border-neutral-800 text-xs text-neutral-500 uppercase tracking-wider font-semibold">
-          <div className="col-span-6">Môn học (Điểm cũ)</div>
-          <div className="col-span-4">Điểm mới dự kiến</div>
-          <div className="col-span-2 text-right">Thao tác</div>
+          <div className="col-span-8">Môn học (Điểm cũ)</div>
+          <div className="col-span-3">Điểm mới dự kiến</div>
         </div>
 
         <div className="space-y-4 pt-4">
@@ -465,7 +467,7 @@ function RetakeEstimatorSection({
               key={index}
               className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4 bg-white dark:bg-neutral-950/30 rounded-lg border border-neutral-200 dark:border-neutral-800/80 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors group"
             >
-              <div className="col-span-1 md:col-span-6 flex flex-col">
+              <div className="col-span-1 md:col-span-8 flex flex-col">
                 <label className="md:hidden text-xs text-neutral-500 mb-1">
                   Môn học
                 </label>
@@ -479,7 +481,7 @@ function RetakeEstimatorSection({
                   }}
                 />
               </div>
-              <div className="col-span-1 md:col-span-4 flex flex-col">
+              <div className="col-span-1 md:col-span-3 flex flex-col">
                 <label className="md:hidden text-xs text-neutral-500 mb-1">
                   Điểm mới dự kiến
                 </label>
@@ -503,7 +505,7 @@ function RetakeEstimatorSection({
                   className="w-full bg-white dark:bg-neutral-950/50 border border-neutral-200 dark:border-neutral-700 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 rounded-lg px-4 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 transition-colors outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
-              <div className="col-span-1 md:col-span-2 flex justify-end">
+              <div className="col-span-1 md:col-span-1 flex justify-end">
                 {retakes.length > 1 ? (
                   <button
                     onClick={() => {
@@ -524,12 +526,9 @@ function RetakeEstimatorSection({
         </div>
 
         {result && !loading && (
-          <div className="mt-8 bg-cyan-950/20 border border-cyan-900/30 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="mt-8 bg-[#8839ef]/10 dark:bg-tokyo-storm border border-cyan-900/30 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
-              <p className="text-sm font-medium text-neutral-100 mb-1">
-                Dự báo thay đổi GPA
-              </p>
-              <p className="text-sm text-neutral-400">
+              <p className="text-lg text-neutral-400">
                 {result.delta_gpa_10 === 0 ? (
                   <>
                     Giữ nguyên ở mức{" "}
@@ -545,33 +544,194 @@ function RetakeEstimatorSection({
                       {currentGpa.gpa_10.toFixed(2)}
                     </span>{" "}
                     {result.delta_gpa_10 > 0 ? "lên" : "xuống"}{" "}
-                    <span className="text-cyan-400 font-semibold">
+                    <span className="text-tokyo-cyan font-semibold">
                       {(currentGpa.gpa_10 + result.delta_gpa_10).toFixed(2)}
                     </span>{" "}
-                    (tăng/giảm{" "}
-                    <span
-                      className={`${result.delta_gpa_10 > 0 ? "text-cyan-400" : "text-red-400"}`}
-                    >
-                      {result.delta_gpa_10 > 0 ? "+" : ""}
-                      {result.delta_gpa_10.toFixed(2)}
-                    </span>
-                    )
                   </>
                 )}
               </p>
             </div>
-            <div className="flex items-baseline gap-1 bg-neutral-950/50 px-6 py-3 rounded-lg shadow-sm border border-neutral-800/50">
+            <div className=" flex items-baseline gap-1  px-6 py-3  ">
               <span
-                className={`text-3xl font-bold ${result.delta_gpa_10 >= 0 ? "text-cyan-400" : "text-red-400"}`}
+                className={`text-3xl font-bold ${result.delta_gpa_10 >= 0 ? "text-cyan-500" : "text-red-400"}`}
               >
-                {result.delta_gpa_10 > 0 ? "+" : ""}
+                {result.delta_gpa_10 > 0 ? "+" : "-"}
                 {result.delta_gpa_10.toFixed(2)}
               </span>
-              <span className="text-sm text-neutral-500">tăng/giảm</span>
             </div>
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function CourseImpactRanking({
+  enrollments,
+  currentGpa,
+}: {
+  enrollments: EnrollmentOption[];
+  currentGpa: GpaOverview;
+}) {
+  const [showAll, setShowAll] = useState(false);
+
+  const ranked = enrollments
+    .filter((e) => e.grade_10 !== null)
+    .map((e) => {
+      const impact = (currentGpa.gpa_10 - e.grade_10!) * e.credits;
+      return { ...e, impact };
+    })
+    .filter((e) => e.impact > 0)
+    .sort((a, b) => b.impact - a.impact);
+
+  if (ranked.length === 0) return null;
+
+  const maxImpact = Math.max(...ranked.map((r) => Math.abs(r.impact)), 1);
+  const visible = showAll ? ranked : ranked.slice(0, 5);
+
+  function getImpactColor(grade: number): string {
+    if (grade >= 8.0) return "bg-tokyo-green";
+    if (grade >= 6.5) return "bg-tokyo-yellow";
+    if (grade >= 5.0) return "bg-tokyo-orange";
+    return "bg-tokyo-red";
+  }
+
+  function getGradeTextColor(grade: number): string {
+    if (grade >= 8.0) return "text-tokyo-green";
+    if (grade >= 6.5) return "text-tokyo-yellow";
+    if (grade >= 5.0) return "text-tokyo-orange";
+    return "text-tokyo-red";
+  }
+
+  return (
+    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-visible">
+      <div className="p-6 border-b border-neutral-200 dark:border-neutral-800">
+        <div className="flex items-center gap-2 mb-1">
+          <AlertTriangle
+            className="w-5 h-5 text-tokyo-orange"
+            strokeWidth={2.5}
+          />
+          <h2 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100">
+            Nên cải thiện môn nào?
+          </h2>
+        </div>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          Xếp hạng theo mức độ kéo tụt GPA. Môn ở trên cùng nên được ưu tiên học
+          cải thiện trước.
+        </p>
+      </div>
+
+      <div className="divide-y divide-neutral-100 dark:divide-neutral-800/60">
+        {visible.map((course, i) => {
+          const gap = currentGpa.gpa_10 - course.grade_10!;
+          const isBelow = gap > 0;
+
+          return (
+            <div
+              key={course.id}
+              className="group relative flex items-center gap-4 px-6 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors"
+            >
+              <span className="text-xs font-bold text-neutral-400 dark:text-neutral-500 w-6 text-right shrink-0">
+                {i + 1}
+              </span>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200 truncate">
+                    {course.course_name}
+                  </span>
+                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 shrink-0">
+                    {course.course_code} · {course.credits} TC
+                  </span>
+                </div>
+                <div className="h-1.5 bg-slate-200 dark:bg-neutral-800 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${getImpactColor(course.grade_10!)}`}
+                    style={{
+                      width: `${Math.max(4, (Math.abs(course.impact) / maxImpact) * 100)}%`,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="text-right shrink-0">
+                <span
+                  className={`text-sm font-bold ${getGradeTextColor(course.grade_10!)}`}
+                >
+                  {course.grade_10!.toFixed(1)}
+                </span>
+              </div>
+
+              {/* Tooltip */}
+              <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-72">
+                <div className="bg-white dark:bg-tokyo-panel text-tokyo-fg text-xs rounded-lg px-4 py-3 shadow-xl border border-neutral-200 dark:border-tokyo-border leading-relaxed">
+                  {isBelow ? (
+                    <>
+                      Điểm{" "}
+                      <span className="font-bold text-tokyo-red">
+                        {course.grade_10!.toFixed(1)}
+                      </span>{" "}
+                      thấp hơn GPA tích lũy (
+                      <span className="font-bold text-tokyo-cyan">
+                        {currentGpa.gpa_10.toFixed(2)}
+                      </span>
+                      ) tới{" "}
+                      <span className="font-bold text-tokyo-orange">
+                        {gap.toFixed(2)}
+                      </span>{" "}
+                      điểm. Với{" "}
+                      <span className="font-bold">
+                        {course.credits} tín chỉ
+                      </span>
+                      {gap >= 2.0
+                        ? ", môn này đang kéo tụt GPA rất nhiều."
+                        : gap >= 1.0
+                          ? ", môn này đang kéo tụt GPA đáng kể."
+                          : gap >= 0.5
+                            ? ", môn này đang kéo tụt GPA kha khá."
+                            : ", cải thiện môn này sẽ giúp tăng nhẹ GPA."}
+                    </>
+                  ) : (
+                    <>
+                      Điểm{" "}
+                      <span className="font-bold text-tokyo-green">
+                        {course.grade_10!.toFixed(1)}
+                      </span>{" "}
+                      đã cao hơn GPA tích lũy (
+                      <span className="font-bold text-tokyo-cyan">
+                        {currentGpa.gpa_10.toFixed(2)}
+                      </span>
+                      ). Môn này đang{" "}
+                      <span className="font-bold text-tokyo-green">
+                        nâng GPA
+                      </span>{" "}
+                      của bạn lên.
+                    </>
+                  )}
+                </div>
+                <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-white dark:border-t-tokyo-panel" />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {ranked.length > 5 && (
+        <button
+          onClick={() => setShowAll(!showAll)}
+          className="w-full px-6 py-3 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors flex items-center justify-center gap-1.5 border-t border-neutral-200 dark:border-neutral-800/60"
+        >
+          {showAll ? (
+            <>
+              <ChevronUp className="w-4 h-4" /> Thu gọn
+            </>
+          ) : (
+            <>
+              <ChevronDown className="w-4 h-4" /> Xem tất cả {ranked.length} môn
+            </>
+          )}
+        </button>
+      )}
     </div>
   );
 }
@@ -672,7 +832,7 @@ export default function GpaToolsPage() {
         )}
 
         {error && !loading && (
-          <div className="rounded-lg border border-red-800/40 bg-red-950/30 p-4 text-sm text-red-300">
+          <div className="rounded-lg border border-red-800/40 bg-[#f7768e]/10 p-4 text-sm text-red-300">
             {error}
           </div>
         )}
@@ -697,11 +857,12 @@ export default function GpaToolsPage() {
                 currentGpa={gpa}
               />
             </div>
-            <div className="flex-1 w-full lg:w-[60%] xl:w-[65%]">
+            <div className="flex-1 w-full lg:w-[60%] xl:w-[65%] space-y-6">
               <RetakeEstimatorSection
                 enrollments={enrollments}
                 currentGpa={gpa}
               />
+              <CourseImpactRanking enrollments={enrollments} currentGpa={gpa} />
             </div>
           </div>
         )}

@@ -62,7 +62,11 @@ function DaaResyncPanel({
     const r = await apiFetch("/api/v1/resync/daa-captcha");
     if (!r.ok) {
       const body = await r.json().catch(() => ({}));
-      setError(typeof body?.detail === "string" ? body.detail : "Không tải được captcha");
+      setError(
+        typeof body?.detail === "string"
+          ? body.detail
+          : "Không tải được captcha",
+      );
       return;
     }
     setCaptcha(await r.json());
@@ -152,13 +156,24 @@ function DaaResyncPanel({
       completedStages.delete(latest.stage);
       activeStage = latest.stage;
     }
-    const stages = ["daa_profile", "daa_grades", "daa_schedule", "daa_exams", "moodle_authenticating", "persisting"];
+    const stages = [
+      "daa_profile",
+      "daa_grades",
+      "daa_schedule",
+      "daa_exams",
+      "moodle_authenticating",
+      "persisting",
+    ];
 
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between text-xs">
           <span className="text-neutral-300 font-medium font-sans">
-            {isCompleted ? "Đồng bộ hoàn tất!" : isFailed ? "Đồng bộ thất bại" : latest?.message || "Đang đồng bộ..."}
+            {isCompleted
+              ? "Đồng bộ hoàn tất!"
+              : isFailed
+                ? "Đồng bộ thất bại"
+                : latest?.message || "Đang đồng bộ..."}
           </span>
           <span className="font-mono text-cyan-400 font-bold">{pct}%</span>
         </div>
@@ -173,15 +188,28 @@ function DaaResyncPanel({
             const isDone = completedStages.has(stage) || isCompleted;
             const isActive = stage === activeStage && !isCompleted && !isFailed;
             return (
-              <li key={stage} className={`flex items-center gap-2 text-xs transition-colors duration-300 ${isDone ? "text-emerald-400" : isActive ? "text-cyan-300" : "text-neutral-600"}`}>
-                <span className="w-4 text-center font-bold font-sans">{isDone ? "✓" : isActive ? "⟳" : "○"}</span>
-                <span className="font-sans">{STAGE_LABELS[stage] || stage}</span>
-                {isActive && <span className="ml-auto h-2 w-2 animate-ping rounded-full bg-cyan-450" />}
+              <li
+                key={stage}
+                className={`flex items-center gap-2 text-xs transition-colors duration-300 ${isDone ? "text-emerald-400" : isActive ? "text-cyan-300" : "text-neutral-600"}`}
+              >
+                <span className="w-4 text-center font-bold font-sans">
+                  {isDone ? "✓" : isActive ? "⟳" : "○"}
+                </span>
+                <span className="font-sans">
+                  {STAGE_LABELS[stage] || stage}
+                </span>
+                {isActive && (
+                  <span className="ml-auto h-2 w-2 animate-ping rounded-full bg-cyan-450" />
+                )}
               </li>
             );
           })}
         </ul>
-        {isFailed && error && <p className="text-xs text-red-400 bg-red-950/20 border border-red-900/30 p-2.5 rounded-lg font-sans">{error}</p>}
+        {isFailed && error && (
+          <p className="text-xs text-red-400 bg-red-950/20 border border-red-900/30 p-2.5 rounded-lg font-sans">
+            {error}
+          </p>
+        )}
       </div>
     );
   }
@@ -190,17 +218,29 @@ function DaaResyncPanel({
     <form onSubmit={onSubmit} className="space-y-3">
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-neutral-300 font-sans">Giải captcha DAA</span>
-          <button type="button" onClick={() => void loadCaptcha()} className="text-xs text-cyan-400 hover:underline font-sans">
+          <span className="text-xs font-semibold text-neutral-300 font-sans">
+            Giải captcha DAA
+          </span>
+          <button
+            type="button"
+            onClick={() => void loadCaptcha()}
+            className="text-xs text-cyan-400 hover:underline font-sans"
+          >
             Làm mới
           </button>
         </div>
         {captcha ? (
           <div className="space-y-2 bg-black/40 p-3 rounded-xl border border-neutral-800/80">
-            <p className="text-xs text-neutral-400 font-sans">{captcha.question}</p>
+            <p className="text-xs text-neutral-400 font-sans">
+              {captcha.question}
+            </p>
             {imageSrc && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={imageSrc} alt="Captcha DAA" className="max-h-20 rounded border border-neutral-700 bg-neutral-900 mx-auto" />
+              <img
+                src={imageSrc}
+                alt="Captcha DAA"
+                className="max-h-20 rounded border border-neutral-700 bg-neutral-900 mx-auto"
+              />
             )}
             <input
               className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-white outline-none ring-cyan-500 focus:ring-2 focus:border-transparent transition-all font-mono text-center tracking-widest"
@@ -211,10 +251,16 @@ function DaaResyncPanel({
             />
           </div>
         ) : (
-          <p className="text-xs text-neutral-500 font-sans">Đang tải captcha…</p>
+          <p className="text-xs text-neutral-500 font-sans">
+            Đang tải captcha…
+          </p>
         )}
       </div>
-      {error && !jobId && <p className="text-xs text-red-400 bg-red-950/20 border border-red-900/30 p-2.5 rounded-lg font-sans">{error}</p>}
+      {error && !jobId && (
+        <p className="text-xs text-red-400 bg-red-950/20 border border-red-900/30 p-2.5 rounded-lg font-sans">
+          {error}
+        </p>
+      )}
       <div className="flex gap-2.5 pt-1">
         <button
           type="button"
@@ -312,16 +358,22 @@ export function Sidebar({
           isCollapsed ? "w-[64px]" : "w-[260px]"
         }`}
       >
-        <div
-          className={`flex h-16 shrink-0 items-center border-b border-[#3a494b]/20 ${isCollapsed ? "justify-center px-0" : "gap-3 px-6"}`}
+        <Link
+          href="/"
+          className={`flex h-16 shrink-0 items-center border-b border-[#3a494b]/20 overflow-hidden transition-all duration-300 hover:bg-white/5 ${isCollapsed ? "justify-center px-0" : "justify-start px-5 gap-3"}`}
         >
-          <div className="h-2 w-2 shrink-0 rounded-full bg-[#73daca] animate-pulse" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.png"
+            alt="UIT EduAdvisor"
+            className={`object-contain shrink-0 transition-all duration-300 ${isCollapsed ? "h-6 w-auto" : "h-7 w-auto drop-shadow-md"}`}
+          />
           {!isCollapsed && (
-            <span className="text-[11px] font-mono tracking-widest text-[#7dcfff] font-semibold uppercase truncate">
-              UIT.EDUADVISOR
+            <span className="text-[16px] font-extrabold tracking-tight whitespace-nowrap bg-clip-text text-transparent bg-gradient-to-r from-tokyo-cyan via-tokyo-blue to-tokyo-magenta drop-shadow-sm cursor-pointer select-none animate-gradient-x bg-[length:200%_auto] origin-left">
+              UIT EduAdvisor
             </span>
           )}
-        </div>
+        </Link>
 
         <nav
           className={`flex-1 overflow-y-auto py-6 ${isCollapsed ? "px-2" : "px-4"}`}
@@ -438,16 +490,17 @@ export function Sidebar({
               Đồng bộ dữ liệu DAA
             </h3>
             <p className="text-xs text-neutral-450 leading-relaxed mb-4 font-sans">
-              Hệ thống sẽ tải lại lịch thi, điểm và thời khóa biểu mới nhất từ Cổng đào tạo DAA của bạn.
+              Hệ thống sẽ tải lại lịch thi, điểm và thời khóa biểu mới nhất từ
+              Cổng đào tạo DAA của bạn.
             </p>
-            
-            <DaaResyncPanel 
-              csrfToken={me?.csrf_token || ""} 
+
+            <DaaResyncPanel
+              csrfToken={me?.csrf_token || ""}
               onSyncComplete={() => {
                 setIsSyncModalOpen(false);
                 window.location.reload();
-              }} 
-              onCancel={() => setIsSyncModalOpen(false)} 
+              }}
+              onCancel={() => setIsSyncModalOpen(false)}
             />
           </div>
         </div>

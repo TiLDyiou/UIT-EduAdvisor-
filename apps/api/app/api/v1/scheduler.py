@@ -248,12 +248,56 @@ async def recommend(
         grades=grades,
     )
 
+    # Evaluate English exemption logic
+    import re
+    max_english_level = 0
+    enrollment_term_codes = set()
+    for e in enrollments:
+        if e.term_code and e.term_code != "CURRENT":
+            enrollment_term_codes.add(e.term_code)
+            
+    def _term_sort_key(tc: str) -> tuple[int, int]:
+        m = re.match(r"HK(\d)_(\d{4})-(\d{4})", tc)
+        if m:
+            return (int(m.group(2)), int(m.group(1)))
+        return (9999, 9)
+
+    sorted_terms = sorted(enrollment_term_codes, key=_term_sort_key)
+    
+    has_english_in_first_term = False
+    if sorted_terms:
+        first_term = sorted_terms[0]
+        for e in enrollments:
+            if e.term_code == first_term and e.course:
+                if re.search(r"(?:anh văn|tiếng anh)\s+(\d+)", e.course.name.lower()):
+                    has_english_in_first_term = True
+                    break
+                    
+    for e in enrollments:
+        if e.course:
+            m_eng = re.search(r"(?:anh văn|tiếng anh)\s+(\d+)", e.course.name.lower())
+            if m_eng and e.term_code: # means enrolled
+                level = int(m_eng.group(1))
+                if level > max_english_level:
+                    max_english_level = level
+                    
+    if sorted_terms and not has_english_in_first_term:
+        max_english_level = 999
+
     # Build candidate courses.
     credit_map: dict[int, int] = {}
     candidates: list[CandidateCourse] = []
     for t in terms:
         for cc in t.curriculum_courses:
             c = cc.course
+            
+            # English skip rule
+            m_eng = re.search(r"(?:anh văn|tiếng anh)\s+(\d+)", c.name.lower())
+            if m_eng:
+                level = int(m_eng.group(1))
+                if level < max_english_level:
+                    continue
+                    
             credit_map[c.id] = c.credits
             candidates.append(
                 CandidateCourse(
@@ -298,6 +342,12 @@ async def recommend(
 @router.post("/solve", response_model=ScheduleResponse)
 async def solve(body: ScheduleRequest) -> ScheduleResponse:
     """Run CSP/Backtracking solver to find up to 3 schedule options."""
+    if not body.course_codes:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Bạn cần chọn ít nhất 1 môn học để bắt đầu xếp lịch."
+        )
+        
     sections = [_schema_to_section(s) for s in body.sections]
 
     available_slots: set[tuple[int, int]] | None = None

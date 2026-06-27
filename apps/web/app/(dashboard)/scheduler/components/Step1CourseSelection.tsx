@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { schedulerService, Section } from "@/lib/scheduler";
 import {
   UploadCloud,
@@ -34,6 +34,13 @@ export default function Step1CourseSelection({
     );
     return new Set(mapped);
   });
+  
+  useEffect(() => {
+    if (initialSelectedCodes && initialSelectedCodes.length === 0 && selectedCodes.size > 0) {
+      setSelectedCodes(new Set());
+    }
+  }, [initialSelectedCodes, selectedCodes.size]);
+
   const [uploading, setUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);

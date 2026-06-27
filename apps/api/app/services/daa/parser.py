@@ -82,6 +82,18 @@ def login_failed(html: str) -> bool:
     return bool(soup.select_one("div.alert-error"))
 
 
+def get_login_error(html: str) -> str | None:
+    """Extract actual error message from Drupal error divs if any."""
+    soup = BeautifulSoup(html, "html.parser")
+    err_div = soup.select_one("div.messages.error")
+    if err_div:
+        return err_div.get_text(" ", strip=True)
+    alert_div = soup.select_one("div.alert-error")
+    if alert_div:
+        return alert_div.get_text(" ", strip=True)
+    return None
+
+
 def parse_profile_name(html: str) -> str | None:
     soup = BeautifulSoup(html, "html.parser")
     title = soup.select_one("h1.title, #page-title")
@@ -217,28 +229,90 @@ def parse_grades_tables(html: str) -> list[dict[str, str | Decimal | int | None]
 def parse_schedule_rows(html: str) -> list[dict[str, str | int | None]]:
     soup = BeautifulSoup(html, "html.parser")
     out: list[dict[str, str | int | None]] = []
+    
+    def _norm(s: str) -> str:
+        s = s.lower().strip()
+        s = s.replace("\u0111", "d").replace("\u0110", "d")
+        import unicodedata
+        return unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode()
+        
     for table in soup.select("table"):
-        headers = [th.get_text(" ", strip=True).lower() for th in table.find_all("th")]
+        headers = [_norm(th.get_text(" ", strip=True)) for th in table.find_all("th")]
         if not headers:
             continue
+            
         joined = " ".join(headers)
-        if "thứ" not in joined and "tiet" not in joined and "tiết" not in joined:
+        if "thu" not in joined and "tiet" not in joined:
             continue
+            
+        col_idx = {}
+        for i, h in enumerate(headers):
+            if h in ("thu", "thu trong tuan"):
+                col_idx["day"] = i
+            elif h in ("tiet", "tiet bd", "tiet hoc", "tiet bat dau"):
+                col_idx["start"] = i
+            elif h in ("so tiet", "st"):
+                col_idx["duration"] = i
+            elif h in ("mamh", "ma mh", "ma hp", "ma hoc phan"):
+                col_idx["code"] = i
+            elif h in ("ten mon", "ten mh", "ten hoc phan", "ten hp", "mon hoc"):
+                col_idx["name"] = i
+            elif h in ("phong", "phong hoc"):
+                col_idx["room"] = i
+                
+        if "day" not in col_idx or "start" not in col_idx or "code" not in col_idx:
+            continue
+            
         for tr in table.find_all("tr")[1:]:
             cells = [td.get_text(" ", strip=True) for td in tr.find_all("td")]
-            if len(cells) < 3:
+            if len(cells) <= max(col_idx.values()):
                 continue
-            course_cell = cells[3] if len(cells) > 3 else None
-            out.append(
-                {
-                    "day_of_week": _parse_int_maybe(cells[0]),
-                    "start_period": _parse_int_maybe(cells[1]),
-                    "end_period": _parse_int_maybe(cells[2]),
-                    "course_code": _extract_course_code(course_cell),
-                    "course_name": course_cell,
-                    "room": cells[-1] if len(cells) > 4 else None,
-                }
-            )
+                
+            day_cell = cells[col_idx["day"]]
+            start_cell = cells[col_idx["start"]]
+            
+            day = _parse_int_maybe(day_cell)
+            start = _parse_int_maybe(start_cell)
+            
+            if not day or not start:
+                continue
+                
+            duration = 1
+            if "duration" in col_idx:
+                d = _parse_int_maybe(cells[col_idx["duration"]])
+                if d: duration = d
+                
+            # sometimes start_cell is "1-3" or "45" (e.g. if 'tiet' contains multiple periods instead of start + duration)
+            m_range = re.search(r"(\d+)\s*-\s*(\d+)", start_cell)
+            if m_range:
+                start = int(m_range.group(1))
+                end = int(m_range.group(2))
+            else:
+                # e.g. "45"
+                m_digits = re.search(r"(\d)(\d+)", start_cell)
+                if m_digits and len(start_cell.strip()) >= 2 and duration == 1:
+                    start = int(m_digits.group(1))
+                    end = int(start_cell.strip()[-1])
+                    if end == 0: end = 10
+                else:
+                    end = start + duration - 1
+            
+            course_code = _extract_course_code(cells[col_idx["code"]])
+            if not course_code:
+                continue
+                
+            name = cells[col_idx["name"]] if "name" in col_idx else None
+            room = cells[col_idx["room"]] if "room" in col_idx else None
+            
+            out.append({
+                "day_of_week": day,
+                "start_period": start,
+                "end_period": end,
+                "course_code": course_code,
+                "course_name": name,
+                "room": room,
+            })
+            
     return out
 
 
@@ -413,24 +487,21 @@ def parse_grades_summary(html: str) -> dict[str, float | int | None]:
             continue
         label = _norm(_text(cells[0]))
 
-        if "diem trung binh chung tich luy" in label:
-            # ĐTBCTL row — GPA in cells[6] (colspan=3 label reduces 10 cols to 8)
-            if len(cells) > 6:
-                m = decimal_re.search(_text(cells[6]))
+        if "diem trung binh" in label and "tich luy" in label:
+            for cell in cells[1:]:
+                m = decimal_re.search(_text(cell))
                 if m:
-                    val = float(m.group(0).replace(",", "."))
-                    result["dtbctl_10"] = val
+                    result["dtbctl_10"] = float(m.group(0).replace(",", "."))
+                    break
 
-        elif "diem trung binh chung" in label:
-            # ĐTBC row — GPA in cells[6]
-            if len(cells) > 6:
-                m = decimal_re.search(_text(cells[6]))
+        elif "diem trung binh" in label and "tich luy" not in label and "hoc ky" not in label:
+            for cell in cells[1:]:
+                m = decimal_re.search(_text(cell))
                 if m:
-                    val = float(m.group(0).replace(",", "."))
-                    result["dtbc_10"] = val
+                    result["dtbc_10"] = float(m.group(0).replace(",", "."))
+                    break
 
-        elif "so tin chi tich luy" in label:
-            # Earned credits in the 4th cell (index 3), or next available int
+        elif "tin chi tich luy" in label:
             for cell in cells[1:]:
                 txt = _text(cell).strip()
                 if re.fullmatch(r"\d+", txt):
@@ -574,3 +645,59 @@ def parse_class_code_info(html: str) -> tuple[str | None, int | None]:
                 major_name = MAJOR_MAPPING.get(prefix)
                 return major_name, int(year_str)
     return None, None
+
+
+def parse_ics_schedule(ics_text: str | bytes) -> list[dict[str, str | int | None]]:
+    import icalendar
+    cal = icalendar.Calendar.from_ical(ics_text)
+    out = []
+    
+    day_map = {'MO': 2, 'TU': 3, 'WE': 4, 'TH': 5, 'FR': 6, 'SA': 7, 'SU': 8}
+    
+    for component in cal.walk():
+        if component.name == "VEVENT":
+            summary = str(component.get('summary', ''))
+            description = str(component.get('description', ''))
+            
+            course_code = summary.split(' - ')[0].strip()
+            course_name = course_code
+            name_match = re.search(r'\((.*?)\)', description)
+            if name_match:
+                course_name = name_match.group(1)
+                
+            rrule = component.get('rrule')
+            day_of_week = 2
+            if rrule and 'BYDAY' in rrule:
+                byday = rrule['BYDAY'][0]
+                day_of_week = day_map.get(byday, 2)
+                
+            start_p = 1
+            end_p = 1
+            period_match = re.search(r'Tiết\s+(\d+)', description)
+            if period_match:
+                periods = period_match.group(1)
+                start_p = int(periods[0])
+                if periods[-1] == '0':
+                    end_p = 10
+                else:
+                    end_p = int(periods[-1])
+                    
+            room = summary.split('- P. ')[-1].strip() if '- P. ' in summary else None
+            
+            week_pattern = "Hàng tuần"
+            if "Cách" in description:
+                freq_match = re.search(r'Cách\s+\d+\s+tuần', description, re.IGNORECASE)
+                if freq_match:
+                    week_pattern = freq_match.group(0)
+                    
+            out.append({
+                "course_code": course_code,
+                "course_name": course_name,
+                "day_of_week": day_of_week,
+                "start_period": start_p,
+                "end_period": end_p,
+                "room": room,
+                "week_pattern": week_pattern,
+            })
+            
+    return out

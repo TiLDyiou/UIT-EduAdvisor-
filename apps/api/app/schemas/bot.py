@@ -33,6 +33,7 @@ class LinkTokenResponse(BaseModel):
 class BotAccountResponse(BaseModel):
     platform: str
     platform_user_id: str
+    platform_username: str | None = None
     linked_at: datetime
     unlinked_at: datetime | None = None
 

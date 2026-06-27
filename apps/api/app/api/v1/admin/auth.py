@@ -89,7 +89,7 @@ async def admin_login(
         max_age=settings.admin_session_ttl_seconds,
         httponly=True,
         secure=settings.admin_session_cookie_secure,
-        samesite="strict",
+        samesite="lax",
         path="/",
     )
     return resp

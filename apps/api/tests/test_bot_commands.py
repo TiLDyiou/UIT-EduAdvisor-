@@ -38,50 +38,50 @@ async def _link_student(
 class TestPublicCommands:
     async def test_help(self, db: AsyncSession):
         cmd = NormalizedCommand(platform="discord", platform_user_id="unknown", command="/help")
-        result = await dispatch_command(db, cmd)
+        result, _ = await dispatch_command(db, cmd)
         assert "/tkb" in result
         assert "/gpa" in result
         assert "/nhacnho" in result
 
     async def test_start_unlinked(self, db: AsyncSession):
         cmd = NormalizedCommand(platform="discord", platform_user_id="unknown", command="/start")
-        result = await dispatch_command(db, cmd)
-        assert "lien ket" in result.lower()
+        result, _ = await dispatch_command(db, cmd)
+        assert "liên kết" in result.lower()
 
     async def test_start_already_linked(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
         await _link_student(db, student_id, puid="tg_linked")
         cmd = NormalizedCommand(platform="discord", platform_user_id="tg_linked", command="/start")
-        result = await dispatch_command(db, cmd)
-        assert "da lien ket" in result.lower()
+        result, _ = await dispatch_command(db, cmd)
+        assert "đã liên kết" in result.lower()
 
     async def test_start_with_invalid_token(self, db: AsyncSession):
         cmd = NormalizedCommand(
             platform="discord", platform_user_id="unknown", command="/start", args="not-a-uuid"
         )
-        result = await dispatch_command(db, cmd)
-        assert "khong hop le" in result.lower()
+        result, _ = await dispatch_command(db, cmd)
+        assert "không hợp lệ" in result.lower()
 
     async def test_invalid_command(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
         await _link_student(db, student_id, puid="tg_inv")
         cmd = NormalizedCommand(platform="discord", platform_user_id="tg_inv", command="/xyz")
-        result = await dispatch_command(db, cmd)
-        assert "khong hop le" in result.lower()
+        result, _ = await dispatch_command(db, cmd)
+        assert "không hợp lệ" in result.lower()
 
 
 class TestLinkedCommands:
     async def test_unlinked_user_gets_guide(self, db: AsyncSession):
         cmd = NormalizedCommand(platform="discord", platform_user_id="no_link", command="/tkb")
-        result = await dispatch_command(db, cmd)
-        assert "chua duoc lien ket" in result.lower()
+        result, _ = await dispatch_command(db, cmd)
+        assert "chưa được liên kết" in result.lower()
 
     async def test_tkb_no_data(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
         await _link_student(db, student_id, puid="tg_tkb")
         cmd = NormalizedCommand(platform="discord", platform_user_id="tg_tkb", command="/tkb")
-        result = await dispatch_command(db, cmd)
-        assert "chua co" in result.lower()
+        result, _ = await dispatch_command(db, cmd)
+        assert "chưa có" in result.lower()
 
     async def test_tkb_with_data(self, db: AsyncSession, student_id, create_student, create_course):
         await create_student(student_id)
@@ -101,7 +101,7 @@ class TestLinkedCommands:
         await db.flush()
 
         cmd = NormalizedCommand(platform="discord", platform_user_id="tg_tkb2", command="/tkb")
-        result = await dispatch_command(db, cmd)
+        result, _ = await dispatch_command(db, cmd)
         assert "Intro CS" in result
         assert "A101" in result
 
@@ -128,22 +128,22 @@ class TestLinkedCommands:
         cmd = NormalizedCommand(
             platform="discord", platform_user_id="tg_tkb3", command="/tkb", args="thu4"
         )
-        result = await dispatch_command(db, cmd)
+        result, _ = await dispatch_command(db, cmd)
         assert "Algo" in result
 
         # Filter non-matching day
         cmd2 = NormalizedCommand(
             platform="discord", platform_user_id="tg_tkb3", command="/tkb", args="thu2"
         )
-        result2 = await dispatch_command(db, cmd2)
-        assert "khong co" in result2.lower()
+        result2, _ = await dispatch_command(db, cmd2)
+        assert "không có" in result2.lower()
 
     async def test_lithi_no_exams(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
         await _link_student(db, student_id, puid="tg_lithi")
         cmd = NormalizedCommand(platform="discord", platform_user_id="tg_lithi", command="/lithi")
-        result = await dispatch_command(db, cmd)
-        assert "khong co" in result.lower()
+        result, _ = await dispatch_command(db, cmd)
+        assert "không có" in result.lower()
 
     async def test_lithi_with_exam(
         self, db: AsyncSession, student_id, create_student, create_course
@@ -165,7 +165,7 @@ class TestLinkedCommands:
         await db.flush()
 
         cmd = NormalizedCommand(platform="discord", platform_user_id="tg_lithi2", command="/lithi")
-        result = await dispatch_command(db, cmd)
+        result, _ = await dispatch_command(db, cmd)
         assert "DB" in result
         assert "E301" in result
 
@@ -185,15 +185,15 @@ class TestLinkedCommands:
         await db.flush()
 
         cmd = NormalizedCommand(platform="discord", platform_user_id="tg_dl", command="/deadline")
-        result = await dispatch_command(db, cmd)
+        result, _ = await dispatch_command(db, cmd)
         assert "Bai tap 1" in result
 
     async def test_gpa_no_data(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
         await _link_student(db, student_id, puid="tg_gpa")
         cmd = NormalizedCommand(platform="discord", platform_user_id="tg_gpa", command="/gpa")
-        result = await dispatch_command(db, cmd)
-        assert "chua co" in result.lower()
+        result, _ = await dispatch_command(db, cmd)
+        assert "chưa có" in result.lower()
 
     async def test_gpa_with_data(self, db: AsyncSession, student_id, create_student, create_course):
         await create_student(student_id)
@@ -211,7 +211,7 @@ class TestLinkedCommands:
         await db.flush()
 
         cmd = NormalizedCommand(platform="discord", platform_user_id="tg_gpa2", command="/gpa")
-        result = await dispatch_command(db, cmd)
+        result, _ = await dispatch_command(db, cmd)
         assert "8.5" in result
 
 
@@ -222,8 +222,8 @@ class TestNhacnhoCommand:
         cmd = NormalizedCommand(
             platform="discord", platform_user_id="tg_nh", command="/nhacnho", args="status"
         )
-        result = await dispatch_command(db, cmd)
-        assert "BAT" in result
+        result, _ = await dispatch_command(db, cmd)
+        assert "bật" in result.lower()
 
     async def test_nhacnho_toggle_off(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
@@ -231,8 +231,8 @@ class TestNhacnhoCommand:
         cmd = NormalizedCommand(
             platform="discord", platform_user_id="tg_nh2", command="/nhacnho", args="thi off"
         )
-        result = await dispatch_command(db, cmd)
-        assert "tat" in result.lower()
+        result, _ = await dispatch_command(db, cmd)
+        assert "tắt" in result.lower()
 
     async def test_nhacnho_invalid_syntax(self, db: AsyncSession, student_id, create_student):
         await create_student(student_id)
@@ -240,5 +240,5 @@ class TestNhacnhoCommand:
         cmd = NormalizedCommand(
             platform="discord", platform_user_id="tg_nh3", command="/nhacnho", args="xyz"
         )
-        result = await dispatch_command(db, cmd)
-        assert "cu phap" in result.lower()
+        result, _ = await dispatch_command(db, cmd)
+        assert "cú pháp" in result.lower()

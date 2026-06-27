@@ -25,6 +25,7 @@ export function ThemeToggle() {
 
   return (
     <button
+      type="button"
       onClick={toggle}
       className="flex h-8 w-8 items-center justify-center rounded-lg border border-tokyo-border/40 bg-tokyo-night text-tokyo-variable hover:bg-tokyo-storm hover:text-tokyo-cyan transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm focus:outline-none"
       title={theme === "dark" ? "Chuyển sang Chế độ Sáng" : "Chuyển sang Chế độ Tối"}

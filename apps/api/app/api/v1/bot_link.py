@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+import httpx
 
 from app.core.config import Settings
 from app.db.models.bot import BotAccount, ReminderPreference
@@ -25,12 +26,35 @@ from app.schemas.bot import (
 )
 from app.services.bot.bot_linking import (
     create_link_token,
-    get_linked_accounts,
     unlink_account,
     get_all_bot_accounts,
 )
 
 router = APIRouter(prefix="/bot", tags=["bot-link"])
+
+async def get_discord_username(user_id: str, redis: Redis, settings: Settings) -> str | None:
+    cache_key = f"discord_username:{user_id}"
+    cached = await redis.get(cache_key)
+    if cached:
+        return cached.decode("utf-8")
+    
+    if not settings.discord_bot_token:
+        return None
+        
+    try:
+        headers = {"Authorization": f"Bot {settings.discord_bot_token}"}
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(f"https://discord.com/api/v10/users/{user_id}", headers=headers)
+            if resp.status_code == 200:
+                data = resp.json()
+                name = data.get("global_name") or data.get("username")
+                if name:
+                    await redis.setex(cache_key, 86400, name)
+                    return name
+    except Exception:
+        pass
+    
+    return None
 
 
 def _build_deep_link(platform: str, token: str, settings: Settings) -> str:
@@ -67,17 +91,26 @@ async def create_bot_link_token(
 async def list_bot_accounts(
     db: Annotated[AsyncSession, Depends(get_db)],
     student: Annotated[Student, Depends(get_current_student)],
+    redis: Annotated[Redis, Depends(get_redis)],
+    settings: Annotated[Settings, Depends(get_settings_dep)],
 ) -> list[BotAccountResponse]:
     accounts = await get_all_bot_accounts(db, student.id)
-    return [
-        BotAccountResponse(
-            platform=a.platform,
-            platform_user_id=a.platform_user_id,
-            linked_at=a.linked_at,
-            unlinked_at=a.unlinked_at,
+    out = []
+    for a in accounts:
+        username = None
+        if a.platform == "discord":
+            username = await get_discord_username(a.platform_user_id, redis, settings)
+            
+        out.append(
+            BotAccountResponse(
+                platform=a.platform,
+                platform_user_id=a.platform_user_id,
+                platform_username=username,
+                linked_at=a.linked_at,
+                unlinked_at=a.unlinked_at,
+            )
         )
-        for a in accounts
-    ]
+    return out
 
 
 @router.delete("/accounts/{platform}", status_code=status.HTTP_204_NO_CONTENT)
@@ -100,11 +133,12 @@ async def reactivate_bot_account(
     platform: str,
     db: Annotated[AsyncSession, Depends(get_db)],
     student: Annotated[Student, Depends(get_current_student)],
+    settings: Annotated[Settings, Depends(get_settings_dep)],
     _: Annotated[None, Depends(require_csrf)],
 ):
     if platform not in ("discord", "mail"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_platform")
-    
+
     # Tìm tài khoản đã hủy liên kết gần nhất
     res = await db.execute(
         select(BotAccount)
@@ -118,11 +152,18 @@ async def reactivate_bot_account(
     )
     account = res.scalar_one_or_none()
     if not account:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no_unlinked_account_found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="no_unlinked_account_found"
+        )
+
     account.unlinked_at = None
     account.linked_at = datetime.now(UTC)
     await db.commit()
+
+    sender = get_platform_sender(settings)
+    message = "**Thông báo:** Kênh nhận thông báo này đã được **Bật (Active)** trở lại."
+    await sender.send_message(platform, account.platform_user_id, message)
+
     return {"ok": True}
 
 
@@ -131,11 +172,12 @@ async def deactivate_bot_account(
     platform: str,
     db: Annotated[AsyncSession, Depends(get_db)],
     student: Annotated[Student, Depends(get_current_student)],
+    settings: Annotated[Settings, Depends(get_settings_dep)],
     _: Annotated[None, Depends(require_csrf)],
 ):
     if platform not in ("discord", "mail"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_platform")
-    
+
     # Tìm tài khoản đang hoạt động của học sinh
     res = await db.execute(
         select(BotAccount)
@@ -149,9 +191,14 @@ async def deactivate_bot_account(
     account = res.scalar_one_or_none()
     if not account:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="account_not_linked")
-    
+
     account.unlinked_at = datetime.now(UTC)
     await db.commit()
+
+    sender = get_platform_sender(settings)
+    message = "**Thông báo:** Kênh nhận thông báo này đã bị **Tạm ngưng (Inactive)** từ trang web. Bạn sẽ không nhận được nhắc nhở qua đây nữa.\n\n_Bạn có thể bật lại trong phần Cài đặt hệ thống._"
+    await sender.send_message(platform, account.platform_user_id, message)
+
     return {"ok": True}
 
 
@@ -219,7 +266,7 @@ async def request_email_otp(
 
     email = body.email.strip().lower()
     otp = f"{random.randint(0, 999999):06d}"
-    
+
     # Save OTP to Redis with 5 minutes TTL
     key = f"email_otp:{student.id}:{email}"
     await redis.setex(key, 300, otp)
@@ -260,7 +307,9 @@ async def request_email_otp(
 </html>"""
     success = await sender.send_message("mail", email, html_content)
     if not success:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="send_email_failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="send_email_failed"
+        )
 
     return {"ok": True}
 
@@ -283,13 +332,17 @@ async def link_email_account(
     email = body.email.strip().lower()
     key = f"email_otp:{student.id}:{email}"
     stored_otp = await redis.get(key)
-    
+
     if not stored_otp:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_or_expired_otp")
-    
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_or_expired_otp"
+        )
+
     otp_str = stored_otp if isinstance(stored_otp, str) else stored_otp.decode("utf-8")
     if otp_str != body.otp.strip():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_or_expired_otp")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_or_expired_otp"
+        )
 
     # OTP is valid, delete it
     await redis.delete(key)
@@ -309,17 +362,18 @@ async def link_email_account(
 
     # Check if the requested email is already in DB
     existing_res = await db.execute(
-        select(BotAccount).where(
-            BotAccount.platform == "mail",
-            BotAccount.platform_user_id == email
-        ).limit(1)
+        select(BotAccount)
+        .where(BotAccount.platform == "mail", BotAccount.platform_user_id == email)
+        .limit(1)
     )
     existing_account = existing_res.scalar_one_or_none()
 
     if existing_account:
         if existing_account.student_id != student.id:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="email_in_use_by_other_student")
-        
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="email_in_use_by_other_student"
+            )
+
         existing_account.unlinked_at = None
         existing_account.linked_at = now
     else:

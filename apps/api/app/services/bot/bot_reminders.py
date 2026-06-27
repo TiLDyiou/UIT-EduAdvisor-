@@ -115,9 +115,9 @@ async def _send_exam_reminders(
         course_display = f"{course_code} - {course_name}" if course_code else course_name
         ca_thi = _get_exam_shift(exam.start_time)
         plain_msg = (
-            f"Nhac nho lich thi:\n"
-            f"  Mon: {course_display}\n"
-            f"  Ngay: {exam.exam_date.strftime('%d/%m/%Y')}\n"
+            f"Nhắc nhở lịch thi:\n"
+            f"  Môn: {course_display}\n"
+            f"  Ngày: {exam.exam_date.strftime('%d/%m/%Y')}\n"
             f"  Ca: {ca_thi}"
         )
         if exam.room:
@@ -238,7 +238,7 @@ async def _send_deadline_reminders(
         due_local = dl.due_at.astimezone(local_tz)
         due_text = due_local.strftime("%d/%m/%Y %H:%M")
 
-        plain_msg = f"Nhac nho deadline:\n  {prefix}{dl.title}\n  Han: {due_text}"
+        plain_msg = f"Nhắc nhở deadline:\n  {prefix}{dl.title}\n  Hạn: {due_text}"
 
         course_badge = ""
         if course_code:

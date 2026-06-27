@@ -13,7 +13,6 @@ const ROUTE_LABELS: Record<string, string> = {
   "/gpa-tools": "GPA Tools",
   "/scheduler": "UIT Scheduler",
   "/settings": "Cài đặt",
-  "/admin": "Quản trị viên",
 };
 
 export default function DashboardLayout({

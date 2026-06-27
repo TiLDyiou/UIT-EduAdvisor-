@@ -201,6 +201,7 @@ async def _persist_schedule(session: AsyncSession, student_id, rows: list[dict[s
                 start_period=sp,
                 end_period=ep,
                 room=str(room)[:500] if room else None,
+                week_pattern=str(r.get("week_pattern"))[:200] if r.get("week_pattern") else None,
             )
         )
 
@@ -501,7 +502,40 @@ async def run_onboarding_sync(
 
         await _emit(redis, job_id, "daa_schedule", 50, "Đang đồng bộ thời khóa biểu")
         sched_html = await daa_get_text(daa_client, settings.daa_schedule_path)
-        sched_rows = parse_schedule_rows(sched_html)
+        
+        # Try to parse ICS if the link exists
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(sched_html, "html.parser")
+        
+        # Find link by text instead of href, since href might just be '2/2025' or similar
+        ics_link = soup.find("a", string=re.compile(r"GoogleCalendar", re.I))
+        if not ics_link:
+            # Fallback to href if text changed
+            ics_link = soup.find("a", href=re.compile(r"ics/tkb/"))
+            
+        sched_rows = []
+        if ics_link and ics_link.get("href"):
+            try:
+                from app.services.daa.parser import parse_ics_schedule
+                ics_path = str(ics_link["href"])
+                
+                # The user mentioned: "lấy .ics qua https://daa.uit.edu.vn/ics/tkb/2/2025 và cái endpoint đằng sau lấy tại href"
+                # This implies href might just be '2/2025', so we need to prepend 'ics/tkb/' if it doesn't have it.
+                if "://" in ics_path:
+                    from urllib.parse import urlparse
+                    ics_path = urlparse(ics_path).path
+                elif not "ics/tkb" in ics_path:
+                    ics_path = f"/ics/tkb/{ics_path.lstrip('/')}"
+                    
+                ics_text = await daa_get_text(daa_client, ics_path)
+                sched_rows = parse_ics_schedule(ics_text)
+                logger.info(f"Successfully parsed {len(sched_rows)} rows from ICS file")
+            except Exception as e:
+                logger.warning(f"Failed to parse ICS file, fallback to HTML: {e}", exc_info=True)
+                
+        if not sched_rows:
+            sched_rows = parse_schedule_rows(sched_html)
+            
         async with maker() as session:
             await session.execute(delete(Schedule).where(Schedule.student_id == student_id))
             await _persist_schedule(session, student_id, sched_rows)

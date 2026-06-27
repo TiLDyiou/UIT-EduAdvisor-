@@ -39,7 +39,9 @@ function FormattedText({
   text: string;
   role?: "user" | "assistant";
 }) {
-  const lines = text.split("\n");
+  // Remove raw citations like 【doc_id=6 chunk=39】
+  const cleanText = text.replace(/【[^】]*】/g, "");
+  const lines = cleanText.split("\n");
   const isUser = role === "user";
 
   return (
@@ -62,7 +64,7 @@ function FormattedText({
             return (
               <strong
                 key={j}
-                className={`font-semibold ${isUser ? "text-white" : "text-white/90"}`}
+                className={`font-semibold ${isUser ? "text-white" : "text-slate-800 dark:text-white/90"}`}
               >
                 {part.slice(2, -2)}
               </strong>
@@ -72,7 +74,7 @@ function FormattedText({
             return (
               <em
                 key={j}
-                className={`italic ${isUser ? "text-white/80" : "text-neutral-400"}`}
+                className={`italic ${isUser ? "text-white/80" : "text-slate-600 dark:text-neutral-400"}`}
               >
                 {part.slice(1, -1)}
               </em>
@@ -789,7 +791,7 @@ export function UITMateWidget() {
             <button
               onClick={sendMessage}
               disabled={busy || !input.trim()}
-              className="w-9 h-9 shrink-0 bg-blue-500 dark:bg-neutral-800 border border-blue-400 dark:border-neutral-700 hover:bg-blue-600 dark:hover:bg-neutral-700 disabled:bg-slate-200 dark:disabled:bg-neutral-800 text-white rounded-xl flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-9 h-9 shrink-0 bg-blue-500 dark:bg-neutral-800 border border-blue-400 dark:border-neutral-700 hover:bg-blue-600 dark:hover:bg-neutral-700 disabled:bg-slate-200 dark:disabled:bg-neutral-800 text-tokyo-night dark:text-slate-50 rounded-xl flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {busy ? (
                 <Loader2 className="w-4 h-4 animate-spin text-neutral-400" />
