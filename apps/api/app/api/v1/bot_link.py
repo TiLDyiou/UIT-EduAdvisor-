@@ -36,7 +36,7 @@ async def get_discord_username(user_id: str, redis: Redis, settings: Settings) -
     cache_key = f"discord_username:{user_id}"
     cached = await redis.get(cache_key)
     if cached:
-        return cached.decode("utf-8")
+        return cached if isinstance(cached, str) else cached.decode("utf-8")
     
     if not settings.discord_bot_token:
         return None
