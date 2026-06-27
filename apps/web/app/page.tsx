@@ -207,9 +207,7 @@ function TrackerMockup() {
             <p className="text-xs font-bold text-tokyo-variable truncate">
               {item.name}
             </p>
-            <span className="text-[9px]  text-tokyo-cyan">
-              {item.code}
-            </span>
+            <span className="text-[9px]  text-tokyo-cyan">{item.code}</span>
           </div>
           <span
             className="text-[8px]  font-bold px-2 py-0.5 rounded border whitespace-nowrap"
@@ -364,9 +362,7 @@ function SchedulerMockup() {
       </div>
       {/* Result badge */}
       <div className="flex items-center justify-between bg-tokyo-night rounded-xl p-3 border border-tokyo-green/20">
-        <span className="text-[9px] text-tokyo-fg ">
-          Phương án tối ưu #1
-        </span>
+        <span className="text-[9px] text-tokyo-fg ">Phương án tối ưu #1</span>
         <span className="text-[9px] font-bold text-tokyo-green bg-tokyo-green/10 px-2 py-0.5 rounded">
           0 xung đột
         </span>
@@ -890,7 +886,7 @@ export default function HomePage() {
           <FeatureCard
             href="/settings"
             title="Cài đặt Suite"
-            description="Cấu hình phương thức xác thực Vault, cập nhật mã số sinh viên hoặc thiết lập thông số hiển thị hệ thống."
+            description="Quản lý kênh thông báo đa nền tảng, tùy chỉnh thời gian nhắc lịch học/thi và kiểm soát dữ liệu tài khoản."
             icon={Settings}
             colorClass="text-[#9aa5ce] group-hover:text-[#c0caf5]"
           />
