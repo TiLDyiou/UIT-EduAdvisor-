@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   Upload,
   Lock,
+  Send,
 } from "lucide-react";
 
 // Feature Card Props
@@ -424,6 +425,13 @@ function AiMateMockup() {
         <span className="text-[9px] text-tokyo-cyan bg-tokyo-storm border border-tokyo-blue/20 px-2 py-1 rounded-lg">
           Quy chế học phí?
         </span>
+      </div>
+      {/* Input bar mockup */}
+      <div className="bg-tokyo-night border border-tokyo-border/50 rounded-xl flex items-center px-3 py-2 gap-2 shadow-sm">
+        <span className="text-[11px] text-tokyo-comment flex-1">Hỏi UIT Mate...</span>
+        <div className="w-6 h-6 rounded bg-tokyo-teal/20 text-tokyo-teal flex items-center justify-center shrink-0 transition-colors hover:bg-tokyo-teal hover:text-white">
+          <Send className="w-3 h-3" />
+        </div>
       </div>
     </div>
   );
