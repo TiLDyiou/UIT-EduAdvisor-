@@ -194,7 +194,7 @@ async def onboarding_start(
             max_age=settings.student_session_ttl_seconds,
             httponly=True,
             secure=settings.session_cookie_secure,
-            samesite="lax",
+            samesite="none",
             path="/",
         )
         return resp

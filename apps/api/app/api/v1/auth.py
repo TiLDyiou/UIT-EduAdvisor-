@@ -21,5 +21,10 @@ async def logout(
     token = request.cookies.get(settings.session_cookie_name)
     await revoke_student_session(redis, token)
     res = Response(status_code=status.HTTP_204_NO_CONTENT)
-    res.delete_cookie(settings.session_cookie_name, path="/")
+    res.delete_cookie(
+        settings.session_cookie_name,
+        path="/",
+        secure=settings.session_cookie_secure,
+        samesite="none",
+    )
     return res

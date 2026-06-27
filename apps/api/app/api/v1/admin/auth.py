@@ -89,7 +89,7 @@ async def admin_login(
         max_age=settings.admin_session_ttl_seconds,
         httponly=True,
         secure=settings.admin_session_cookie_secure,
-        samesite="lax",
+        samesite="none",
         path="/",
     )
     return resp
@@ -116,7 +116,12 @@ async def admin_logout(
     )
     await db.commit()
     res = Response(status_code=status.HTTP_204_NO_CONTENT)
-    res.delete_cookie(settings.admin_session_cookie_name, path="/")
+    res.delete_cookie(
+        settings.admin_session_cookie_name,
+        path="/",
+        secure=settings.admin_session_cookie_secure,
+        samesite="none",
+    )
     return res
 
 
