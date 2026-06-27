@@ -30,13 +30,22 @@ def create_app() -> FastAPI:
     )
 
     if settings.cors_origins_list:
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=settings.cors_origins_list,
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
+        if "*" in settings.cors_origins_list:
+            app.add_middleware(
+                CORSMiddleware,
+                allow_origin_regex=".*",
+                allow_credentials=True,
+                allow_methods=["*"],
+                allow_headers=["*"],
+            )
+        else:
+            app.add_middleware(
+                CORSMiddleware,
+                allow_origins=settings.cors_origins_list,
+                allow_credentials=True,
+                allow_methods=["*"],
+                allow_headers=["*"],
+            )
 
     @app.middleware("http")
     async def request_context(request: Request, call_next):
