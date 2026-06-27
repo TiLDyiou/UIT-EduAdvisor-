@@ -18,6 +18,7 @@ import {
   Award,
   ChevronLeft,
   Upload,
+  Lock,
 } from "lucide-react";
 
 // Feature Card Props
@@ -814,9 +815,10 @@ export default function HomePage() {
                     <div className="w-2.5 h-2.5 rounded-full bg-[#e0af68]/60" />
                     <div className="w-2.5 h-2.5 rounded-full bg-[#9ece6a]/60" />
                     <div className="flex-1 ml-3">
-                      <div className="h-4 bg-[#1a1b26] rounded-md flex items-center px-2">
-                        <span className="text-[8px]  text-[#565f89]">
-                          eduadvisor.uit.dev{currentSlide.href}
+                      <div className="h-6 bg-tokyo-panel/80 dark:bg-tokyo-night border border-tokyo-border/50 rounded-md flex items-center px-2 shadow-sm">
+                        <Lock className="w-3 h-3 text-tokyo-comment mr-1.5" />
+                        <span className="text-[10px] text-tokyo-comment tracking-wide">
+                          eduadvisor.uit.dev<span className="text-tokyo-fg">{currentSlide.href}</span>
                         </span>
                       </div>
                     </div>
