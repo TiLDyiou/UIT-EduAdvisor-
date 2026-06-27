@@ -798,8 +798,10 @@ export default function TrackerPage() {
 
   // Fallbacks for preview mode - FORCED MOCK DATA FOR USER PREVIEW
   const displayExams = (roadmap?.is_preview ?? true) ? MOCK_EXAMS : exams;
-  const displayDeadlines =
-    (roadmap?.is_preview ?? true) ? MOCK_DEADLINES : deadlines;
+  const allDeadlines = (roadmap?.is_preview ?? true) ? MOCK_DEADLINES : deadlines;
+  const displayDeadlines = allDeadlines.filter(
+    (d) => new Date(d.due_at).getTime() > Date.now()
+  );
 
   const totalCurriculumCredits = roadmap?.total_credits || 120;
   const currentEarnedCredits =

@@ -353,15 +353,22 @@ def _looks_like_course_code(s: str) -> bool:
     return bool(re.fullmatch(r"[A-Z0-9]+(?:\.[A-Z0-9]+)*", s)) and any(ch.isdigit() for ch in s)
 
 
-async def _persist_moodle_deadlines(session: AsyncSession, student_id, html: str) -> None:
+async def _persist_moodle_deadlines_json(session: AsyncSession, student_id, data: dict) -> None:
+    from app.services.moodle.parser import parse_calendar_events_json
     await session.execute(
         delete(Deadline).where(Deadline.student_id == student_id, Deadline.source == "moodle")
     )
-    for d in parse_upcoming_deadlines(html):
-        due = parse_due_datetime(str(d.get("due_text") or ""))
+    for d in parse_calendar_events_json(data):
+        due = d.get("deadline")
         if due is None:
             continue
-        title = str(d.get("title") or "Moodle")[:2000]
+        title = str(d.get("name") or "Moodle")[:2000]
+        # Try to find course id based on course_name
+        # It requires a DB query or we can just leave it as None and store the course_name in title for now
+        course_name = d.get("courseShortName")
+        if course_name:
+            title = f"[{course_name}] {title}"[:2000]
+            
         session.add(
             Deadline(
                 student_id=student_id,
@@ -369,7 +376,7 @@ async def _persist_moodle_deadlines(session: AsyncSession, student_id, html: str
                 title=title,
                 due_at=due,
                 source="moodle",
-                source_url=str(d.get("source_url") or "")[:2000] or None,
+                source_url=d.get("actionUrl") or "https://courses.uit.edu.vn",
             )
         )
 
@@ -583,12 +590,12 @@ async def run_onboarding_sync(
 
         await _emit(redis, job_id, "moodle_authenticating", 72, "Đang đăng nhập Moodle")
         try:
-            moodle_client = await moodle_login(
+            from app.services.moodle.client import moodle_get_calendar_events_json
+            data = await moodle_get_calendar_events_json(
                 settings, username=student_code, password=password_plain
             )
-            cal_html = await moodle_get_text(moodle_client, settings.moodle_calendar_path)
             async with maker() as session:
-                await _persist_moodle_deadlines(session, student_id, cal_html)
+                await _persist_moodle_deadlines_json(session, student_id, data)
                 await session.commit()
             summary["moodle"] = "ok"
         except Exception as exc:

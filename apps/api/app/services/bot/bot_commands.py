@@ -212,9 +212,12 @@ async def _cmd_deadline(db: AsyncSession, cmd: NormalizedCommand, student: Stude
         return "Không có deadline nào sắp tới.", None
 
     lines = ["Deadline sắp tới:"]
+    from zoneinfo import ZoneInfo
+    tz = ZoneInfo("Asia/Ho_Chi_Minh")
     for d in deadlines:
         course_name = d.course.name if d.course else ""
-        due_str = d.due_at.strftime("%d/%m %H:%M")
+        due_local = d.due_at.astimezone(tz)
+        due_str = due_local.strftime("%d/%m %H:%M")
         prefix = f"[{course_name}] " if course_name else ""
         lines.append(f"  {due_str}: {prefix}{d.title}")
     return "\n".join(lines), None
@@ -332,7 +335,7 @@ async def dispatch_command(db: AsyncSession, cmd: NormalizedCommand) -> tuple[st
         return await _cmd_tkb(db, cmd, student)
     if command == "/lithi":
         return await _cmd_lithi(db, cmd, student)
-    if command == "/deadline":
+    if command in ("/deadline", "/dl"):
         return await _cmd_deadline(db, cmd, student)
     if command == "/gpa":
         return await _cmd_gpa(db, cmd, student)
