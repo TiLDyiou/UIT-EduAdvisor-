@@ -898,7 +898,7 @@ export default function HomePage() {
           />
           <FeatureCard
             href="/scheduler"
-            title="EduAdvisor Scheduler"
+            title="UIT Scheduler"
             description="Tối ưu hóa việc xếp lịch học, cho phép tùy chỉnh khung giờ rảnh/bận và tự động đưa ra các phương án thời khóa biểu tốt nhất."
             icon={CalendarClock}
             colorClass="text-[#f7768e] group-hover:text-[#c0caf5]"
