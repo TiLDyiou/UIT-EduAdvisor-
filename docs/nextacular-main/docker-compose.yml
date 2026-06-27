@@ -1,0 +1,53 @@
+name: nextacular
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nextacular-postgres
+    restart: unless-stopped
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-nextacular}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nextacular}
+      POSTGRES_DB: ${POSTGRES_DB:-nextacular}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-nextacular} -d ${POSTGRES_DB:-nextacular}',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: nextacular-mailpit
+    restart: unless-stopped
+    ports:
+      - '${MAILPIT_SMTP_PORT:-1025}:1025'
+      - '${MAILPIT_WEB_PORT:-8025}:8025'
+    environment:
+      MP_MAX_MESSAGES: 5000
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+  adminer:
+    image: adminer:latest
+    container_name: nextacular-adminer
+    restart: unless-stopped
+    ports:
+      - '${ADMINER_PORT:-8080}:8080'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: pepa-linha
+
+volumes:
+  postgres-data:
+    name: nextacular-postgres-data

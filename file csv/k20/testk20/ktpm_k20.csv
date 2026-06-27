@@ -1,0 +1,111 @@
+Mã MH,Tên Môn Học,TC/SL,LT,TH
+SS003,Tư tưởng Hồ Chí Minh,2,2,0
+SS007,Triết học Mác – Lênin,3,3,0
+SS008,Kinh tế chính trị Mác – Lênin,2,2,0
+SS009,Chủ nghĩa xã hội khoa học,2,2,0
+SS010,Lịch sử Đảng Cộng sản Việt Nam,2,2,0
+SS006,Pháp luật đại cương,2,2,0
+MA006,Giải tích,4,4,0
+MA003,Đại số tuyến tính,3,3,0
+MA004,Cấu trúc rời rạc,4,4,0
+MA005,Xác suất thống kê,3,3,0
+IT001,Nhập môn Lập trình,4,3,1
+ENG01,Anh văn 1,4,4,0
+ENG02,Anh văn 2,4,4,0
+ENG03,Anh văn 3,4,4,0
+SE005,Giới thiệu ngành Kỹ thuật Phần mềm,1,1,0
+IT002,Lập trình hướng đối tượng,4,3,1
+IT003,Cấu trúc dữ liệu và giải thuật,4,3,1
+IT004,Cơ sở dữ liệu,4,3,1
+IT005,Nhập môn mạng máy tính,4,3,1
+IT007,Hệ điều hành,4,3,1
+IT012,Tổ chức và cấu trúc máy tính II,4,3,1
+IT008,Lập trình trực quan,4,3,1
+SE100,Phương pháp phát triển phần mềm hướng đối tượng,4,3,1
+SE104,Nhập môn công nghệ phần mềm,4,3,1
+SE359,DevOps trong Phát triển Phần mềm,3,2,1
+SE102,Nhập môn phát triển game (1),3,2,1
+SE115,Phát triển game với Unity,3,2,1
+SE116,Phát triển kỹ năng lập trình Game ứng dụng trong thực tế,4,3,1
+SE114,Nhập môn ứng dụng di động (1),3,2,1
+SE360,Điện toán đám mây và phát triển ứng dụng hướng dịch vụ,4,3,1
+SE361,Phát triển phần mềm theo kiến trúc Microservices,4,3,1
+SE301,Phát triển phần mềm mã nguồn mở (1),3,3,0
+SE215,Giao tiếp người máy (2),4,3,1
+SE113,Kiểm chứng phần mềm (1),4,3,1
+SE358,Quản lý dự án phát triển phần mềm (2),4,3,1
+SE117,Kỹ thuật lập trình,4,3,1
+SE330,Ngôn ngữ lập trình Java (1),4,3,1
+SE332,Chuyên đề CSDL nâng cao (1),2,2,0
+SE334,Các phương pháp lập trình (1),3,2,1
+SE347,Công nghệ Web và ứng dụng (2),4,3,1
+SE350,Chuyên đề E-learning (1),2,2,0
+SE343,Công nghệ Portal (2),3,3,0
+SE355,Máy học và các công cụ (2),3,2,1
+SE310,Công nghệ .NET (2),4,3,1
+SE346,Lập trình trên thiết bị di động (1),4,3,1
+SE404,Chuyên đề E-Government (1),2,2,0
+SE331,Chuyên đề E-Commerce (1),2,2,0
+SE313,Một số thuật toán thông minh (2),2,2,0
+SE352,Phát triển ứng dụng VR (1),3,2,1
+SE109,"Phát triển, vận hành, bảo trì phần mềm (1)",3,3,0
+SE356,Kiến trúc phần mềm (2),4,3,1
+SE357,Kỹ thuật phân tích yêu cầu (2),3,2,1
+SE325,Chuyên đề J2EE (2),4,3,1
+SE101,Phương pháp mô hình hóa,3,3,0
+SE106,Đặc tả hình thức,4,4,0
+SE214,Công nghệ phần mềm chuyên sâu,4,3,1
+SE362,An toàn phần mềm và hệ thống,4,3,1
+SE363,Phát triển ứng dụng trên nền tảng dữ liệu lớn,4,3,1
+SE364,Thiết kế giao diện và trải nghiệm người dùng,4,3,1
+SE365,Học sâu ứng dụng trong phát triển phần mềm,4,3,1
+SE221,Lập trình game nâng cao (1),4,3,1
+SE220,Thiết kế game (1),4,3,1
+SE320,Lập trình đồ họa 3 chiều với Direct 3D (1),4,3,1
+SE327,Phát triển và vận hành game (1),4,3,1
+SE328,Lập trình TTNT trong game (2),4,3,1
+SE344,Lập trình game trên các thiết bị di động (2),4,3,1
+SE314,Công nghệ game 3D,3,2,1
+SE315,Công nghệ Game Online,4,3,1
+SE316,Phát triển Game đa nền tảng,3,2,1
+SE317,Công nghệ tiên tiến trong phát triển game,3,2,1
+SS004,Kỹ năng nghề nghiệp,2,2,0
+*,Tự chọn tự do,6,*,*
+SE502,Thực tập,2,2,0
+SE503,Đồ án,2,2,0
+SE505,Khóa luận tốt nghiệp,10,10,0
+SE506,Đồ án tốt nghiệp tại doanh nghiệp,10,10,0
+SE507,Đồ án tốt nghiệp,6,6,0
+SE400,Seminar các vấn đề hiện đại của Công nghệ Phần mềm,4,4,0
+SE406,Mẫu thiết kế hướng đối tượng,4,4,0
+SE403,Nguyên lý thiết kế thế giới ảo,4,4,0
+SE407,Chuyên đề Pervasive and Mobile Computing,4,4,0
+SE408,Phát triển game với Blockchain,4,3,1
+SE409,Phát triển dự án Game,4,3,1
+MA006,Giải tích,4,4,0
+Hệ Liên Kết,Đại số tuyến tính,3,3,0
+Hệ Liên Kết,Anh văn 1,4,4,0
+Hệ Liên Kết,Giới thiệu ngành Kỹ thuật Phần mềm,1,1,0
+Hệ Liên Kết,Nhập môn lập trình,4,3,1
+Hệ Liên Kết,Hệ điều hành,4,3,1
+IT002,Lập trình hướng đối tượng,4,3,1
+Cấu trúc dữ liệu và giải thuật,4,3,1,
+Cấu trúc rời rạc,4,4,0,
+Xác suất thống kê,3,3,0,
+Hệ Liên Kết,Anh văn 2,4,4,0
+IT004,Cơ sở dữ liệu,4,3,1
+Hệ Liên Kết,Nhập môn mạng máy tính,4,3,1
+Hệ Liên Kết,Tổ chức và cấu trúc máy tính 2,4,3,1
+Hệ Liên Kết,Lập trình trực quan,4,3,1
+Hệ Liên Kết,Anh văn 3,4,4,0
+SE104,Nhập môn công nghệ phần mềm,4,3,1
+Hệ Liên Kết,Triết học Mác - Lênin,3,3,0
+Hệ Liên Kết,Kinh tế chính trị Mác – Lênin,2,2,0
+Hệ Liên Kết,Kỹ năng nghề nghiệp,2,2,0
+SS009,Chủ nghĩa xã hội khoa học,2,2,0
+Hệ Liên Kết,Lịch sử Đảng Cộng sản Việt Nam,2,2,0
+Hệ Liên Kết,Phương pháp phát triển phần mềm hướng đối tượng,4,3,1
+SS006,Pháp luật đại cương,2,2,0
+Hệ Liên Kết,Tư tưởng Hồ Chí Minh,2,2,
+Hệ Liên Kết,Đồ án,2,2,
+SE502,Thực tập,2,2,

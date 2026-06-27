@@ -1,0 +1,1 @@
+"""DAA (Drupal) integration."""

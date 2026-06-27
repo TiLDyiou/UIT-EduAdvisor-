@@ -1,0 +1,287 @@
+<!DOCTYPE html><html class="dark" lang="vi"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>UIT EduAdvisor | Auth &amp; Sync</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-highest": "#35343a",
+                    "on-secondary-fixed-variant": "#5700c9",
+                    "on-primary-fixed": "#002022",
+                    "error-container": "#93000a",
+                    "on-surface-variant": "#b9cacb",
+                    "on-primary": "#00363a",
+                    "on-background": "#e4e1e9",
+                    "tertiary": "#e0ffe5",
+                    "secondary-fixed": "#e9ddff",
+                    "surface-variant": "#35343a",
+                    "surface-container": "#1f1f25",
+                    "surface-bright": "#39383e",
+                    "tertiary-fixed-dim": "#00e384",
+                    "surface-container-high": "#2a292f",
+                    "secondary-container": "#7000ff",
+                    "on-secondary-container": "#ddcdff",
+                    "surface-tint": "#00dbe7",
+                    "error": "#ffb4ab",
+                    "primary": "#e1fdff",
+                    "on-tertiary-fixed": "#00210e",
+                    "on-tertiary-container": "#006e3d",
+                    "on-primary-container": "#006a71",
+                    "on-tertiary-fixed-variant": "#00522c",
+                    "on-error-container": "#ffdad6",
+                    "outline": "#849495",
+                    "surface-container-low": "#1b1b20",
+                    "on-error": "#690005",
+                    "surface-dim": "#131318",
+                    "inverse-primary": "#00696f",
+                    "background": "#131318",
+                    "outline-variant": "#3a494b",
+                    "primary-container": "#00f2ff",
+                    "surface": "#131318",
+                    "tertiary-container": "#00fa92",
+                    "on-surface": "#e4e1e9",
+                    "on-secondary-fixed": "#23005b",
+                    "secondary-fixed-dim": "#d1bcff",
+                    "on-tertiary": "#00391d",
+                    "on-secondary": "#3c0090",
+                    "on-primary-fixed-variant": "#004f54",
+                    "inverse-surface": "#e4e1e9",
+                    "surface-container-lowest": "#0e0e13",
+                    "primary-fixed": "#74f5ff",
+                    "secondary": "#d1bcff",
+                    "inverse-on-surface": "#303036",
+                    "tertiary-fixed": "#5affa2",
+                    "primary-fixed-dim": "#00dbe7"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "margin": "32px",
+                    "md": "16px",
+                    "base": "4px",
+                    "xs": "4px",
+                    "sm": "8px",
+                    "gutter": "20px",
+                    "xl": "40px",
+                    "lg": "24px"
+            },
+            "fontFamily": {
+                    "label-lg": ["Space Grotesk"],
+                    "title-lg": ["Space Grotesk"],
+                    "headline-lg": ["Space Grotesk"],
+                    "body-md": ["Space Grotesk"],
+                    "label-sm": ["Space Grotesk"],
+                    "display-lg": ["Space Grotesk"],
+                    "body-lg": ["Space Grotesk"],
+                    "headline-md": ["Space Grotesk"]
+            },
+            "fontSize": {
+                    "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.08em", "fontWeight": "700"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-sm": ["10px", {"lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #131318;
+            background-image: 
+                linear-gradient(rgba(0, 242, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 242, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .cyber-glow {
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+        }
+        .btn-glow:hover {
+            box-shadow: 0 0 15px #00F2FF;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1b1b20;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #00f2ff;
+        }
+        .text-glow-cyber {
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.5), 0 0 20px rgba(0, 242, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-background min-h-screen flex flex-col items-center">
+<main class="flex-grow pt-16 pb-16 px-6 max-w-6xl mx-auto w-full flex flex-col items-center">
+<!-- Large Hero Banner -->
+<div class="mb-16 text-center">
+<h1 class="font-display-lg text-display-lg text-primary-container tracking-[0.15em] uppercase text-glow-cyber">uit eduadvisor</h1>
+<div class="w-24 h-1 bg-primary-container mx-auto mt-4 shadow-[0_0_10px_#00F2FF]"></div>
+</div>
+<!-- Content Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter items-start w-full">
+<!-- Auth Section -->
+<section class="bg-surface-container-low border-l-2 border-primary-container p-8 rounded-lg cyber-glow relative overflow-hidden">
+<div class="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
+<span class="material-symbols-outlined text-9xl">fingerprint</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-primary-container mb-8 flex items-center gap-3"><span class="material-symbols-outlined">sync_alt</span> Kết nối dữ liệu học vụ</h2>
+<form class="space-y-6">
+<!-- Inputs -->
+<div class="space-y-4">
+<div class="relative">
+<label class="block font-label-sm text-label-sm text-outline uppercase mb-1">MSSV</label>
+<input class="w-full bg-transparent border-b border-surface-bright focus:border-primary-container focus:ring-0 text-on-surface font-body-lg py-2 px-0 transition-all placeholder:text-surface-variant" placeholder="Nhập mã số sinh viên" type="text">
+</div>
+<div class="relative">
+<label class="block font-label-sm text-label-sm text-outline uppercase mb-1">Mật khẩu</label>
+<input class="w-full bg-transparent border-b border-surface-bright focus:border-primary-container focus:ring-0 text-on-surface font-body-lg py-2 px-0 transition-all placeholder:text-surface-variant" placeholder="••••••••" type="password">
+</div>
+</div>
+<!-- Captcha Area -->
+<div class="bg-surface-container p-4 rounded border border-outline-variant/30">
+<div class="flex justify-between items-end gap-4 mb-4">
+<div class="flex-grow">
+<label class="block font-label-sm text-label-sm text-outline uppercase mb-2">Mã xác nhận (DAA)</label>
+<div class="h-12 bg-black/40 rounded flex items-center justify-center overflow-hidden border border-cyan-900/50">
+<img class="h-full object-contain" data-alt="A technical captcha image showing distorted alphanumeric characters in a digital terminal style. The background is dark blue with neon cyan lines crossing through the text. The overall aesthetic is data-heavy and encrypted." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzQj1vwn797Tplruo2gsEdXS9CsIkPUjQeZWnrfFNeJazs7KR_JV8jFu7Yt0BwObDuCLgpoKSXmAsTxhEkRUlsRJtwjtSHTFTuapE9e9xpx22fHrW3cMLnRlLZSdY5KYmJD10TH_eR3_dVuSvo5ei1Vj9jG5gnyT66c-6UjfJ4PUwQ7qToUMl8rvUfZk5ALqU9Qo_6ssYxBN9rvefOE7ucVdKyOsLVhuP1N7QnblatswsQJOUBAA98qjFAvgEXXV147fMljxkZbtCB">
+</div>
+</div>
+<button class="flex items-center gap-2 text-label-lg font-label-lg text-cyan-400 hover:text-cyan-200 transition-colors pb-1" type="button">
+<span class="material-symbols-outlined text-base">refresh</span>
+                            Tải lại
+                        </button>
+</div>
+<input class="w-full bg-surface-container-high border border-outline-variant/50 focus:border-primary-container rounded-sm px-3 py-2 text-on-surface font-body-md" placeholder="Nhập đáp án captcha" type="text">
+</div>
+<!-- Consent -->
+<div class="flex items-start gap-3 p-3 bg-primary-container/5 rounded border border-primary-container/10">
+<input class="mt-1 w-4 h-4 rounded-sm bg-transparent border-primary-container text-primary-container focus:ring-primary-container/20" id="consent" placeholder="on" type="checkbox" value="">
+<label class="text-label-sm font-label-sm text-on-surface-variant leading-relaxed" for="consent">
+                        Tôi đã đọc và đồng ý với <span class="text-primary-container">Chính sách bảo mật &amp; Điều khoản sử dụng</span>. Hệ thống sẽ lưu MSSV + Mật khẩu dưới dạng mã hóa <span class="font-bold">FLE</span> để phục vụ tự động đồng bộ Moodle.
+                    </label>
+</div>
+<!-- Action Button -->
+<button class="w-full py-4 bg-primary-container text-on-primary-fixed font-headline-md text-headline-md rounded-lg btn-glow transition-all active:scale-[0.98] flex items-center justify-center gap-3" type="submit">Bắt đầu đồng bộ <span class="material-symbols-outlined">rocket_launch</span></button>
+<!-- Vault Note -->
+<p class="text-center font-label-sm text-label-sm text-outline opacity-60 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[12px]">verified_user</span>
+                    Mật khẩu của bạn được bảo vệ bởi Vault Transit Engine. Chúng tôi không bao giờ lưu trữ mật khẩu dưới dạng văn bản thuần túy.
+                </p>
+</form>
+</section>
+<!-- Sync Status Section -->
+<section class="space-y-6">
+<div class="bg-surface-container p-8 rounded-lg border border-outline-variant/20 relative">
+<div class="flex justify-between items-center mb-8">
+<h2 class="font-title-lg text-title-lg text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container">hub</span>
+                        Tiến trình hệ thống
+                    </h2>
+<span class="font-label-sm text-label-sm bg-primary-container/10 text-primary-container px-2 py-1 rounded"><br></span>
+</div>
+<!-- Steps List -->
+<div class="space-y-4 mb-8">
+<!-- Step 1: Active -->
+<div class="flex items-center justify-between p-4 bg-surface-container-high rounded border-l-2 border-primary-container">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary-container animate-spin">sync</span>
+<div>
+<p class="font-body-md text-on-surface">Xác thực DAA...</p>
+<p class="text-xs text-primary-container/60 font-label-sm uppercase tracking-widest">Processing handshake</p>
+</div>
+</div>
+<span class="text-label-lg font-label-lg text-primary-container">Đang chạy</span>
+</div>
+<!-- Step 2: Pending -->
+<div class="flex items-center justify-between p-4 bg-surface-container-low opacity-50 rounded border-l-2 border-tertiary/20">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-outline">data_thresholding</span>
+<div>
+<p class="font-body-md text-on-surface">Crawl dữ liệu bảng điểm &amp; TKB...</p>
+<p class="text-xs text-outline font-label-sm uppercase tracking-widest">Queue empty</p>
+</div>
+</div>
+<span class="text-label-lg font-label-lg text-outline">Chờ</span>
+</div>
+<!-- Step 3: Pending -->
+<div class="flex items-center justify-between p-4 bg-surface-container-low opacity-50 rounded border-l-2 border-tertiary/20">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-outline">shield_person</span>
+<div>
+<p class="font-body-md text-on-surface">Xác thực Moodle...</p>
+<p class="text-xs text-outline font-label-sm uppercase tracking-widest">Awaiting auth token</p>
+</div>
+</div>
+<span class="text-label-lg font-label-lg text-outline">Chờ</span>
+</div>
+<!-- Step 4: Pending -->
+<div class="flex items-center justify-between p-4 bg-surface-container-low opacity-50 rounded border-l-2 border-tertiary/20">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-outline">cloud_sync</span>
+<div>
+<p class="font-body-md text-on-surface">Đồng bộ deadline &amp; tài liệu...</p>
+<p class="text-xs text-outline font-label-sm uppercase tracking-widest">Pending local write</p>
+</div>
+</div>
+<span class="text-label-lg font-label-lg text-outline">Chờ</span>
+</div>
+</div>
+<!-- Progress Bar Area -->
+<div class="space-y-2">
+<div class="flex justify-between font-label-sm text-label-sm text-outline uppercase tracking-widest">
+<span class="">Global Sync Progress</span>
+<span class="text-primary-container">25%</span>
+</div>
+<div class="w-full h-1 bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary-container w-1/4 shadow-[0_0_10px_#00F2FF]"></div>
+</div>
+</div>
+</div>
+<!-- Info Card -->
+<div class="bg-on-secondary-fixed-variant/20 p-6 rounded-lg border border-on-secondary-fixed-variant/40 flex gap-4">
+<span class="material-symbols-outlined text-secondary-fixed text-3xl">info</span>
+<div>
+<h4 class="font-label-lg text-label-lg text-secondary-fixed uppercase mb-1">System Architecture</h4>
+<p class="text-on-secondary-container font-body-md leading-relaxed">
+                        Quá trình đồng bộ diễn ra hoàn toàn trên Serverless Edge. Dữ liệu sau khi crawl sẽ được index vào Vector Database để hỗ trợ cố vấn AI cho lộ trình học tập của bạn.
+                    </p>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-8 px-6 flex flex-col md:flex-row justify-between items-center gap-4 bg-black border-t border-cyan-900/50 mt-auto">
+<div class="text-cyan-400 font-['Space_Grotesk'] text-xs tracking-widest">© 2026 UIT EduAdvisor</div>
+<div class="flex gap-6">
+<a class="font-['Space_Grotesk'] text-xs tracking-widest text-slate-500 hover:text-cyan-400 transition-colors duration-200" href="#">Terms</a>
+<a class="font-['Space_Grotesk'] text-xs tracking-widest text-slate-500 hover:text-cyan-400 transition-colors duration-200" href="#">Privacy</a>
+<a class="font-['Space_Grotesk'] text-xs tracking-widest text-slate-500 hover:text-cyan-400 transition-colors duration-200" href="#">Support</a>
+</div>
+</footer>
+
+
+
+
+</body></html>

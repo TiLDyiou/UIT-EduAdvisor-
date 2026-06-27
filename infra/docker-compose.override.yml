@@ -1,0 +1,45 @@
+# Local dev override. Auto-loaded by `docker compose` alongside the base file.
+# Key differences from base:
+#   - expose service ports to localhost
+#   - mount source for hot reload (api uses uvicorn --reload, web uses next dev)
+#   - skip the production multi-stage Dockerfile by overriding the command
+#
+# To run as production-like locally, use:
+#   docker compose -f docker-compose.yml up
+
+services:
+  postgres:
+    ports:
+      - "${POSTGRES_PORT}:5432"
+
+  redis:
+    ports:
+      - "${REDIS_PORT}:6379"
+
+  vault:
+    ports:
+      - "8200:8200"
+
+  api:
+    ports:
+      - "${API_PORT}:8000"
+    volumes:
+      - ../apps/api/app:/app/app
+      - ../apps/api/alembic:/app/alembic
+      - ../apps/api/alembic.ini:/app/alembic.ini
+      - ../docs:/app/docs
+    command:
+      ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  web:
+    build:
+      target: deps
+    ports:
+      - "${WEB_PORT}:3000"
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ../apps/web:/app
+      - /app/node_modules
+      - /app/.next
+    command: ["npm", "run", "dev"]

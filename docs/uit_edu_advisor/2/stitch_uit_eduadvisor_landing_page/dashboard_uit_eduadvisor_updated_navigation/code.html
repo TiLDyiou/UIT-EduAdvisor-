@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dashboard - UIT EduAdvisor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#1f1f25",
+                        "background": "#131318",
+                        "on-tertiary-fixed-variant": "#00522c",
+                        "on-tertiary-container": "#006e3d",
+                        "on-primary-container": "#006a71",
+                        "on-error": "#690005",
+                        "inverse-on-surface": "#303036",
+                        "surface-container-lowest": "#0e0e13",
+                        "on-tertiary": "#00391d",
+                        "on-tertiary-fixed": "#00210e",
+                        "tertiary-fixed-dim": "#00e384",
+                        "primary-fixed": "#74f5ff",
+                        "on-error-container": "#ffdad6",
+                        "secondary-container": "#7000ff",
+                        "on-secondary-container": "#ddcdff",
+                        "on-secondary": "#3c0090",
+                        "on-secondary-fixed-variant": "#5700c9",
+                        "surface-container-highest": "#35343a",
+                        "secondary-fixed": "#e9ddff",
+                        "on-primary-fixed-variant": "#004f54",
+                        "outline": "#849495",
+                        "on-secondary-fixed": "#23005b",
+                        "tertiary-fixed": "#5affa2",
+                        "on-background": "#e4e1e9",
+                        "on-primary": "#00363a",
+                        "surface": "#131318",
+                        "secondary-fixed-dim": "#d1bcff",
+                        "secondary": "#d1bcff",
+                        "surface-bright": "#39383e",
+                        "on-surface": "#e4e1e9",
+                        "surface-container-low": "#1b1b20",
+                        "surface-container-high": "#2a292f",
+                        "on-primary-fixed": "#002022",
+                        "on-surface-variant": "#b9cacb",
+                        "primary-container": "#00f2ff",
+                        "error-container": "#93000a",
+                        "surface-tint": "#00dbe7",
+                        "primary": "#e1fdff",
+                        "primary-fixed-dim": "#00dbe7",
+                        "outline-variant": "#3a494b",
+                        "tertiary": "#e0ffe5",
+                        "error": "#ffb4ab",
+                        "tertiary-container": "#00fa92",
+                        "inverse-surface": "#e4e1e9",
+                        "inverse-primary": "#00696f",
+                        "surface-dim": "#131318",
+                        "surface-variant": "#35343a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "gutter": "20px",
+                        "base": "4px",
+                        "md": "16px",
+                        "margin": "32px",
+                        "xl": "40px",
+                        "xs": "4px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Space Grotesk"],
+                        "title-lg": ["Space Grotesk"],
+                        "label-lg": ["Space Grotesk"],
+                        "label-sm": ["Space Grotesk"],
+                        "headline-md": ["Space Grotesk"],
+                        "display-lg": ["Space Grotesk"],
+                        "body-md": ["Space Grotesk"],
+                        "body-lg": ["Space Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "label-lg": ["12px", { "lineHeight": "16px", "letterSpacing": "0.08em", "fontWeight": "700" }],
+                        "label-sm": ["10px", { "lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Space Grotesk', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen font-body-md selection:bg-primary-container selection:text-background">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 border-b border-primary-container/30 bg-background/80 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.5)] flex justify-between items-center h-16 px-6 font-space-grotesk tracking-tight">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary-container text-[32px]" data-icon="hub">hub</span>
+<h1 class="text-xl font-bold text-primary-container drop-shadow-[0_0_8px_rgba(0,242,255,0.6)]">UIT EduAdvisor</h1>
+</div>
+<div class="flex items-center gap-md">
+<button aria-label="Notifications" class="text-slate-400 hover:text-primary-container transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border-2 border-primary-container/50">
+<img alt="Academic Advisor Profile" class="w-full h-full object-cover" data-alt="A futuristic portrait photo of a tech-savvy student or academic advisor in a dark room illuminated by neon blue cyber accents. The style is high-contrast cyberpunk, reflecting a digital-first, authoritative persona." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHdESjOQ3Ed1mF-y0V8r-8ZjAgUrW2BM3ZqSe9poLjMUKCHRkyTV8rI97GTe8mJQSPQh-Tq8Qm7jZ7SeC9e3hyNsxUnCI1XCxcrnaV4JwuVhkA17RWJ_vQj_QKl_Tsbmo6j-DMKeDQUWy0BMYRvc8VeZHKXLE72jsa2q95yH0T6WOCrvhexeoIlbhBilv12UFjiBSqF4xxJxSreTVhv6qpYYCWtTxnS1-e_po56GKAa_v5O7N_RSCbWAv6bLvuH9VXqsfQYPpvck40"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar (Web) -->
+<nav class="hidden md:flex flex-col pt-20 pb-8 px-4 fixed left-0 top-0 h-full w-64 border-r border-primary-container/30 bg-surface/50 backdrop-blur-xl font-space-grotesk uppercase tracking-widest text-xs z-40">
+<div class="mb-lg px-2">
+<p class="text-primary-container font-black">EduAdvisor</p>
+<p class="text-on-surface-variant text-[10px] tracking-widest opacity-70">Academic Interface</p>
+</div>
+<ul class="flex flex-col gap-base flex-1">
+<li>
+<a class="flex items-center gap-md px-4 py-3 rounded-DEFAULT bg-primary-container/10 text-primary-container border-l-4 border-primary-container shadow-[0_0_15px_rgba(0,242,255,0.2)] transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-4 py-3 rounded-DEFAULT text-slate-500 hover:text-slate-300 hover:bg-slate-800/50 hover:shadow-[0_0_10px_rgba(0,242,255,0.1)] border-l-4 border-transparent transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="route">route</span>
+<span>Roadmap</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-4 py-3 rounded-DEFAULT text-slate-500 hover:text-slate-300 hover:bg-slate-800/50 hover:shadow-[0_0_10px_rgba(0,242,255,0.1)] border-l-4 border-transparent transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="calendar_month">calendar_month</span>
+<span>Scheduler</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-4 py-3 rounded-DEFAULT text-slate-500 hover:text-slate-300 hover:bg-slate-800/50 hover:shadow-[0_0_10px_rgba(0,242,255,0.1)] border-l-4 border-transparent transition-all duration-300 ease-in-out" href="#"><span class="material-symbols-outlined text-lg" data-icon="calculate">calculate</span><span>GPA CALCULATOR</span></a>
+</li>
+<li>
+<a class="flex items-center gap-md px-4 py-3 rounded-DEFAULT text-slate-500 hover:text-slate-300 hover:bg-slate-800/50 hover:shadow-[0_0_10px_rgba(0,242,255,0.1)] border-l-4 border-transparent transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="library_books">library_books</span>
+<span>Library</span>
+</a>
+</li>
+</ul>
+<div class="mt-auto px-2">
+<button class="w-full bg-primary-container text-background py-2 rounded-DEFAULT font-label-lg uppercase hover:shadow-[0_0_15px_#00F2FF] transition-all flex items-center justify-center gap-sm"><span class="material-symbols-outlined text-sm" data-icon="description">description</span> Documentation</button>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="pt-24 pb-24 md:pl-[280px] pr-6 md:pr-12 min-h-screen">
+<!-- Welcome Header -->
+<div class="mb-lg border-b border-surface-bright pb-md">
+<p class="font-label-sm text-primary-container uppercase tracking-widest mb-xs flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-primary-container shadow-[0_0_8px_#00F2FF]"></span> User Profile
+            </p>
+<h2 class="font-display-lg text-on-surface">Chào bạn, <span class="text-primary-container">Nguyễn Văn A</span></h2>
+<p class="font-body-md text-on-surface-variant mt-sm">Student ID: <span class="font-mono text-on-surface">20520000</span> | Faculty of Software Engineering</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Academic Telemetry (Bento Grid) -->
+<section class="lg:col-span-8 flex flex-col gap-md">
+<h3 class="font-title-lg text-on-surface flex items-center gap-sm border-l-2 border-primary-container pl-sm">
+<span class="material-symbols-outlined text-primary-container" data-icon="monitoring">monitoring</span> Academic Telemetry
+                </h3>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-md">
+<!-- GPA 10 -->
+<div class="bg-surface-container-low rounded-DEFAULT p-md border border-surface-bright relative overflow-hidden group hover:border-primary-container/50 transition-colors">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary-container"></div>
+<p class="font-label-sm text-on-surface-variant uppercase mb-sm">GPA (Scale 10)</p>
+<div class="flex items-end justify-between">
+<span class="font-headline-lg text-on-surface">8.4</span>
+<span class="text-tertiary-container font-label-sm flex items-center"><span class="material-symbols-outlined text-[14px]" data-icon="arrow_upward">arrow_upward</span> 0.2</span>
+</div>
+<!-- Mini Bar Chart -->
+<div class="mt-md flex gap-xs items-end h-8">
+<div class="w-full bg-primary-container/20 h-4 rounded-t-DEFAULT"></div>
+<div class="w-full bg-primary-container/40 h-6 rounded-t-DEFAULT"></div>
+<div class="w-full bg-primary-container/60 h-5 rounded-t-DEFAULT"></div>
+<div class="w-full bg-primary-container h-8 rounded-t-DEFAULT shadow-[0_0_8px_#00F2FF]"></div>
+</div>
+</div>
+<!-- GPA 4 -->
+<div class="bg-surface-container-low rounded-DEFAULT p-md border border-surface-bright relative overflow-hidden group hover:border-primary-container/50 transition-colors">
+<div class="absolute top-0 left-0 w-1 h-full bg-secondary"></div>
+<p class="font-label-sm text-on-surface-variant uppercase mb-sm">GPA (Scale 4)</p>
+<div class="flex items-end justify-between">
+<span class="font-headline-lg text-on-surface">3.4</span>
+<span class="text-tertiary-container font-label-sm flex items-center"><span class="material-symbols-outlined text-[14px]" data-icon="arrow_upward">arrow_upward</span> 0.1</span>
+</div>
+<div class="mt-md w-full bg-surface-bright h-2 rounded-full overflow-hidden">
+<div class="bg-secondary h-full w-[85%] shadow-[0_0_8px_#d1bcff]"></div>
+</div>
+</div>
+<!-- Credits -->
+<div class="bg-surface-container-low rounded-DEFAULT p-md border border-surface-bright relative overflow-hidden group hover:border-primary-container/50 transition-colors">
+<div class="absolute top-0 left-0 w-1 h-full bg-tertiary-container"></div>
+<p class="font-label-sm text-on-surface-variant uppercase mb-sm">Credits Earned</p>
+<div class="flex items-end justify-between">
+<span class="font-headline-lg text-on-surface">112<span class="text-lg text-on-surface-variant">/145</span></span>
+</div>
+<!-- Radial Progress visually approximated -->
+<div class="mt-md relative w-full h-8 flex items-center gap-xs">
+<div class="flex-1 bg-surface-bright h-2 rounded-full overflow-hidden">
+<div class="bg-tertiary-container h-full w-[77%] shadow-[0_0_8px_#00fa92]"></div>
+</div>
+<span class="font-label-sm text-tertiary-container">77%</span>
+</div>
+</div>
+</div>
+<!-- Active Nodes (Courses) -->
+<div class="mt-md bg-surface-container-high rounded-DEFAULT p-md border border-surface-bright">
+<div class="flex justify-between items-center mb-md border-b border-surface-bright pb-sm">
+<h4 class="font-title-lg text-on-surface flex items-center gap-sm">
+<span class="material-symbols-outlined text-secondary" data-icon="account_tree">account_tree</span> Active Nodes (Current Courses)
+                        </h4>
+<span class="bg-primary-container/10 text-primary-container border border-primary-container px-2 py-1 rounded-sm font-label-sm uppercase">Semester 1 - 2024</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<div class="bg-surface-container-low p-sm rounded-DEFAULT border-l-2 border-primary-container flex justify-between items-center hover:bg-surface-container transition-colors">
+<div>
+<p class="font-label-lg text-on-surface">SE104 - Software Architecture</p>
+<p class="font-label-sm text-on-surface-variant mt-xs">Prof. Tran Van B</p>
+</div>
+<span class="bg-surface-bright text-on-surface px-2 py-1 rounded-sm font-label-sm">4 Credits</span>
+</div>
+<div class="bg-surface-container-low p-sm rounded-DEFAULT border-l-2 border-primary-container flex justify-between items-center hover:bg-surface-container transition-colors">
+<div>
+<p class="font-label-lg text-on-surface">IS201 - Advanced Database</p>
+<p class="font-label-sm text-on-surface-variant mt-xs">Prof. Le Thi C</p>
+</div>
+<span class="bg-surface-bright text-on-surface px-2 py-1 rounded-sm font-label-sm">3 Credits</span>
+</div>
+<div class="bg-surface-container-low p-sm rounded-DEFAULT border-l-2 border-secondary flex justify-between items-center hover:bg-surface-container transition-colors">
+<div>
+<p class="font-label-lg text-on-surface">CS300 - Machine Learning</p>
+<p class="font-label-sm text-on-surface-variant mt-xs">Prof. Nguyen Van D</p>
+</div>
+<span class="bg-surface-bright text-on-surface px-2 py-1 rounded-sm font-label-sm">3 Credits</span>
+</div>
+<div class="bg-surface-container-low p-sm rounded-DEFAULT border-l-2 border-surface-variant flex justify-between items-center hover:bg-surface-container transition-colors opacity-70">
+<div>
+<p class="font-label-lg text-on-surface">PE101 - Physical Education</p>
+<p class="font-label-sm text-on-surface-variant mt-xs">Prof. Pham Van E</p>
+</div>
+<span class="bg-surface-bright text-on-surface px-2 py-1 rounded-sm font-label-sm">1 Credit</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Sidebar Content -->
+<section class="lg:col-span-4 flex flex-col gap-md">
+<!-- Critical Alerts -->
+<div class="bg-surface-container-high rounded-DEFAULT p-md border border-error-container relative overflow-hidden">
+<div class="absolute top-0 right-0 p-2">
+<span class="flex h-3 w-3 relative">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-error shadow-[0_0_8px_#ffb4ab]"></span>
+</span>
+</div>
+<h3 class="font-title-lg text-error flex items-center gap-sm mb-md border-b border-error-container/50 pb-sm">
+<span class="material-symbols-outlined" data-icon="warning">warning</span> Critical Alerts
+                    </h3>
+<ul class="flex flex-col gap-sm">
+<li class="bg-surface-container-lowest p-sm rounded-DEFAULT border border-error-container/50 flex flex-col gap-xs">
+<div class="flex justify-between items-start">
+<p class="font-label-lg text-on-surface">SE104 Midterm Assignment</p>
+<span class="text-error font-label-sm bg-error-container/20 px-2 py-1 rounded-sm border border-error/30">Due: Today 23:59</span>
+</div>
+<p class="font-label-sm text-on-surface-variant">Moodle submission required.</p>
+</li>
+<li class="bg-surface-container-lowest p-sm rounded-DEFAULT border border-surface-bright flex flex-col gap-xs">
+<div class="flex justify-between items-start">
+<p class="font-label-lg text-on-surface">Tuition Fee Deadline</p>
+<span class="text-secondary font-label-sm bg-secondary-container/20 px-2 py-1 rounded-sm border border-secondary/30">Due: in 3 days</span>
+</div>
+</li>
+</ul>
+</div>
+<!-- System Log / Mini Feed -->
+<div class="bg-surface-container-low rounded-DEFAULT p-md border border-surface-bright flex-1">
+<h3 class="font-title-lg text-on-surface flex items-center gap-sm mb-md border-b border-surface-bright pb-sm">
+<span class="material-symbols-outlined text-outline" data-icon="terminal">terminal</span> System Log
+                    </h3>
+<div class="space-y-sm">
+<div class="flex gap-sm items-start">
+<span class="text-tertiary-container mt-1 material-symbols-outlined text-[16px]" data-icon="check_circle">check_circle</span>
+<div>
+<p class="font-label-sm text-on-surface">Grade updated for IS201</p>
+<p class="font-label-sm text-on-surface-variant text-[9px]">2 hours ago</p>
+</div>
+</div>
+<div class="flex gap-sm items-start">
+<span class="text-primary-container mt-1 material-symbols-outlined text-[16px]" data-icon="info">info</span>
+<div>
+<p class="font-label-sm text-on-surface">New course material uploaded in SE104</p>
+<p class="font-label-sm text-on-surface-variant text-[9px]">Yesterday</p>
+</div>
+</div>
+<div class="flex gap-sm items-start opacity-50">
+<span class="text-outline mt-1 material-symbols-outlined text-[16px]" data-icon="history">history</span>
+<div>
+<p class="font-label-sm text-on-surface">System maintenance completed</p>
+<p class="font-label-sm text-on-surface-variant text-[9px]">Oct 24, 2024</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Floating Action Button (FAB) -->
+<button aria-label="UIT Mate" class="fixed bottom-8 right-8 w-14 h-14 bg-primary-container text-background rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(0,242,255,0.4)] hover:shadow-[0_0_30px_rgba(0,242,255,0.8)] hover:scale-105 transition-all duration-300 z-50 group">
+<span class="material-symbols-outlined text-3xl group-hover:animate-pulse" data-icon="robot_2">robot_2</span>
+<!-- Tooltip -->
+<span class="absolute -top-10 right-0 bg-surface-container-high text-on-surface font-label-sm px-3 py-1.5 rounded-DEFAULT border border-primary-container/50 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Ask UIT Mate</span>
+</button>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full z-40 bg-surface/90 backdrop-blur-xl border-t border-surface-bright flex justify-around items-center h-16 pb-safe">
+<a class="flex flex-col items-center gap-1 text-primary-container p-2" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-sm text-[8px] uppercase tracking-wider">Dash</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-500 hover:text-primary-container transition-colors p-2" href="#">
+<span class="material-symbols-outlined" data-icon="route">route</span>
+<span class="font-label-sm text-[8px] uppercase tracking-wider">Roadmap</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-500 hover:text-primary-container transition-colors p-2" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+<span class="font-label-sm text-[8px] uppercase tracking-wider">Schedule</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-500 hover:text-primary-container transition-colors p-2" href="#">
+<span class="material-symbols-outlined" data-icon="library_books">library_books</span>
+<span class="font-label-sm text-[8px] uppercase tracking-wider">Library</span>
+</a>
+</nav>
+</body></html>
