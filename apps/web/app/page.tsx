@@ -57,7 +57,7 @@ function FeatureCard({
             {title}
           </h3>
           {badgeText && (
-            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#bb9af7]/10 text-[#bb9af7] border border-[#bb9af7]/20 uppercase">
+            <span className="text-[9px]  font-bold px-1.5 py-0.5 rounded bg-[#bb9af7]/10 text-[#bb9af7] border border-[#bb9af7]/20 uppercase">
               {badgeText}
             </span>
           )}
@@ -68,7 +68,7 @@ function FeatureCard({
         </p>
       </div>
 
-      <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-[#73daca] group-hover:text-[#7dcfff] transition-colors">
+      <div className="flex items-center gap-1.5 text-xs  font-bold text-[#73daca] group-hover:text-[#7dcfff] transition-colors">
         <span>RUN MODULE</span>
         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
       </div>
@@ -156,18 +156,18 @@ function TrackerMockup() {
       {/* GPA Card */}
       <div className="flex gap-3">
         <div className="flex-1 bg-tokyo-night rounded-xl p-4 border border-tokyo-cyan/20">
-          <span className="text-[9px] text-tokyo-comment uppercase tracking-wider block font-mono">
+          <span className="text-[9px] text-tokyo-comment uppercase tracking-wider block ">
             GPA Hệ 10
           </span>
           <span className="text-3xl font-black text-tokyo-cyan mt-1 block">
             8.25
           </span>
           <span className="inline-flex items-center gap-1 text-[8px] font-bold px-2 py-0.5 rounded-full mt-2 text-tokyo-green bg-tokyo-green/10 border border-tokyo-green/20">
-            <Award className="w-2.5 h-2.5" /> Khá
+            <Award className="w-2.5 h-2.5" /> Giỏi
           </span>
         </div>
         <div className="flex-1 bg-tokyo-night rounded-xl p-4 border border-tokyo-border/40">
-          <span className="text-[9px] text-tokyo-comment uppercase tracking-wider block font-mono">
+          <span className="text-[9px] text-tokyo-comment uppercase tracking-wider block ">
             Tín chỉ tích luỹ
           </span>
           <span className="text-3xl font-black text-tokyo-fg mt-1 block">
@@ -207,12 +207,12 @@ function TrackerMockup() {
             <p className="text-xs font-bold text-tokyo-variable truncate">
               {item.name}
             </p>
-            <span className="text-[9px] font-mono text-tokyo-cyan">
+            <span className="text-[9px]  text-tokyo-cyan">
               {item.code}
             </span>
           </div>
           <span
-            className="text-[8px] font-mono font-bold px-2 py-0.5 rounded border whitespace-nowrap"
+            className="text-[8px]  font-bold px-2 py-0.5 rounded border whitespace-nowrap"
             style={{
               color: item.color,
               borderColor: `${item.color}33`,
@@ -232,7 +232,7 @@ function GpaToolsMockup() {
     <div className="space-y-3">
       {/* Current GPA */}
       <div className="bg-tokyo-night rounded-xl p-4 border border-tokyo-magenta/20 text-center">
-        <span className="text-[9px] text-tokyo-comment uppercase tracking-wider block font-mono">
+        <span className="text-[9px] text-tokyo-comment uppercase tracking-wider block ">
           GPA Hiện tại
         </span>
         <span className="text-4xl font-black text-tokyo-magenta mt-1 block">
@@ -244,7 +244,7 @@ function GpaToolsMockup() {
       </div>
       {/* Reverse Calculator */}
       <div className="bg-tokyo-night rounded-xl p-4 border border-tokyo-border/40">
-        <p className="text-[9px] text-tokyo-comment uppercase tracking-wider font-mono mb-3">
+        <p className="text-[9px] text-tokyo-comment uppercase tracking-wider  mb-3">
           Tính ngược điểm cần đạt
         </p>
         <div className="flex gap-2">
@@ -252,7 +252,7 @@ function GpaToolsMockup() {
             <span className="text-[8px] text-tokyo-fg block mb-1">
               GPA mục tiêu
             </span>
-            <div className="bg-tokyo-storm rounded-lg px-3 py-2 border border-tokyo-border/40 text-sm font-mono text-tokyo-magenta">
+            <div className="bg-tokyo-storm rounded-lg px-3 py-2 border border-tokyo-border/40 text-sm  text-tokyo-magenta">
               8.50
             </div>
           </div>
@@ -260,7 +260,7 @@ function GpaToolsMockup() {
             <span className="text-[8px] text-tokyo-fg block mb-1">
               TC còn lại
             </span>
-            <div className="bg-tokyo-storm rounded-lg px-3 py-2 border border-tokyo-border/40 text-sm font-mono text-tokyo-fg">
+            <div className="bg-tokyo-storm rounded-lg px-3 py-2 border border-tokyo-border/40 text-sm  text-tokyo-fg">
               85
             </div>
           </div>
@@ -364,7 +364,7 @@ function SchedulerMockup() {
       </div>
       {/* Result badge */}
       <div className="flex items-center justify-between bg-tokyo-night rounded-xl p-3 border border-tokyo-green/20">
-        <span className="text-[9px] text-tokyo-fg font-mono">
+        <span className="text-[9px] text-tokyo-fg ">
           Phương án tối ưu #1
         </span>
         <span className="text-[9px] font-bold text-tokyo-green bg-tokyo-green/10 px-2 py-0.5 rounded">
@@ -618,12 +618,12 @@ export default function HomePage() {
             <div className="h-7 w-24 animate-pulse rounded-md bg-[#24283b]" />
           ) : me ? (
             <div className="flex items-center gap-3">
-              <span className="text-[10px] font-mono text-[#565f89]">
+              <span className="text-[10px]  text-[#565f89]">
                 {me.student_code_masked}
               </span>
               <Link
                 href="/tracker"
-                className="relative group inline-flex items-center gap-1 text-[11px] font-mono font-bold px-3 py-1.5 rounded-md border border-[#7aa2f7]/40 bg-[#7aa2f7]/10 text-[#7aa2f7] overflow-hidden transition-all duration-300 hover:bg-[#7aa2f7]/20 shadow-[0_0_10px_rgba(122,162,247,0.1)] hover:shadow-[0_0_15px_rgba(122,162,247,0.25)]"
+                className="relative group inline-flex items-center gap-1 text-[11px]  font-bold px-3 py-1.5 rounded-md border border-[#7aa2f7]/40 bg-[#7aa2f7]/10 text-[#7aa2f7] overflow-hidden transition-all duration-300 hover:bg-[#7aa2f7]/20 shadow-[0_0_10px_rgba(122,162,247,0.1)] hover:shadow-[0_0_15px_rgba(122,162,247,0.25)]"
               >
                 <span>ENTER SUITE</span>
                 <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
@@ -632,7 +632,7 @@ export default function HomePage() {
           ) : (
             <Link
               href="/onboarding"
-              className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold px-3 py-1.5 rounded-md border border-[#73daca]/40 bg-[#73daca]/10 text-[#73daca] transition-all duration-300 hover:bg-[#73daca]/20 hover:shadow-[0_0_15px_rgba(115,218,202,0.25)]"
+              className="inline-flex items-center gap-1.5 text-[11px]  font-bold px-3 py-1.5 rounded-md border border-[#73daca]/40 bg-[#73daca]/10 text-[#73daca] transition-all duration-300 hover:bg-[#73daca]/20 hover:shadow-[0_0_15px_rgba(115,218,202,0.25)]"
             >
               <span>CONNECT DAA</span>
             </Link>
@@ -645,9 +645,9 @@ export default function HomePage() {
         ref={heroReveal.ref}
         className={`relative max-w-6xl mx-auto px-6 pt-16 md:pt-24 pb-12 text-center scroll-reveal ${heroReveal.isVisible ? "visible" : ""}`}
       >
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#bb9af7]/20 bg-[#bb9af7]/5 text-xs text-[#bb9af7] mb-6 font-mono font-semibold">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#bb9af7]/20 bg-[#bb9af7]/5 text-xs text-[#bb9af7] mb-6  font-semibold">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>GEMINI PRO POWERED ACADEMIC ENGINE</span>
+          <span>AI POWERED ACADEMIC ENGINE</span>
         </div>
 
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-none text-white max-w-4xl mx-auto">
@@ -681,7 +681,7 @@ export default function HomePage() {
       >
         {/* Section header */}
         <div className="text-center mb-8">
-          <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#7dcfff]">
+          <span className="text-xs  font-bold uppercase tracking-widest text-[#7dcfff]">
             FEATURE WALKTHROUGH
           </span>
           <h2 className="text-2xl md:text-3xl font-extrabold text-white mt-2">
@@ -768,7 +768,7 @@ export default function HomePage() {
               <div className="flex flex-col justify-center space-y-5 order-2 lg:order-1">
                 <div>
                   <div
-                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider mb-4"
+                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px]  font-bold uppercase tracking-wider mb-4"
                     style={{
                       color: currentSlide.accent,
                       backgroundColor: currentSlide.accentBg,
@@ -800,7 +800,7 @@ export default function HomePage() {
                 </Link>
 
                 {/* Slide counter */}
-                <span className="text-[10px] font-mono text-[#565f89]">
+                <span className="text-[10px]  text-[#565f89]">
                   {String(activeSlide + 1).padStart(2, "0")} /{" "}
                   {String(FEATURE_SLIDES.length).padStart(2, "0")}
                 </span>
@@ -819,7 +819,7 @@ export default function HomePage() {
                     <div className="w-2.5 h-2.5 rounded-full bg-[#9ece6a]/60" />
                     <div className="flex-1 ml-3">
                       <div className="h-4 bg-[#1a1b26] rounded-md flex items-center px-2">
-                        <span className="text-[8px] font-mono text-[#565f89]">
+                        <span className="text-[8px]  text-[#565f89]">
                           eduadvisor.uit.dev{currentSlide.href}
                         </span>
                       </div>
@@ -840,7 +840,7 @@ export default function HomePage() {
         style={{ transitionDelay: "100ms" }}
       >
         <div className="flex flex-col items-center space-y-4 mb-14 text-center">
-          <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#7dcfff]">
+          <span className="text-xs  font-bold uppercase tracking-widest text-[#7dcfff]">
             MODULE SUITE CATALOG
           </span>
           <h2 className="text-3xl md:text-4xl font-extrabold text-white">
@@ -861,7 +861,7 @@ export default function HomePage() {
             description="Trò chuyện trực tiếp cùng trợ lý AI được thiết kế chuyên sâu cho quy chế học tập, quy định tín chỉ tại UIT."
             icon={MessageSquare}
             colorClass="text-[#bb9af7] group-hover:text-[#c0caf5]"
-            badgeText="Gemini Core"
+            badgeText="GPT Core"
           />
           <FeatureCard
             href="/tracker"
@@ -898,7 +898,7 @@ export default function HomePage() {
       </section>
 
       {/* Minimal Footer */}
-      <footer className="relative max-w-6xl mx-auto px-6 pt-8 border-t border-[#414868]/30 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] font-mono text-[#565f89] uppercase tracking-widest">
+      <footer className="relative max-w-6xl mx-auto px-6 pt-8 border-t border-[#414868]/30 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px]  text-[#565f89] uppercase tracking-widest">
         <span>&copy; 2026 UIT EduAdvisor Platform</span>
       </footer>
     </main>
