@@ -807,7 +807,7 @@ export default function HomePage() {
               {/* Right: visual mockup */}
               <div className="order-1 lg:order-2">
                 <div
-                  className="rounded-2xl border p-5 bg-[#24283b]/60 backdrop-blur-sm transition-colors duration-500"
+                  className="rounded-2xl border p-5 bg-[#24283b]/60 backdrop-blur-sm transition-colors duration-500 h-[360px] md:h-[420px] flex flex-col overflow-hidden"
                   style={{ borderColor: currentSlide.accentBorder }}
                 >
                   {/* Mockup header bar */}
