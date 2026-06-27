@@ -3,9 +3,8 @@ export function apiBaseUrl(): string {
     // In SSR, Node fetch requires an absolute URL. Use internal docker URL.
     return (process.env.API_INTERNAL_URL || "http://api:8000").replace(/\/$/, "");
   }
-  // In browser, use relative path so Next.js rewrites() can proxy it.
-  // This avoids CORS issues entirely.
-  return "";
+  // In browser, use the public API URL directly to avoid Vercel Proxy being blocked by Cloudflare.
+  return (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
 }
 
 function buildUrl(path: string): string {
