@@ -44,6 +44,8 @@ class EnrollmentRow:
 
     credits: int
     final_grade_10: Decimal | None
+    course_id: str | None = None
+    term_code: str | None = None
 
 
 def compute_cumulative_gpa(rows: list[EnrollmentRow]) -> GpaResult:
@@ -55,9 +57,39 @@ def compute_cumulative_gpa(rows: list[EnrollmentRow]) -> GpaResult:
     earned_credits = 0
     weighted_sum_10 = Decimal("0")
 
+    best_grades: dict[str, EnrollmentRow] = {}
+    unique_rows: list[EnrollmentRow] = []
+
+    def get_term_score(term: str | None) -> int:
+        if not term:
+            return 0
+        import re
+        # e.g., "HK1_2024-2025" -> (1, 2024) -> 20241
+        m = re.search(r"HK(\d+)_(\d{4})", term)
+        if m:
+            return int(m.group(2)) * 10 + int(m.group(1))
+        return 0
+
     for r in rows:
         if r.final_grade_10 is None or r.credits <= 0:
             continue
+            
+        if r.course_id:
+            if r.course_id not in best_grades:
+                best_grades[r.course_id] = r
+            else:
+                current_score = get_term_score(best_grades[r.course_id].term_code)
+                new_score = get_term_score(r.term_code)
+                
+                # Bốc lần học đến sau (latest term) thay vì điểm cao nhất.
+                if new_score >= current_score:
+                    best_grades[r.course_id] = r
+        else:
+            unique_rows.append(r)
+            
+    final_rows = list(best_grades.values()) + unique_rows
+
+    for r in final_rows:
         total_credits += r.credits
         weighted_sum_10 += r.final_grade_10 * r.credits
         if is_passed(r.final_grade_10):

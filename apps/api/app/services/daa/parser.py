@@ -423,12 +423,18 @@ def parse_daa_exam_schedule(html: str, lanthi: int, hocky: int, namhoc: int) -> 
             else:
                 start_time = time(7, 30)
                 
-        end_dt = datetime.combine(date(2000, 1, 1), start_time) + timedelta(minutes=120)
-        end_time = end_dt.time()
+        end_time = None
                 
         date_str = cells[5].strip().replace("-", "/")
         try:
             exam_date = datetime.strptime(date_str, "%d/%m/%Y").date()
+            if exam_date.year > namhoc + 1:
+                # Tránh lỗi DAA tự động thêm năm hiện tại vào các kỳ thi năm ngoái.
+                exam_date = exam_date.replace(year=namhoc if hocky == 1 else namhoc + 1)
+                
+            exam_datetime = datetime.combine(exam_date, start_time)
+            if exam_datetime < datetime.now():
+                continue
         except Exception:
             continue
             

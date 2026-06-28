@@ -93,12 +93,17 @@ def parse_calendar_events_json(data: dict) -> list[dict]:
         actionable = action.get("actionable", False)
         
         # Calculate task status
+        if due_dt and due_dt.year < datetime.now(tz).year:
+            # Bỏ qua các sự kiện từ các năm học trước để tránh hiển thị lỗi "Sắp tới" do nhầm lẫn ngày/tháng
+            continue
+            
         if not actionable:
-            status = "Đã xong/Đã khóa"
+            continue
         elif timesort > current_time:
             status = "Cần làm"
         else:
-            status = "Quá hạn"
+            # Người dùng yêu cầu không hiển thị bài tập quá hạn nữa
+            continue
             
         course = ev.get("course", {})
         

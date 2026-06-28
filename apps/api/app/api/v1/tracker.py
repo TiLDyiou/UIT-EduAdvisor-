@@ -115,6 +115,8 @@ def _enrollment_to_row(e: Enrollment) -> EnrollmentRow:
     return EnrollmentRow(
         credits=e.course.credits or 0 if e.course else 0,
         final_grade_10=e.final_grade_10,
+        course_id=str(e.course_id) if e.course_id else None,
+        term_code=e.term_code,
     )
 
 

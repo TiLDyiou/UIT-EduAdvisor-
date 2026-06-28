@@ -247,7 +247,7 @@ async def _cmd_gpa(db: AsyncSession, cmd: NormalizedCommand, student: Student) -
             return "Chưa có dữ liệu điểm.", None
 
         rows = [
-            EnrollmentRow(credits=e.course.credits if e.course else 0, final_grade_10=e.final_grade_10)
+            EnrollmentRow(credits=e.course.credits if e.course else 0, final_grade_10=e.final_grade_10, course_id=str(e.course_id) if e.course_id else None, term_code=e.term_code)
             for e in enrollments
         ]
         result = compute_cumulative_gpa(rows)

@@ -215,7 +215,7 @@ async def recommend(
 
     # Build student context.
     rows = [
-        EnrollmentRow(credits=e.course.credits if e.course else 0, final_grade_10=e.final_grade_10)
+        EnrollmentRow(credits=e.course.credits if e.course else 0, final_grade_10=e.final_grade_10, course_id=str(e.course_id) if e.course_id else None, term_code=e.term_code)
         for e in enrollments
     ]
     gpa_result = compute_cumulative_gpa(rows)

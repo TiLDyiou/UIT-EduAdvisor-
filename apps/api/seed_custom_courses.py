@@ -1,0 +1,194 @@
+import asyncio
+import csv
+from io import StringIO
+from sqlalchemy.dialects.postgresql import insert
+from app.db.models.academic import Course
+from app.db.session import init_engine, get_sessionmaker
+from app.core.config import get_settings
+
+csv_data = """SS003,Tư tưởng Hồ Chí Minh,2,Môn đại cương,
+SS006,Pháp luật đại cương,2,Môn đại cương,
+SS007,Triết học Mác – Lênin,3,Môn đại cương,
+SS008,Kinh tế chính trị Mác – Lênin,2,Môn đại cương,
+SS009,Chủ nghĩa xã hội khoa học,2,Môn đại cương,
+SS010,Lịch sử Đảng Cộng sản Việt Nam,2,Môn đại cương,
+MA003,Đại số tuyến tính,3,Môn đại cương,
+MA004,Cấu trúc rời rạc,4,Môn đại cương,
+MA005,Xác suất thống kê,3,Môn đại cương,
+MA006,Giải tích,4,Môn đại cương,
+IT001,Nhập môn lập trình,4,Môn đại cương,
+ENG01,Anh văn 1,4,Môn đại cương,
+ENG02,Anh văn 2,4,Môn đại cương,
+ENG03,Anh văn 3,4,Môn đại cương,
+PE231,Giáo dục thể chất 1,,Môn đại cương,
+PE232,Giáo dục thể chất 2,,Môn đại cương,
+ME001,Giáo dục quốc phòng,,Môn đại cương,
+SS004,Kỹ năng nghề nghiệp,2,Môn đại cương,
+CS115,Toán cho KHMT,4,Môn cơ sở ngành,
+IT002,Lập trình hướng đối tượng,4,Môn cơ sở ngành,
+SE104,Nhập môn Công nghệ phần mềm,4,Môn cơ sở ngành,
+CS111,Nguyên lý và phương pháp lập trình,3,Môn cơ sở ngành,
+CS526,Phát triển ứng dụng đa phương tiện trên thiết bị di động,4,Môn cơ sở ngành,
+CS311,Kỹ thuật lập trình Trí tuệ nhân tạo,3,Môn cơ sở ngành,
+CS116,Lập trình Python cho Máy học,3,Môn cơ sở ngành,
+IT003,Cấu trúc dữ liệu và giải thuật,4,Môn cơ sở ngành,
+CS112,Phân tích và thiết kế thuật toán,4,Môn cơ sở ngành,
+CS117,Tư duy tính toán,4,Môn cơ sở ngành,
+CS523,Cấu trúc dữ liệu và giải thuật nâng cao,3,Môn cơ sở ngành,
+IT012,Tổ chức và cấu trúc máy tính II,4,Môn cơ sở ngành,
+IT007,Hệ điều hành,4,Môn cơ sở ngành,
+IT005,Nhập môn mạng máy tính,4,Môn cơ sở ngành,
+IT004,Cơ sở dữ liệu,4,Môn cơ sở ngành,
+CS005,Giới thiệu ngành Khoa học Máy tính,1,Môn cơ sở ngành,
+CS217,Các hệ cơ sở tri thức,4,Môn chuyên ngành,
+CS214,Biểu diễn tri thức và suy luận,4,Môn chuyên ngành,
+CS211,Trí tuệ nhân tạo nâng cao,4,Môn chuyên ngành,
+CS312,Hệ thống đa tác tử,4,Môn chuyên ngành,
+CS313,Khai thác dữ liệu và ứng dụng,4,Môn chuyên ngành,
+CS314,Lập trình symbolic trong trí tuệ nhân tạo,4,Môn chuyên ngành,
+CS315,Máy học nâng cao,4,Môn chuyên ngành,
+CS316,Các hệ giải bài toán thông minh,4,Môn chuyên ngành,
+CS106,Trí tuệ nhân tạo,4,Môn chuyên ngành,
+CS114,Máy học,4,Môn chuyên ngành,
+CS221,Xử lý ngôn ngữ tự nhiên,4,Môn chuyên ngành,
+CS229,Ngữ nghĩa học tính toán,4,Môn chuyên ngành,
+CS226,Ngôn ngữ học máy tính,4,Môn chuyên ngành,
+CS222,Xử lý ngôn ngữ tự nhiên nâng cao,4,Môn chuyên ngành,
+CS323,Các hệ thống hỏi-đáp,4,Môn chuyên ngành,
+CS324,Máy học trong xử lý ngôn ngữ tự nhiên,4,Môn chuyên ngành,
+CS321,Ngôn ngữ học ngữ liệu,4,Môn chuyên ngành,
+CS325,Dịch máy,4,Môn chuyên ngành,
+CS231,Nhập môn Thị giác máy tính,4,Môn chuyên ngành,
+CS105,Đồ họa máy tính,4,Môn chuyên ngành,
+CS331,Thị giác máy tính nâng cao,4,Môn chuyên ngành,
+CS532,Thị giác máy tính trong tương tác người – máy,4,Môn chuyên ngành,
+CS338,Nhận dạng,4,Môn chuyên ngành,
+CS333,Đồ họa game,3,Môn chuyên ngành,
+CS336,Truy vấn thông tin đa phương tiện,4,Môn chuyên ngành,
+CS337,Xử lý âm thanh và tiếng nói,4,Môn chuyên ngành,
+CS535,Tổng hợp tiếng nói,4,Môn chuyên ngành,
+CS232,Tính toán Đa phương tiện,4,Môn chuyên ngành,
+CS317,Phát triển và vận hành hệ thống máy học,4,Môn chuyên ngành,
+CS106,Trí tuệ nhân tạo,4,Môn chuyên ngành,
+CS114,Máy học,4,Môn chuyên ngành,
+CS211,Trí tuệ nhân tạo nâng cao,4,Môn chuyên ngành,
+CS313,Khai thác dữ liệu và ứng dụng,4,Môn chuyên ngành,
+CS314,Lập trình symbolic trong trí tuệ nhân tạo,4,Môn chuyên ngành,
+CS315,Máy học nâng cao,4,Môn chuyên ngành,
+CS217,Các hệ cơ sở tri thức,4,Môn chuyên ngành,
+CS214,Biểu diễn tri thức và suy luận,4,Môn chuyên ngành,
+CS312,Hệ thống đa tác tử,4,Môn chuyên ngành,
+CS316,Các hệ giải bài toán thông minh,4,Môn chuyên ngành,
+CS221,Xử lý ngôn ngữ tự nhiên,4,Môn chuyên ngành,
+CS229,Ngữ nghĩa học tính toán,4,Môn chuyên ngành,
+CS226,Ngôn ngữ học máy tính,4,Môn chuyên ngành,
+CS222,Xử lý ngôn ngữ tự nhiên nâng cao,4,Môn chuyên ngành,
+CS324,Máy học trong xử lý ngôn ngữ tự nhiên,4,Môn chuyên ngành,
+CS323,Các hệ thống hỏi-đáp,4,Môn chuyên ngành,
+CS321,Ngôn ngữ học ngữ liệu,4,Môn chuyên ngành,
+CS325,Dịch máy,4,Môn chuyên ngành,
+CS114,Máy học,4,Môn chuyên ngành,
+CS232,Tính toán Đa phương tiện,4,Môn chuyên ngành,
+CS336,Truy vấn thông tin đa phương tiện,4,Môn chuyên ngành,
+CS313,Khai thác dữ liệu và ứng dụng,4,Môn chuyên ngành,
+CS337,Xử lý âm thanh và tiếng nói,4,Môn chuyên ngành,
+CS535,Tổng hợp tiếng nói,4,Môn chuyên ngành,
+CS231,Nhập môn Thị giác máy tính,4,Môn chuyên ngành,
+CS331,Thị giác máy tính nâng cao,4,Môn chuyên ngành,
+CS338,Nhận dạng,4,Môn chuyên ngành,
+CS532,Thị giác máy tính trong tương tác người – máy,4,Môn chuyên ngành,
+CS114,Máy học,4,Môn chuyên ngành,
+CS105,Đồ họa máy tính,4,Môn chuyên ngành,
+CS519,Phương pháp luận nghiên cứu khoa học,3,Môn học tự chọn,
+CS529,Các vấn đề nghiên cứu và ứng dụng trong Khoa học Máy tính,4,Môn học tự chọn,
+CS551,Thực tập,2,Môn học tự chọn,
+CS332,Máy học trong Thị giác máy tính,4,Môn học tự chọn,
+CS333,Đồ họa game,3,Môn học tự chọn,
+CS527,Thực tại ảo,4,Môn học tự chọn,
+CS528,Trực quan hóa thông tin,4,Môn học tự chọn,
+CS505,Khóa luận tốt nghiệp,10,"Đồ án, thực tập",
+CS554,Đồ án tốt nghiệp tại doanh nghiệp,10,"Đồ án, thực tập",
+CS553,Đồ án tốt nghiệp,6,"Đồ án, thực tập",
+CS409,Hệ suy diễn mờ,4,"Đồ án, thực tập",
+CS405,Logic mờ và ứng dụng,4,"Đồ án, thực tập",
+CS406,Xử lý ảnh và ứng dụng,4,"Đồ án, thực tập",
+CS410,Mạng Neural và Thuật giải di truyền,4,"Đồ án, thực tập",
+CS419,Truy xuất thông tin,4,"Đồ án, thực tập",
+CS412,Web ngữ nghĩa,4,"Đồ án, thực tập",
+CS420,Các vấn đề chọn lọc trong Thị giác máy tính,4,"Đồ án, thực tập",
+CS431,Các kĩ thuật học sâu và ứng dụng,3,"Đồ án, thực tập"
+"""
+
+KIND_MAP = {
+    "Môn đại cương": "dai_cuong",
+    "Môn cơ sở ngành": "co_so_nganh",
+    "Môn chuyên ngành": "chuyen_nganh",
+    "Môn học tự chọn": "tu_do",
+    "Đồ án, thực tập": "do_an",
+}
+
+async def main():
+    init_engine(get_settings().database_url)
+    maker = get_sessionmaker()
+    
+    courses_to_add = []
+    
+    # parse CSV
+    reader = csv.reader(StringIO(csv_data))
+    
+    seen = set()
+    for row in reader:
+        if not row or len(row) < 4:
+            continue
+            
+        code = row[0].strip()
+        if code == "CS551 *":
+            code = "CS551"
+            
+        name = row[1].strip()
+        tc = row[2].strip()
+        kind_raw = row[3].strip()
+        
+        difficulty = None
+        if len(row) >= 5:
+            difficulty = row[4].strip() or None
+            
+        if not code:
+            code = None
+            
+        if code and code in seen:
+            continue
+        if code:
+            seen.add(code)
+            
+        credits = int(tc) if tc else 0
+        
+        kind = KIND_MAP.get(kind_raw, "tu_do")
+        
+        course = Course(
+            code=code,
+            name=name,
+            credits=credits,
+            kind=kind,
+            difficulty=difficulty
+        )
+        courses_to_add.append(course)
+        
+    async with maker() as session:
+        stmt = insert(Course).values([
+            {
+                "code": c.code,
+                "name": c.name,
+                "credits": c.credits,
+                "kind": c.kind,
+                "difficulty": c.difficulty,
+            }
+            for c in courses_to_add
+        ])
+        stmt = stmt.on_conflict_do_nothing(index_elements=['code'])
+        await session.execute(stmt)
+        await session.commit()
+        print(f"Executed upsert for {len(courses_to_add)} courses")
+
+if __name__ == "__main__":
+    asyncio.run(main())

@@ -39,6 +39,8 @@ async def build_realtime_context_block(db: AsyncSession, student: Student) -> st
             EnrollmentRow(
                 credits=int(e.course.credits) if e.course else 0,
                 final_grade_10=e.final_grade_10,
+                course_id=str(e.course_id) if e.course_id else None,
+                term_code=e.term_code,
             )
         )
         label = f"{e.course.code} - {e.course.name} ({e.term_code})" if e.course else e.term_code

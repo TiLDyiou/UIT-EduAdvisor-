@@ -797,10 +797,21 @@ export default function TrackerPage() {
   const sortedTerms = [...termGroups.entries()].sort(([a], [b]) => a - b);
 
   // Fallbacks for preview mode - FORCED MOCK DATA FOR USER PREVIEW
-  const displayExams = (roadmap?.is_preview ?? true) ? MOCK_EXAMS : exams;
+  const displayExams = ((roadmap?.is_preview ?? true) ? MOCK_EXAMS : exams).filter(
+    (e) => {
+      const examDate = new Date(e.exam_date);
+      // Filter out exams that are strictly in the past year, or older than 1 day
+      if (examDate.getFullYear() < new Date().getFullYear()) return false;
+      return examDate.getTime() > Date.now() - 86400000;
+    }
+  );
   const allDeadlines = (roadmap?.is_preview ?? true) ? MOCK_DEADLINES : deadlines;
   const displayDeadlines = allDeadlines.filter(
-    (d) => new Date(d.due_at).getTime() > Date.now()
+    (d) => {
+      const due = new Date(d.due_at);
+      if (due.getFullYear() < new Date().getFullYear()) return false;
+      return due.getTime() > Date.now();
+    }
   );
 
   const totalCurriculumCredits = roadmap?.total_credits || 120;

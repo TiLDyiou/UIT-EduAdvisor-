@@ -79,11 +79,13 @@ async def _ensure_course(
     if row:
         if row.admin_locked:
             return row
-        if name and name != row.name:
+        if name and name != row.name and name != code and name != normalized_code:
             row.name = name[:2000]
         if credits is not None:
             with contextlib.suppress(Exception):
-                row.credits = int(credits)
+                new_credits = int(credits)
+                if new_credits > row.credits:
+                    row.credits = new_credits
         return row
     creds = 0
     if credits is not None:
@@ -121,7 +123,8 @@ async def _ensure_major(session: AsyncSession, major_name: str):
 
 async def _persist_grades(session: AsyncSession, student_id, rows: list[dict[str, Any]]) -> None:
     for row in rows:
-        code = str(row.get("course_code") or "").strip()
+        raw_code = str(row.get("course_code") or "").strip()
+        code = _normalize_course_code(raw_code)
         if not code:
             continue
         c = await _ensure_course(
@@ -341,11 +344,17 @@ def _normalize_course_code(raw: str | None) -> str | None:
     if not text:
         return None
     first_token = text.split(" ", 1)[0].strip(".,;:-")
+    
+    # Strip class suffix and practical class suffix (e.g. IT007.Q210.1 -> IT007)
+    if "." in first_token:
+        first_token = first_token.split(".")[0]
+        
     if _looks_like_course_code(first_token):
         return first_token[:32]
-    m = re.search(r"\b([A-Z]{2,}\d{2,4}(?:\.[A-Z0-9]+)*)\b", text.upper())
+        
+    m = re.search(r"\b([A-Z]{2,}\d{2,4})\b", text.upper())
     if not m:
-        return text[:32]
+        return text.split(".")[0][:32] if "." in text else text[:32]
     return m.group(1)[:32]
 
 
