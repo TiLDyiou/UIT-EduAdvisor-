@@ -1,13 +1,7 @@
-# UIT EduAdvisor - root Makefile
-#
-# A single entrypoint for everything a dev needs to do day-to-day.
-# Sub-targets shell into the right directory so devs don't have to remember
-# whether to cd into apps/api, apps/web, or infra.
-
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
-# All compose commands run from infra/ so paths in compose files are stable.
+
 COMPOSE := docker compose -f infra/docker-compose.yml -f infra/docker-compose.override.yml --env-file .env
 
 API_DIR := apps/api
@@ -18,9 +12,7 @@ help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
-# ---------------------------------------------------------------------------
-# Bootstrap
-# ---------------------------------------------------------------------------
+
 
 .PHONY: env
 env: ## Create .env from .env.example if missing
@@ -44,9 +36,7 @@ install-api:
 install-web:
 	cd $(WEB_DIR) && npm install
 
-# ---------------------------------------------------------------------------
-# Compose lifecycle
-# ---------------------------------------------------------------------------
+
 
 .PHONY: up
 up: env ## Start the full stack (build images if needed)
@@ -68,9 +58,7 @@ logs: ## Tail logs from all services
 ps: ## Show service status
 	$(COMPOSE) ps
 
-# ---------------------------------------------------------------------------
-# Database
-# ---------------------------------------------------------------------------
+
 
 .PHONY: migrate
 migrate: ## Apply Alembic migrations inside the api container
@@ -85,9 +73,9 @@ revision: ## Create a new Alembic revision. Usage: make revision m="add students
 psql: ## Open a psql shell on the running postgres container
 	$(COMPOSE) exec postgres psql -U $${POSTGRES_USER:-eduadvisor} -d $${POSTGRES_DB:-eduadvisor}
 
-# ---------------------------------------------------------------------------
-# Test & lint (run on the host, not in containers, for speed and IDE parity)
-# ---------------------------------------------------------------------------
+
+# Test & lint 
+
 
 .PHONY: test
 test: test-api test-web ## Run all unit tests
