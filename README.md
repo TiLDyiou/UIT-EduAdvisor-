@@ -1,6 +1,6 @@
 # UIT EduAdvisor
 
-**Tác giả:** Đặng Nguyễn Gia Bảo (24520147) và Nguyễn Đức Đại (24520147)
+**Tác giả:** Đặng Nguyễn Gia Bảo (24520147) và Nguyễn Đức Đại (24520245)
 
 **Tỉ lệ đóng góp:** 50% - 50%
 
