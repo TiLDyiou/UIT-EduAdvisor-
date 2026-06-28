@@ -1,8 +1,11 @@
 # UIT EduAdvisor
 
 **Tác giả:** Đặng Nguyễn Gia Bảo (24520147) và Nguyễn Đức Đại (24520147)
+
 **Tỉ lệ đóng góp:** 50% - 50%
+
 **Đã được triển khai tại:** <https://uit-edu-advisor-two.vercel.app>
+
 UIT EduAdvisor là một nền tảng Web Application hỗ trợ học vụ dành riêng cho sinh viên Đại học Công nghệ Thông tin (UIT). Hệ thống giúp sinh viên trực quan hóa lộ trình học tập, tối ưu thời khóa biểu, và được tư vấn trực tiếp bởi trợ lý AI.
 
 ## 1. Frontend (Giao diện Web)
